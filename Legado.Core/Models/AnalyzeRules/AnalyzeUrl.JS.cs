@@ -20,7 +20,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 JavaObject = this,
                 BaseUrl = baseUrl,
                 CookieStore = this.CookieStore,
-                Key = this.source.GetKey(),
+                Key = key,
                 Page = this.page,
                 Source = this.source,
                 Book = this.ruleData,

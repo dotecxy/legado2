@@ -1,5 +1,5 @@
 ﻿using Legado.Core.Data.Entities;
-using Legado.Core.Helps.Http; 
+using Legado.Core.Helps.Http;
 using Legado.Core.Models; // 假设 Book, BaseSource 等模型在此命名空间
 using Legado.Core.Models.AnalyzeRules;
 using Legado.Core.Utils; // 假设 NetworkUtils, CookieStore 等在此
@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Legado.Core.Utils.NetworkUtils;
 using static Legado.Core.Constants.AppPattern;
+using Legado.Core.Helps;
 
 namespace Legado.Core.Models.AnalyzeRules
 {
@@ -22,9 +23,9 @@ namespace Legado.Core.Models.AnalyzeRules
     /// 搜索URL规则解析
     /// 对应 Kotlin: AnalyzeUrl.kt
     /// </summary>
-    public partial class AnalyzeUrl
+    public partial class AnalyzeUrl : JsExtensions
     {
-        
+
 
         // ================= 属性字段 =================
         public string RuleUrl { get; private set; }
@@ -74,7 +75,7 @@ namespace Legado.Core.Models.AnalyzeRules
             BookSource source = null,
             object ruleData = null,
             BookChapter chapter = null,
-            Dictionary<string, string> headerMapF = null)
+            Dictionary<string, string> headerMapF = null) : base("cache_path")
         {
             this.mUrl = mUrl;
             this.key = key;
@@ -86,7 +87,7 @@ namespace Legado.Core.Models.AnalyzeRules
             this.ruleData = ruleData;
             this.chapter = chapter;
             this.enabledCookieJar = source?.EnabledCookieJar ?? false;
-             
+
             // 处理 BaseUrl
             var urlMatcher = PARAM_PATTERN.Match(this.baseUrl);
             if (urlMatcher.Success)
@@ -113,7 +114,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 }
             }
 
-            InitUrl(); 
+            InitUrl();
             this.domain = GetSubDomain(source?.BookSourceUrl ?? Url);
         }
 
@@ -204,6 +205,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 });
             }
         }
+
 
         /// <summary>
         /// 解析 URL 及 JSON 选项
@@ -393,6 +395,10 @@ namespace Legado.Core.Models.AnalyzeRules
             return Regex.IsMatch(text, "%[0-9A-Fa-f]{2}");
         }
 
+        public void put(string key,string value)
+        { 
+        }
+
         // ================= 网络请求 =================
 
         /// <summary>
@@ -417,6 +423,8 @@ namespace Legado.Core.Models.AnalyzeRules
                 // C# 后端通常无法支持 WebView，抛出异常或降级
                 // throw new NotSupportedException("WebView is not supported in Core library.");
                 Console.WriteLine("Warning: WebView requested but not supported. Fallback to HTTP.");
+                var body = webView("", urlNoQuery, jsStr);
+                return new StrResponse(Url, body);
             }
 
             using (var client = CreateHttpClient())
@@ -536,11 +544,7 @@ namespace Legado.Core.Models.AnalyzeRules
             }
             catch { return null; }
         }
-
-        private string GetSubDomain(string url)
-        {
-            try { return new Uri(url).Host; } catch { return ""; }
-        }
+         
     }
 
     /// <summary>
@@ -595,5 +599,5 @@ namespace Legado.Core.Models.AnalyzeRules
             return JsonConvert.SerializeObject(Body);
         }
     }
-      
+
 }

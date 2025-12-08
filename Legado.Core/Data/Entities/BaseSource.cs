@@ -104,7 +104,7 @@ namespace Legado.Core.Data.Entities
             }
         }
 
-        public string GetKey() => BookSourceUrl;
+        public virtual string GetKey() => BookSourceUrl;
 
 
         public BaseSource GetSource()

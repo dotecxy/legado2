@@ -22,7 +22,7 @@ namespace Legado.Test
         public async Task Initialize()
         {
             var json = await URL.GetStringAsync();
-            json = File.ReadAllText(@"D:\testb\bookSource.json");
+            json = File.ReadAllText(@"..\..\..\..\bookSource.json");
             bookList = JsonConvert.DeserializeObject<List<BookSource>>(json);
         }
 
@@ -37,7 +37,10 @@ namespace Legado.Test
         public async Task TestSearchAsync()
         {
             var first = bookList.First();
-            AnalyzeUrl analyzeUrl = new AnalyzeUrl(first.SearchUrl, page: 1, source: first);
+            AnalyzeUrl analyzeUrl = new AnalyzeUrl(first.SearchUrl, page: 1, source: first,baseUrl:first.BookSourceUrl,key:"我的");
+           var result= await analyzeUrl.GetStrResponseAwait(useWebView:true);
+
+            webbook
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Legado.Core.Helps.Http
 
         public string GetCookie(string url)
         {
-            throw new NotImplementedException();
+            return null;
         }
 
         public string MapToCookie(IDictionary<string, string> cookieMap)
@@ -35,8 +35,7 @@ namespace Legado.Core.Helps.Http
         }
 
         public void SetCookie(string url, string cookie)
-        {
-            throw new NotImplementedException();
+        { 
         }
     }
 }
