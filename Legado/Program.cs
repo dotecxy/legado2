@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
-using Legado.Core;
+using Legado.Core.Data.Entities;
+using Legado.Core.Models.WebBooks;
+using Newtonsoft.Json;
 
 namespace Legado
 {
@@ -24,8 +28,7 @@ namespace Legado
                 }
 
                 var bookSourceContent = File.ReadAllText(bookSourcePath);
-                var crawlerEngine = new CrawlerEngine();
-                var bookSources = crawlerEngine.LoadBookSources(bookSourceContent);
+                var bookSources = JsonConvert.DeserializeObject<List<BookSource>>(bookSourceContent);
 
                 Console.WriteLine($"成功加载 {bookSources.Count} 个书源");
                 Console.WriteLine();
@@ -38,28 +41,52 @@ namespace Legado
                 
                 if (bookSources.Count > 0)
                 {
-                    // 使用第一个书源进行搜索
-                    var firstBookSource = bookSources[0];
-                    Console.WriteLine($"正在使用书源 '{firstBookSource.bookSourceName}' 搜索 '{keyword}'...");
+                    var webBook = new WebBook();
+                    var successCount = 0;
+                    var tryCount = Math.Min(5, bookSources.Count);
                     
-                    var searchResults = await crawlerEngine.SearchBooksAsync(firstBookSource, keyword);
-                    
-                    if (searchResults.Count > 0)
+                    for (int i = 0; i < tryCount && successCount == 0; i++)
                     {
-                        Console.WriteLine($"找到 {searchResults.Count} 个结果：");
-                        for (int i = 0; i < Math.Min(5, searchResults.Count); i++)
+                        var bookSource = bookSources[i];
+                        Console.WriteLine($"\n正在尝试书源 [{i + 1}/{tryCount}]: '{bookSource.BookSourceName}'");
+                        
+                        try
                         {
-                            var result = searchResults[i];
-                            Console.WriteLine($"{i + 1}. {result.Name} - {result.Author}");
-                            Console.WriteLine($"   分类：{result.Kind}");
-                            Console.WriteLine($"   最新章节：{result.LastChapter}");
-                            Console.WriteLine($"   链接：{result.BookUrl}");
-                            Console.WriteLine();
+                            var searchResults = await webBook.SearchBookAwait(bookSource, keyword);
+                            
+                            if (searchResults != null && searchResults.Count > 0)
+                            {
+                                Console.WriteLine($"\n找到 {searchResults.Count} 个结果：");
+                                for (int j = 0; j < Math.Min(5, searchResults.Count); j++)
+                                {
+                                    var result = searchResults[j];
+                                    Console.WriteLine($"{j + 1}. {result.Name} - {result.Author}");
+                                    Console.WriteLine($"   分类：{result.Kind}");
+                                    Console.WriteLine($"   最新章节：{result.LatestChapterTitle}");
+                                    Console.WriteLine($"   链接：{result.BookUrl}");
+                                    Console.WriteLine();
+                                }
+                                successCount++;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"  未找到结果");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"  错误: {ex.Message}");
+                            if (i == tryCount - 1 && successCount == 0)
+                            {
+                                Console.WriteLine($"\n详细错误信息:");
+                                Console.WriteLine(ex.ToString());
+                            }
                         }
                     }
-                    else
+                    
+                    if (successCount == 0)
                     {
-                        Console.WriteLine("没有找到匹配的结果");
+                        Console.WriteLine($"\n没有从任何书源获取到结果。");
                     }
                 }
                 
@@ -70,8 +97,7 @@ namespace Legado
                 Console.WriteLine($"测试出错：{ex.Message}");
                 Console.WriteLine(ex.StackTrace);
             }
-            
-            Console.ReadKey();
+             
         }
     }
 }

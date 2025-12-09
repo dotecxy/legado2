@@ -8,7 +8,7 @@ namespace Legado.Core.Data.Entities.Rules
     /// <summary>
     /// 发现结果规则
     /// </summary>
-    public class ExploreRule 
+    public class ExploreRule : IBookListRule
     {
         /// <summary>
         /// 书籍列表选择器

@@ -11,6 +11,7 @@ namespace Legado.Core.Models.AnalyzeRules
 {
     /// <summary>
     /// 使用 AngleSharp 分析规则 
+    /// 对应 Kotlin: AnalyzeByJSoup.kt
     /// </summary>
     public class AnalyzeByAngleSharp
     {
@@ -23,6 +24,14 @@ namespace Legado.Core.Models.AnalyzeRules
         public AnalyzeByAngleSharp(object doc)
         {
             _element = Parse(doc);
+        }
+
+        /// <summary>
+        /// 获取当前元素
+        /// </summary>
+        public IElement GetElement()
+        {
+            return _element;
         }
 
         /// <summary>
@@ -68,6 +77,15 @@ namespace Legado.Core.Models.AnalyzeRules
         }
 
         /// <summary>
+        /// 获取所有元素（对应 getAllElements）
+        /// </summary>
+        public List<object> GetAllElements(string rule)
+        {
+            var elements = GetElements(rule);
+            return elements.Cast<object>().ToList();
+        }
+
+        /// <summary>
         /// 合并内容列表，得到内容
         /// </summary>
         public string GetString(string ruleStr)
@@ -95,9 +113,17 @@ namespace Legado.Core.Models.AnalyzeRules
         }
 
         /// <summary>
-        /// 获取所有内容列表
+        /// 获取所有字符串列表（对应 getStringList）
         /// </summary>
         public List<string> GetStringList(string ruleStr)
+        {
+            return GetStringList(ruleStr, false);
+        }
+
+        /// <summary>
+        /// 获取所有字符串列表（带是否保留Html参数）
+        /// </summary>
+        public List<string> GetStringList(string ruleStr, bool isUrl)
         {
             var textS = new List<string>();
 
@@ -174,6 +200,314 @@ namespace Legado.Core.Models.AnalyzeRules
             }
 
             return textS;
+        }
+
+        /// <summary>
+        /// 获取 HTML 列表（对应 Kotlin 的 getHtmlList）
+        /// </summary>
+        public List<string> GetHtmlList(string ruleStr)
+        {
+            var htmlList = new List<string>();
+            
+            if (string.IsNullOrEmpty(ruleStr))
+                return htmlList;
+
+            var elements = GetElements(ruleStr);
+            foreach (var element in elements)
+            {
+                if (element != null)
+                {
+                    htmlList.Add(element.OuterHtml);
+                }
+            }
+
+            return htmlList;
+        }
+
+        /// <summary>
+        /// 获取单个 HTML（对应 Kotlin 的 getHtml）
+        /// </summary>
+        public string GetHtml(string ruleStr)
+        {
+            var htmlList = GetHtmlList(ruleStr);
+            if (htmlList.Count == 0)
+                return null;
+            
+            if (htmlList.Count == 1)
+                return htmlList[0];
+            
+            return string.Join("\n", htmlList);
+        }
+
+        /// <summary>
+        /// 获取第一个 HTML（对应 Kotlin 的 getHtml0）
+        /// </summary>
+        public string GetHtml0(string ruleStr)
+        {
+            var htmlList = GetHtmlList(ruleStr);
+            return htmlList.Count > 0 ? htmlList[0] : string.Empty;
+        }
+
+        /// <summary>
+        /// 获取属性列表（对应 Kotlin 的 getAttributeList）
+        /// </summary>
+        public List<string> GetAttributeList(string ruleStr, string attrName)
+        {
+            var attrList = new List<string>();
+            
+            if (string.IsNullOrEmpty(ruleStr) || string.IsNullOrEmpty(attrName))
+                return attrList;
+
+            var elements = GetElements(ruleStr);
+            foreach (var element in elements)
+            {
+                if (element != null)
+                {
+                    var attrValue = element.GetAttribute(attrName);
+                    if (!string.IsNullOrEmpty(attrValue))
+                    {
+                        attrList.Add(attrValue);
+                    }
+                }
+            }
+
+            return attrList;
+        }
+
+        /// <summary>
+        /// 获取单个属性（对应 Kotlin 的 getAttribute）
+        /// </summary>
+        public string GetAttribute(string ruleStr, string attrName)
+        {
+            var attrList = GetAttributeList(ruleStr, attrName);
+            if (attrList.Count == 0)
+                return null;
+            
+            if (attrList.Count == 1)
+                return attrList[0];
+            
+            return string.Join("\n", attrList);
+        }
+
+        /// <summary>
+        /// 获取第一个属性（对应 Kotlin 的 getAttribute0）
+        /// </summary>
+        public string GetAttribute0(string ruleStr, string attrName)
+        {
+            var attrList = GetAttributeList(ruleStr, attrName);
+            return attrList.Count > 0 ? attrList[0] : string.Empty;
+        }
+
+        /// <summary>
+        /// 获取文本列表（对应 Kotlin 的 getTextList）
+        /// </summary>
+        public List<string> GetTextList(string ruleStr)
+        {
+            var textList = new List<string>();
+            
+            if (string.IsNullOrEmpty(ruleStr))
+                return textList;
+
+            var elements = GetElements(ruleStr);
+            foreach (var element in elements)
+            {
+                if (element != null)
+                {
+                    var text = element.TextContent?.Trim();
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        textList.Add(text);
+                    }
+                }
+            }
+
+            return textList;
+        }
+
+        /// <summary>
+        /// 获取单个文本（对应 Kotlin 的 getText）
+        /// </summary>
+        public string GetText(string ruleStr)
+        {
+            var textList = GetTextList(ruleStr);
+            if (textList.Count == 0)
+                return null;
+            
+            if (textList.Count == 1)
+                return textList[0];
+            
+            return string.Join("\n", textList);
+        }
+
+        /// <summary>
+        /// 获取第一个文本（对应 Kotlin 的 getText0）
+        /// </summary>
+        public string GetText0(string ruleStr)
+        {
+            var textList = GetTextList(ruleStr);
+            return textList.Count > 0 ? textList[0] : string.Empty;
+        }
+
+        /// <summary>
+        /// 获取 OwnText 列表（对应 Kotlin 的 getOwnTextList）
+        /// </summary>
+        public List<string> GetOwnTextList(string ruleStr)
+        {
+            var textList = new List<string>();
+            
+            if (string.IsNullOrEmpty(ruleStr))
+                return textList;
+
+            var elements = GetElements(ruleStr);
+            foreach (var element in elements)
+            {
+                if (element != null)
+                {
+                    var childrenText = element.ChildNodes
+                        .OfType<IText>()
+                        .Select(n => n.Text?.Trim())
+                        .Where(t => !string.IsNullOrEmpty(t))
+                        .ToList();
+
+                    if (childrenText.Count > 0)
+                    {
+                        textList.Add(string.Join(" ", childrenText));
+                    }
+                }
+            }
+
+            return textList;
+        }
+
+        /// <summary>
+        /// 获取单个 OwnText（对应 Kotlin 的 getOwnText）
+        /// </summary>
+        public string GetOwnText(string ruleStr)
+        {
+            var textList = GetOwnTextList(ruleStr);
+            if (textList.Count == 0)
+                return null;
+            
+            if (textList.Count == 1)
+                return textList[0];
+            
+            return string.Join("\n", textList);
+        }
+
+        /// <summary>
+        /// 获取第一个 OwnText（对应 Kotlin 的 getOwnText0）
+        /// </summary>
+        public string GetOwnText0(string ruleStr)
+        {
+            var textList = GetOwnTextList(ruleStr);
+            return textList.Count > 0 ? textList[0] : string.Empty;
+        }
+
+        /// <summary>
+        /// 获取 TextNodes 列表（对应 Kotlin 的 getTextNodesList）
+        /// </summary>
+        public List<string> GetTextNodesList(string ruleStr)
+        {
+            var textList = new List<string>();
+            
+            if (string.IsNullOrEmpty(ruleStr))
+                return textList;
+
+            var elements = GetElements(ruleStr);
+            foreach (var element in elements)
+            {
+                if (element != null)
+                {
+                    var textNodes = element.ChildNodes.OfType<IText>().ToList();
+                    var nodeTexts = new List<string>();
+                    
+                    foreach (var node in textNodes)
+                    {
+                        var text = node.Text?.Trim();
+                        if (!string.IsNullOrEmpty(text))
+                        {
+                            nodeTexts.Add(text);
+                        }
+                    }
+                    
+                    if (nodeTexts.Count > 0)
+                    {
+                        textList.Add(string.Join("\n", nodeTexts));
+                    }
+                }
+            }
+
+            return textList;
+        }
+
+        /// <summary>
+        /// 获取单个 TextNodes（对应 Kotlin 的 getTextNodes）
+        /// </summary>
+        public string GetTextNodes(string ruleStr)
+        {
+            var textList = GetTextNodesList(ruleStr);
+            if (textList.Count == 0)
+                return null;
+            
+            if (textList.Count == 1)
+                return textList[0];
+            
+            return string.Join("\n", textList);
+        }
+
+        /// <summary>
+        /// 获取第一个 TextNodes（对应 Kotlin 的 getTextNodes0）
+        /// </summary>
+        public string GetTextNodes0(string ruleStr)
+        {
+            var textList = GetTextNodesList(ruleStr);
+            return textList.Count > 0 ? textList[0] : string.Empty;
+        }
+
+        /// <summary>
+        /// 获取 All Inner Html 列表（对应 Kotlin 的 getAllInnerHtmlList）
+        /// </summary>
+        public List<string> GetAllInnerHtmlList(string ruleStr)
+        {
+            var htmlList = new List<string>();
+            
+            if (string.IsNullOrEmpty(ruleStr))
+                return htmlList;
+
+            var elements = GetElements(ruleStr);
+            foreach (var element in elements)
+            {
+                if (element != null)
+                {
+                    htmlList.Add(element.InnerHtml);
+                }
+            }
+
+            return htmlList;
+        }
+
+        /// <summary>
+        /// 获取单个 All Inner Html（对应 Kotlin 的 getAllInnerHtml）
+        /// </summary>
+        public string GetAllInnerHtml(string ruleStr)
+        {
+            var htmlList = GetAllInnerHtmlList(ruleStr);
+            if (htmlList.Count == 0)
+                return null;
+            
+            if (htmlList.Count == 1)
+                return htmlList[0];
+            
+            return string.Join("\n", htmlList);
+        }
+
+        /// <summary>
+        /// 获取第一个 All Inner Html（对应 Kotlin 的 getAllInnerHtml0）
+        /// </summary>
+        public string GetAllInnerHtml0(string ruleStr)
+        {
+            var htmlList = GetAllInnerHtmlList(ruleStr);
+            return htmlList.Count > 0 ? htmlList[0] : string.Empty;
         }
 
         /// <summary>

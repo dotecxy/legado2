@@ -11,4 +11,10 @@
     <ProjectReference Include="..\Legado.Core\Legado.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\bookSource.json" Link="bookSource.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

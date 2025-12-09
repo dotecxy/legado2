@@ -7,6 +7,10 @@ using System.Text;
 
 namespace Legado.Core.Helps
 {
+    /// <summary>
+    /// JavaScript 执行器 (对应 Kotlin: evalJS 相关功能)
+    /// 使用 Jint 引擎执行 JavaScript 代码
+    /// </summary>
     public class JsEvaluator
     {
         private readonly Engine _engine;
@@ -121,6 +125,10 @@ namespace Legado.Core.Helps
         }
     }
 
+    /// <summary>
+    /// 分析规则上下文 (对应 Kotlin: AnalyzeRule 的上下文绑定)
+    /// 提供 JS 执行时需要的上下文对象
+    /// </summary>
     public class AnalyzeRuleContext
     {
         public object JavaObject { get; set; }

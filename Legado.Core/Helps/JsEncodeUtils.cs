@@ -3,11 +3,16 @@ using System.Text;
 using System.Security.Cryptography;
 using System.IO;
 using System.Linq;
+using System.Numerics;
+using System.Text.RegularExpressions;
+using System.Web;
+using System.Collections.Generic;
 
 namespace Legado.Core.Helps
 {
     /// <summary>
-    /// JS加解密扩展类
+    /// JS 加解密扩展类 (对应 Kotlin: EncoderUtils.kt)
+    /// 提供 MD5、对称加密、非对称加密、签名、摘要等功能
     /// </summary>
     public class JsEncodeUtils
     {
@@ -223,16 +228,469 @@ namespace Legado.Core.Helps
         }
 
         [Obsolete("过于繁琐弃用")]
+        public string DesEncodeToString(string data, string key, string transformation, string iv)
+        {
+            return CreateSymmetricCrypto(transformation, key, iv).EncryptStr(data);
+        }
+
+        [Obsolete("过于繁琐弃用")]
         public string TripleDESDecodeStr(string data, string key, string mode, string padding, string iv)
         {
             return CreateSymmetricCrypto($"DESede/{mode}/{padding}", key, iv).DecryptStr(data);
         }
 
-        // ... (其他 TripleDES 方法类似，省略以节省空间，逻辑皆为调用 CreateSymmetricCrypto)
+        [Obsolete("过于繁琐弃用")]
+        public string TripleDESEncodeStr(string data, string key, string mode, string padding, string iv)
+        {
+            return CreateSymmetricCrypto($"DESede/{mode}/{padding}", key, iv).EncryptStr(data);
+        }
+
+        [Obsolete("过于繁琐弃用")]
+        public string TripleDESDecodeBase64Str(string data, string key, string mode, string padding, string iv)
+        {
+            return CreateSymmetricCrypto($"DESede/{mode}/{padding}", key, iv).DecryptStr(data);
+        }
+
+        [Obsolete("过于繁琐弃用")]
+        public string TripleDESEncodeBase64Str(string data, string key, string mode, string padding, string iv)
+        {
+            return CreateSymmetricCrypto($"DESede/{mode}/{padding}", key, iv).EncryptBase64(data);
+        }
+
+        //****************** Base64 编解码 ************************//
+
+        public string Base64Encode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            byte[] bytes = Encoding.UTF8.GetBytes(str);
+            return Convert.ToBase64String(bytes);
+        }
+
+        public string Base64Encode(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0) return "";
+            return Convert.ToBase64String(bytes);
+        }
+
+        public string Base64Decode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            try
+            {
+                byte[] bytes = Convert.FromBase64String(str);
+                return Encoding.UTF8.GetString(bytes);
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        public byte[] Base64DecodeToBytes(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return new byte[0];
+            try
+            {
+                return Convert.FromBase64String(str);
+            }
+            catch
+            {
+                return new byte[0];
+            }
+        }
+
+        //****************** Base58 编解码 ************************//
+
+        /// <summary>
+        /// Base58 编码（Bitcoin 风格）
+        /// </summary>
+        public string Base58Encode(byte[] input)
+        {
+            if (input == null || input.Length == 0) return "";
+            
+            const string ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+            var result = new StringBuilder();
+            var num = new System.Numerics.BigInteger(input.Reverse().Concat(new byte[] { 0 }).ToArray());
+            
+            while (num > 0)
+            {
+                var remainder = (int)(num % 58);
+                num /= 58;
+                result.Insert(0, ALPHABET[remainder]);
+            }
+
+            // 处理前导零
+            foreach (var b in input)
+            {
+                if (b != 0) break;
+                result.Insert(0, '1');
+            }
+
+            return result.ToString();
+        }
+
+        public string Base58Encode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            return Base58Encode(Encoding.UTF8.GetBytes(str));
+        }
+
+        /// <summary>
+        /// Base58 解码
+        /// </summary>
+        public byte[] Base58DecodeToBytes(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return new byte[0];
+            
+            const string ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+            var num = System.Numerics.BigInteger.Zero;
+            
+            foreach (var c in input)
+            {
+                var digit = ALPHABET.IndexOf(c);
+                if (digit < 0) throw new ArgumentException($"Invalid Base58 character: {c}");
+                num = num * 58 + digit;
+            }
+
+            var bytes = num.ToByteArray().Reverse().ToArray();
+            
+            // 移除可能的符号字节
+            if (bytes.Length > 1 && bytes[0] == 0)
+            {
+                bytes = bytes.Skip(1).ToArray();
+            }
+
+            // 处理前导 '1'
+            var leadingOnes = input.TakeWhile(c => c == '1').Count();
+            var leadingZeros = new byte[leadingOnes];
+            
+            return leadingZeros.Concat(bytes).ToArray();
+        }
+
+        public string Base58Decode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            try
+            {
+                return Encoding.UTF8.GetString(Base58DecodeToBytes(str));
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        //****************** Base32 编解码 ************************//
+
+        /// <summary>
+        /// Base32 编码（RFC 4648）
+        /// </summary>
+        public string Base32Encode(byte[] input)
+        {
+            if (input == null || input.Length == 0) return "";
+            
+            const string ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+            var result = new StringBuilder();
+            int buffer = input[0];
+            int bitsLeft = 8;
+            int index = 1;
+
+            while (bitsLeft > 0 || index < input.Length)
+            {
+                if (bitsLeft < 5)
+                {
+                    if (index < input.Length)
+                    {
+                        buffer <<= 8;
+                        buffer |= input[index++] & 0xFF;
+                        bitsLeft += 8;
+                    }
+                    else
+                    {
+                        int pad = 5 - bitsLeft;
+                        buffer <<= pad;
+                        bitsLeft += pad;
+                    }
+                }
+
+                int val = 0x1F & (buffer >> (bitsLeft - 5));
+                bitsLeft -= 5;
+                result.Append(ALPHABET[val]);
+            }
+
+            return result.ToString();
+        }
+
+        public string Base32Encode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            return Base32Encode(Encoding.UTF8.GetBytes(str));
+        }
+
+        /// <summary>
+        /// Base32 解码
+        /// </summary>
+        public byte[] Base32DecodeToBytes(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return new byte[0];
+            
+            const string ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+            input = input.TrimEnd('=').ToUpper();
+            
+            var output = new List<byte>();
+            int buffer = 0;
+            int bitsLeft = 0;
+
+            foreach (var c in input)
+            {
+                int val = ALPHABET.IndexOf(c);
+                if (val < 0) throw new ArgumentException($"Invalid Base32 character: {c}");
+
+                buffer <<= 5;
+                buffer |= val & 0x1F;
+                bitsLeft += 5;
+
+                if (bitsLeft >= 8)
+                {
+                    output.Add((byte)((buffer >> (bitsLeft - 8)) & 0xFF));
+                    bitsLeft -= 8;
+                }
+            }
+
+            return output.ToArray();
+        }
+
+        public string Base32Decode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            try
+            {
+                return Encoding.UTF8.GetString(Base32DecodeToBytes(str));
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        //****************** Hex 编解码 ************************//
+
+        public string HexEncode(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0) return "";
+            return BitConverter.ToString(bytes).Replace("-", "").ToLower();
+        }
+
+        public string HexEncode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            return HexEncode(Encoding.UTF8.GetBytes(str));
+        }
+
+        public byte[] HexDecodeToBytes(string hex)
+        {
+            if (string.IsNullOrEmpty(hex)) return new byte[0];
+            try
+            {
+                if (hex.Length % 2 != 0) return new byte[0];
+                
+                byte[] bytes = new byte[hex.Length / 2];
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+                }
+                return bytes;
+            }
+            catch
+            {
+                return new byte[0];
+            }
+        }
+
+        public string HexDecode(string hex)
+        {
+            if (string.IsNullOrEmpty(hex)) return "";
+            try
+            {
+                return Encoding.UTF8.GetString(HexDecodeToBytes(hex));
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        //****************** Unicode 编解码 ************************//
+
+        /// <summary>
+        /// 字符串转 Unicode 编码（\uXXXX 格式）
+        /// </summary>
+        public string StrToUnicode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            var result = new StringBuilder();
+            foreach (char c in str)
+            {
+                result.Append($"\\u{((int)c):X4}");
+            }
+            return result.ToString();
+        }
+
+        /// <summary>
+        /// Unicode 解码为字符串
+        /// </summary>
+        public string UnicodeToStr(string unicode)
+        {
+            if (string.IsNullOrEmpty(unicode)) return "";
+            try
+            {
+                return Regex.Replace(unicode, @"\\u([0-9A-Fa-f]{4})", match =>
+                {
+                    return ((char)Convert.ToInt32(match.Groups[1].Value, 16)).ToString();
+                });
+            }
+            catch
+            {
+                return unicode;
+            }
+        }
+
+        //****************** URL 编解码 ************************//
+
+        public string UrlEncode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            return System.Web.HttpUtility.UrlEncode(str, Encoding.UTF8);
+        }
+
+        public string UrlDecode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            return System.Web.HttpUtility.UrlDecode(str, Encoding.UTF8);
+        }
+
+        //****************** HTML 编解码 ************************//
+
+        public string HtmlEncode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            return System.Web.HttpUtility.HtmlEncode(str);
+        }
+
+        public string HtmlDecode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            return System.Web.HttpUtility.HtmlDecode(str);
+        }
+
+        //****************** Escape 编解码 ************************//
+
+        /// <summary>
+        /// JavaScript escape 编码
+        /// </summary>
+        public string Escape(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            var result = new StringBuilder();
+            foreach (char c in str)
+            {
+                if ((c >= '0' && c <= '9') || 
+                    (c >= 'A' && c <= 'Z') || 
+                    (c >= 'a' && c <= 'z') ||
+                    c == '-' || c == '_' || c == '.' || c == '!' || 
+                    c == '~' || c == '*' || c == '\'' || c == '(' || c == ')')
+                {
+                    result.Append(c);
+                }
+                else if (c <= 0xFF)
+                {
+                    result.Append($"%{((int)c):X2}");
+                }
+                else
+                {
+                    result.Append($"%u{((int)c):X4}");
+                }
+            }
+            return result.ToString();
+        }
+
+        /// <summary>
+        /// JavaScript unescape 解码
+        /// </summary>
+        public string Unescape(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            try
+            {
+                var result = new StringBuilder();
+                for (int i = 0; i < str.Length; i++)
+                {
+                    if (str[i] == '%')
+                    {
+                        if (i + 5 < str.Length && str[i + 1] == 'u')
+                        {
+                            // %uXXXX 格式
+                            string hex = str.Substring(i + 2, 4);
+                            result.Append((char)Convert.ToInt32(hex, 16));
+                            i += 5;
+                        }
+                        else if (i + 2 < str.Length)
+                        {
+                            // %XX 格式
+                            string hex = str.Substring(i + 1, 2);
+                            result.Append((char)Convert.ToInt32(hex, 16));
+                            i += 2;
+                        }
+                        else
+                        {
+                            result.Append(str[i]);
+                        }
+                    }
+                    else
+                    {
+                        result.Append(str[i]);
+                    }
+                }
+                return result.ToString();
+            }
+            catch
+            {
+                return str;
+            }
+        }
+
+        //****************** SHA 系列哈希 ************************//
+
+        public string Sha1Encode(string str)
+        {
+            return DigestHex(str, "SHA1");
+        }
+
+        public string Sha256Encode(string str)
+        {
+            return DigestHex(str, "SHA256");
+        }
+
+        public string Sha384Encode(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            using (var sha = SHA384.Create())
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(str);
+                byte[] hash = sha.ComputeHash(bytes);
+                return BitConverter.ToString(hash).Replace("-", "").ToLower();
+            }
+        }
+
+        public string Sha512Encode(string str)
+        {
+            return DigestHex(str, "SHA512");
+        }
     }
 
     /// <summary>
-    /// C# 实现的 SymmetricCrypto (模拟 Android/Java 的 Cipher 行为)
+    /// 对称加密工具类 (对应 Kotlin: SymmetricCrypto)
+    /// 支持 AES、DES、3DES 等算法
     /// </summary>
     public class SymmetricCrypto
     {
@@ -438,28 +896,364 @@ namespace Legado.Core.Helps
     }
 
     /// <summary>
-    /// 非对称加密占位类
+    /// 非对称加密工具类 (对应 Kotlin: AsymmetricCrypto)
+    /// 支持 RSA 等算法
     /// </summary>
     public class AsymmetricCrypto
     {
-        private string _transformation;
+        private readonly string _transformation;
+        private RSACryptoServiceProvider _rsa;
+        private bool _usePublicKey = true;
+
         public AsymmetricCrypto(string transformation)
         {
             _transformation = transformation;
+            _rsa = new RSACryptoServiceProvider();
         }
-        // 需要实现 encrypt/decrypt/sign/verify 等方法
-        // 通常使用 RSACryptoServiceProvider
+
+        /// <summary>
+        /// 设置公钥 (PEM 或 XML 格式)
+        /// </summary>
+        public AsymmetricCrypto SetPublicKey(string publicKey)
+        {
+            try
+            {
+                if (publicKey.Contains("<RSAKeyValue>"))
+                {
+                    // XML 格式
+                    _rsa.FromXmlString(publicKey);
+                }
+                else
+                {
+                    // PEM 或 Base64 格式
+                    // .NET Standard 2.0 不支持 ImportSubjectPublicKeyInfo
+                    // 这里简化处理，仅支持 XML 格式，或使用第三方库
+                    Console.WriteLine("[Warning] PEM key format requires .NET Core 3.0+ or third-party library");
+                }
+                _usePublicKey = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SetPublicKey Error] {ex.Message}");
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// 设置私钥 (PEM 或 XML 格式)
+        /// </summary>
+        public AsymmetricCrypto SetPrivateKey(string privateKey)
+        {
+            try
+            {
+                if (privateKey.Contains("<RSAKeyValue>"))
+                {
+                    // XML 格式
+                    _rsa.FromXmlString(privateKey);
+                }
+                else
+                {
+                    // PEM 或 Base64 格式
+                    // .NET Standard 2.0 不支持 ImportPkcs8PrivateKey
+                    Console.WriteLine("[Warning] PEM key format requires .NET Core 3.0+ or third-party library");
+                }
+                _usePublicKey = false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SetPrivateKey Error] {ex.Message}");
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// 加密
+        /// </summary>
+        public byte[] Encrypt(byte[] data)
+        {
+            try
+            {
+                // 使用 PKCS1 填充
+                return _rsa.Encrypt(data, false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Encrypt Error] {ex.Message}");
+                return new byte[0];
+            }
+        }
+
+        public byte[] Encrypt(string data)
+        {
+            return Encrypt(Encoding.UTF8.GetBytes(data));
+        }
+
+        public string EncryptBase64(string data)
+        {
+            return Convert.ToBase64String(Encrypt(data));
+        }
+
+        public string EncryptHex(string data)
+        {
+            return BitConverter.ToString(Encrypt(data)).Replace("-", "").ToLower();
+        }
+
+        /// <summary>
+        /// 解密
+        /// </summary>
+        public byte[] Decrypt(byte[] data)
+        {
+            try
+            {
+                return _rsa.Decrypt(data, false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Decrypt Error] {ex.Message}");
+                return new byte[0];
+            }
+        }
+
+        public byte[] DecryptFromBase64(string data)
+        {
+            return Decrypt(Convert.FromBase64String(data));
+        }
+
+        public string DecryptToString(string data)
+        {
+            byte[] encrypted;
+            try
+            {
+                // 尝试 Base64
+                encrypted = Convert.FromBase64String(data);
+            }
+            catch
+            {
+                // 尝试 Hex
+                encrypted = HexToBytes(data);
+            }
+            return Encoding.UTF8.GetString(Decrypt(encrypted));
+        }
+
+        /// <summary>
+        /// 签名
+        /// </summary>
+        public byte[] Sign(byte[] data)
+        {
+            try
+            {
+                return _rsa.SignData(data, SHA256.Create());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Sign Error] {ex.Message}");
+                return new byte[0];
+            }
+        }
+
+        public string SignBase64(string data)
+        {
+            return Convert.ToBase64String(Sign(Encoding.UTF8.GetBytes(data)));
+        }
+
+        /// <summary>
+        /// 验证签名
+        /// </summary>
+        public bool Verify(byte[] data, byte[] signature)
+        {
+            try
+            {
+                return _rsa.VerifyData(data, SHA256.Create(), signature);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool VerifyBase64(string data, string signature)
+        {
+            return Verify(Encoding.UTF8.GetBytes(data), Convert.FromBase64String(signature));
+        }
+
+        private byte[] HexToBytes(string hex)
+        {
+            if (hex.Length % 2 != 0) throw new ArgumentException();
+            byte[] bytes = new byte[hex.Length / 2];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+            }
+            return bytes;
+        }
     }
 
     /// <summary>
-    /// 签名占位类
+    /// 签名工具类 (对应 Kotlin: Sign)
+    /// 支持数字签名功能
     /// </summary>
     public class Sign
     {
-        private string _algorithm;
+        private readonly string _algorithm;
+        private RSACryptoServiceProvider _rsa;
+        private HashAlgorithm _hashAlgorithm;
+
         public Sign(string algorithm)
         {
             _algorithm = algorithm;
+            _rsa = new RSACryptoServiceProvider();
+            
+            // 根据算法名称选择哈希算法
+            switch (algorithm.ToUpper())
+            {
+                case "SHA1WITHRSA":
+                case "SHA1":
+                    _hashAlgorithm = SHA1.Create();
+                    break;
+                case "SHA256WITHRSA":
+                case "SHA256":
+                    _hashAlgorithm = SHA256.Create();
+                    break;
+                case "SHA512WITHRSA":
+                case "SHA512":
+                    _hashAlgorithm = SHA512.Create();
+                    break;
+                case "MD5WITHRSA":
+                case "MD5":
+                    _hashAlgorithm = MD5.Create();
+                    break;
+                default:
+                    _hashAlgorithm = SHA256.Create();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 设置公钥
+        /// </summary>
+        public Sign SetPublicKey(string publicKey)
+        {
+            try
+            {
+                if (publicKey.Contains("<RSAKeyValue>"))
+                {
+                    _rsa.FromXmlString(publicKey);
+                }
+                else
+                {
+                    // .NET Standard 2.0 不支持 ImportSubjectPublicKeyInfo
+                    Console.WriteLine("[Warning] PEM key format requires .NET Core 3.0+ or third-party library");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Sign SetPublicKey Error] {ex.Message}");
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// 设置私钥
+        /// </summary>
+        public Sign SetPrivateKey(string privateKey)
+        {
+            try
+            {
+                if (privateKey.Contains("<RSAKeyValue>"))
+                {
+                    _rsa.FromXmlString(privateKey);
+                }
+                else
+                {
+                    // .NET Standard 2.0 不支持 ImportPkcs8PrivateKey
+                    Console.WriteLine("[Warning] PEM key format requires .NET Core 3.0+ or third-party library");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Sign SetPrivateKey Error] {ex.Message}");
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// 签名
+        /// </summary>
+        public byte[] SignData(byte[] data)
+        {
+            try
+            {
+                return _rsa.SignData(data, _hashAlgorithm);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SignData Error] {ex.Message}");
+                return new byte[0];
+            }
+        }
+
+        public byte[] SignData(string data)
+        {
+            return SignData(Encoding.UTF8.GetBytes(data));
+        }
+
+        public string SignDataBase64(string data)
+        {
+            return Convert.ToBase64String(SignData(data));
+        }
+
+        public string SignDataHex(string data)
+        {
+            return BitConverter.ToString(SignData(data)).Replace("-", "").ToLower();
+        }
+
+        /// <summary>
+        /// 验证签名
+        /// </summary>
+        public bool VerifyData(byte[] data, byte[] signature)
+        {
+            try
+            {
+                return _rsa.VerifyData(data, _hashAlgorithm, signature);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool VerifyData(string data, string signature)
+        {
+            try
+            {
+                byte[] signatureBytes;
+                try
+                {
+                    // 尝试 Base64
+                    signatureBytes = Convert.FromBase64String(signature);
+                }
+                catch
+                {
+                    // 尝试 Hex
+                    signatureBytes = HexToBytes(signature);
+                }
+                return VerifyData(Encoding.UTF8.GetBytes(data), signatureBytes);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private byte[] HexToBytes(string hex)
+        {
+            if (hex.Length % 2 != 0) throw new ArgumentException();
+            byte[] bytes = new byte[hex.Length / 2];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+            }
+            return bytes;
         }
     }
 }

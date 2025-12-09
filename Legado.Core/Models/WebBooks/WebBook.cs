@@ -3,12 +3,13 @@ using Legado.Core.Models.AnalyzeRules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Legado.Core.Models.WebBooks
 {
     /// <summary>
-    /// 网络书籍操作类
+    /// 网络书籍操作类 (对应 Kotlin: WebBook.kt)
     /// </summary>
     public class WebBook
     {
@@ -42,42 +43,28 @@ namespace Legado.Core.Models.WebBooks
                 source: bookSource
             );
 
-            // 执行预更新JS
-            // BookSource类没有GetPreUpdateJs方法，注释掉这段代码
-            // var js = bookSource.GetPreUpdateJs();
-            // if (!string.IsNullOrEmpty(js))
-            // {
-            //     // TODO: 实现EvalJS方法
-            //     Console.WriteLine("执行预更新JS: " + js);
-            // }
-
             // 执行请求
             var resBody = await analyzeUrl.GetStrResponseAwait();
-            // 创建StrResponse对象
-            var res = new StrResponse(bookSource.SearchUrl, resBody.Body);
-
-            //检测书源是否已登录
+            
+            // 检测书源是否已登录
             if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
             {
                 // TODO: 实现EvalJS方法
                 Console.WriteLine("执行登录检查JS: " + bookSource.LoginCheckJs);
             }
 
-            //CheckRedirect(bookSource, res);
-
             // 解析书籍列表
-            //return BookList.AnalyzeBookList(
-            //    bookSource: bookSource,
-            //    ruleData: ruleData,
-            //    analyzeUrl: analyzeUrl,
-            //    baseUrl: res.Url,
-            //    body: res.Body,
-            //    isSearch: true,
-            //    isRedirect: CheckRedirect(bookSource, res),
-            //    filter: filter,
-            //    shouldBreak: shouldBreak
-            //);
-            return null;
+            return BookList.AnalyzeBookList(
+                bookSource: bookSource,
+                ruleData: ruleData,
+                analyzeUrl: analyzeUrl,
+                baseUrl: resBody.Url,
+                body: resBody.Body,
+                isSearch: true,
+                isRedirect: false,
+                filter: filter,
+                shouldBreak: shouldBreak
+            );
         }
 
         ///// <summary>
@@ -87,161 +74,137 @@ namespace Legado.Core.Models.WebBooks
         ///// <param name="url">发现地址</param>
         ///// <param name="page">页码</param>
         ///// <returns>发现结果列表</returns>
-        //public static List<SearchBook> ExploreBookAwait(
-        //    BookSource bookSource,
-        //    string url,
-        //    int? page = 1)
-        //{
-        //    var ruleData = new RuleData();
-        //    var analyzeUrl = new AnalyzeUrl(
-        //        url,
-        //        page: page,
-        //        baseUrl: bookSource.BookSourceUrl,
-        //        ruleData: null
-        //    );
+        public async Task<List<SearchBook>> ExploreBookAwait(
+            BookSource bookSource,
+            string url,
+            int? page = 1)
+        {
+            var ruleData = new RuleData();
+            var analyzeUrl = new AnalyzeUrl(
+                mUrl: url,
+                page: page,
+                baseUrl: bookSource.BookSourceUrl,
+                source: bookSource
+            );
 
-        //    var resBody = analyzeUrl.Execute();
-        //    var res = new StrResponse(url, resBody);
+            var resBody = await analyzeUrl.GetStrResponseAwait();
 
-        //    //检测书源是否已登录
-        //    if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
-        //    {
-        //        // TODO: 实现EvalJS方法
-        //        Console.WriteLine("执行登录检查JS: " + bookSource.LoginCheckJs);
-        //    }
+            //检测书源是否已登录
+            if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
+            {
+                // TODO: 实现EvalJS方法
+                Console.WriteLine("执行登录检查JS: " + bookSource.LoginCheckJs);
+            }
 
-        //    CheckRedirect(bookSource, res);
+            // 解析书籍列表
+            return BookList.AnalyzeBookList(
+                bookSource: bookSource,
+                ruleData: ruleData,
+                analyzeUrl: analyzeUrl,
+                baseUrl: resBody.Url,
+                body: resBody.Body,
+                isSearch: false,
+                isRedirect: false,
+                filter: null,
+                shouldBreak: null
+            );
+        }
 
-        //    // 解析书籍列表
-        //    return BookList.AnalyzeBookList(
-        //        bookSource: bookSource,
-        //        ruleData: ruleData,
-        //        analyzeUrl: analyzeUrl,
-        //        baseUrl: res.Url,
-        //        body: res.Body,
-        //        isSearch: false,
-        //        isRedirect: CheckRedirect(bookSource, res),
-        //        filter: null,
-        //        shouldBreak: null
-        //    );
-        //}
+        /// <summary>
+        /// 获取书籍信息
+        /// </summary>
+        /// <param name="bookSource">书源</param>
+        /// <param name="book">书籍</param>
+        /// <param name="canReName">是否可以重命名</param>
+        /// <returns>更新后的书籍信息</returns>
+        public async Task<Book> GetBookInfoAwait(
+            BookSource bookSource,
+            Book book,
+            bool canReName = true)
+        {
+            var analyzeUrl = new AnalyzeUrl(
+                mUrl: book.BookUrl,
+                baseUrl: bookSource.BookSourceUrl,
+                source: bookSource,
+                ruleData: book
+            );
 
-        ///// <summary>
-        ///// 获取书籍信息
-        ///// </summary>
-        ///// <param name="bookSource">书源</param>
-        ///// <param name="book">书籍</param>
-        ///// <param name="canReName">是否可以重命名</param>
-        ///// <returns>更新后的书籍信息</returns>
-        //public static Book GetBookInfoAwait(
-        //    BookSource bookSource,
-        //    Book book,
-        //    bool canReName = true)
-        //{
-        //    // TODO: 实现类型管理逻辑
+            var resBody = await analyzeUrl.GetStrResponseAwait();
 
-        //    if (!string.IsNullOrWhiteSpace(book.InfoHtml))
-        //    {
-        //        BookInfo.AnalyzeBookInfo(
-        //            bookSource: bookSource,
-        //            book: book,
-        //            baseUrl: book.BookUrl,
-        //            redirectUrl: book.BookUrl,
-        //            body: book.InfoHtml,
-        //            canReName: canReName
-        //        );
-        //    }
-        //    else
-        //    {
-        //        var analyzeUrl = new AnalyzeUrl(
-        //            book.BookUrl,
-        //            baseUrl: bookSource.BookSourceUrl,
-        //            ruleData: null
-        //        );
+            //检测书源是否已登录
+            if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
+            {
+                // TODO: 实现EvalJS方法
+                Console.WriteLine("执行登录检查JS: " + bookSource.LoginCheckJs);
+            }
 
-        //        var resBody = analyzeUrl.Execute();
-        //        var res = new StrResponse(book.BookUrl, resBody);
+            await BookInfo.AnalyzeBookInfo(
+                bookSource: bookSource,
+                book: book,
+                baseUrl: book.BookUrl,
+                redirectUrl: resBody.Url,
+                body: resBody.Body,
+                canReName: canReName
+            );
 
-        //        //检测书源是否已登录
-        //        if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
-        //        {
-        //            // TODO: 实现EvalJS方法
-        //            Console.WriteLine("执行登录检查JS: " + bookSource.LoginCheckJs);
-        //        }
+            return book;
+        }
 
-        //        CheckRedirect(bookSource, res);
+        /// <summary>
+        /// 获取章节列表
+        /// </summary>
+        /// <param name="bookSource">书源</param>
+        /// <param name="book">书籍</param>
+        /// <param name="runPreUpdateJs">是否运行预更新JS</param>
+        /// <param name="cancellationToken">取消令牌</param>
+        /// <returns>章节列表</returns>
+        public async Task<List<BookChapter>> GetChapterListAwait(
+            BookSource bookSource,
+            Book book,
+            bool runPreUpdateJs = false,
+            CancellationToken cancellationToken = default)
+        {
+            // 运行预更新JS
+            if (runPreUpdateJs && !string.IsNullOrWhiteSpace(bookSource.RuleToc?.PreUpdateJs))
+            {
+                try
+                {
+                    // TODO: 执行 JS 脚本
+                    // var analyzeRule = new AnalyzeRule(book, bookSource);
+                    // analyzeRule.GetString(bookSource.RuleToc.PreUpdateJs);
+                }
+                catch (Exception e)
+                {
+                    // Debug.Log error
+                }
+            }
 
-        //        BookInfo.AnalyzeBookInfo(
-        //            bookSource: bookSource,
-        //            book: book,
-        //            baseUrl: book.BookUrl,
-        //            redirectUrl: res.Url,
-        //            body: res.Body,
-        //            canReName: canReName
-        //        );
-        //    }
+            var tocUrl = string.IsNullOrWhiteSpace(book.TocUrl) ? book.BookUrl : book.TocUrl;
+            var analyzeUrl = new AnalyzeUrl(
+                mUrl: tocUrl,
+                baseUrl: book.BookUrl,
+                source: bookSource,
+                ruleData: book
+            );
 
-        //    return book;
-        //}
+            var resBody = await analyzeUrl.GetStrResponseAwait();
 
-        ///// <summary>
-        ///// 获取章节列表
-        ///// </summary>
-        ///// <param name="bookSource">书源</param>
-        ///// <param name="book">书籍</param>
-        ///// <param name="runPreUpdateJs">是否运行预更新JS</param>
-        ///// <returns>章节列表</returns>
-        //public static List<BookChapter> GetChapterListAwait(
-        //    BookSource bookSource,
-        //    Book book,
-        //    bool runPreUpdateJs = false)
-        //{
-        //    // TODO: 实现类型管理逻辑
+            //检测书源是否已登录
+            if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
+            {
+                // TODO: 实现EvalJS方法
+                Console.WriteLine("执行登录检查JS: " + bookSource.LoginCheckJs);
+            }
 
-        //    if (runPreUpdateJs)
-        //    {
-        //        RunPreUpdateJs(bookSource, book);
-        //    }
-
-        //    if (book.BookUrl == book.TocUrl && !string.IsNullOrWhiteSpace(book.TocHtml))
-        //    {
-        //        return BookChapterList.AnalyzeChapterList(
-        //            bookSource: bookSource,
-        //            book: book,
-        //            baseUrl: book.TocUrl,
-        //            redirectUrl: book.TocUrl,
-        //            body: book.TocHtml
-        //        );
-        //    }
-        //    else
-        //    {
-        //        var analyzeUrl = new AnalyzeUrl(
-        //            book.TocUrl,
-        //            baseUrl: book.BookUrl,
-        //            ruleData: null
-        //        );
-
-        //        var resBody = analyzeUrl.Execute();
-        //        var res = new StrResponse(book.TocUrl, resBody);
-
-        //        //检测书源是否已登录
-        //        if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
-        //        {
-        //            // TODO: 实现EvalJS方法
-        //            Console.WriteLine("执行登录检查JS: " + bookSource.LoginCheckJs);
-        //        }
-
-        //        CheckRedirect(bookSource, res);
-
-        //        return BookChapterList.AnalyzeChapterList(
-        //            bookSource: bookSource,
-        //            book: book,
-        //            baseUrl: book.TocUrl,
-        //            redirectUrl: res.Url,
-        //            body: res.Body
-        //        );
-        //    }
-        //}
+            return await BookChapterList.AnalyzeChapterList(
+                bookSource: bookSource,
+                book: book,
+                baseUrl: tocUrl,
+                redirectUrl: resBody.Url,
+                body: resBody.Body,
+                cancellationToken: cancellationToken
+            );
+        }
 
         ///// <summary>
         ///// 运行预更新JS
@@ -258,162 +221,86 @@ namespace Legado.Core.Models.WebBooks
         //    }
         //}
 
-        ///// <summary>
-        ///// 获取章节内容
-        ///// </summary>
-        ///// <param name="bookSource">书源</param>
-        ///// <param name="book">书籍</param>
-        ///// <param name="bookChapter">章节</param>
-        ///// <param name="nextChapterUrl">下一章节URL</param>
-        ///// <param name="needSave">是否需要保存</param>
-        ///// <returns>章节内容</returns>
-        //public static async Task<string> GetContentAwait(
-        //    BookSource bookSource,
-        //    Book book,
-        //    BookChapter bookChapter,
-        //    string nextChapterUrl = null,
-        //    bool needSave = true)
-        //{
-        //    var contentRule = bookSource.GetContentRule();
-        //    if (string.IsNullOrWhiteSpace(contentRule.Content))
-        //    {
-        //        // TODO: 添加日志
-        //        return bookChapter.Url;
-        //    }
+        /// <summary>
+        /// 获取章节内容
+        /// </summary>
+        /// <param name="bookSource">书源</param>
+        /// <param name="book">书籍</param>
+        /// <param name="bookChapter">章节</param>
+        /// <param name="nextChapterUrl">下一章节URL</param>
+        /// <returns>章节内容</returns>
+        public async Task<string> GetContentAwait(
+            BookSource bookSource,
+            Book book,
+            BookChapter bookChapter,
+            string nextChapterUrl = null)
+        {            
+            var contentRule = bookSource.RuleContent;
+            if (contentRule == null || string.IsNullOrWhiteSpace(contentRule.Content))
+            {
+                throw new Exception("Content rule is null");
+            }
 
-        //    if (bookChapter.IsVolume && bookChapter.Url.StartsWith(bookChapter.Title))
-        //    {
-        //        // TODO: 添加日志
-        //        return string.Empty;
-        //    }
+            // 卷名特殊处理
+            if (bookChapter.IsVolume && bookChapter.Url.StartsWith(bookChapter.Title))
+            {
+                return string.Empty;
+            }
 
-        //    if (bookChapter.Url == book.BookUrl && !string.IsNullOrWhiteSpace(book.TocHtml))
-        //    {
-        //        return await BookContent.AnalyzeContent(
-        //            bookSource: bookSource,
-        //            book: book,
-        //            chapter: bookChapter,
-        //            baseUrl: bookChapter.GetAbsoluteURL(book.TocUrl),
-        //            redirectUrl: bookChapter.GetAbsoluteURL(book.TocUrl),
-        //            body: book.TocHtml
-        //        );
-        //    }
-        //    else
-        //    {
-        //        var analyzeUrl = new AnalyzeUrl(
-        //            bookChapter.GetAbsoluteURL(book.TocUrl),
-        //            baseUrl: book.TocUrl,
-        //            ruleData: null
-        //        );
+            var chapterUrl = bookChapter.GetAbsoluteURL();
+            var analyzeUrl = new AnalyzeUrl(
+                mUrl: chapterUrl,
+                baseUrl: book.TocUrl,
+                source: bookSource,
+                ruleData: bookChapter
+            );
 
-        //        var resBody = analyzeUrl.Execute();
-        //        var res = new StrResponse(bookChapter.GetAbsoluteURL(book.TocUrl), resBody);
+            var resBody = await analyzeUrl.GetStrResponseAwait();
 
-        //        //检测书源是否已登录
-        //        if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
-        //        {
-        //            // TODO: 实现EvalJS方法
-        //            Console.WriteLine("执行登录检查JS: " + bookSource.LoginCheckJs);
-        //        }
+            //检测书源是否已登录
+            if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
+            {
+                // TODO: 实现EvalJS方法
+                Console.WriteLine("执行登录检查JS: " + bookSource.LoginCheckJs);
+            }
 
-        //        CheckRedirect(bookSource, res);
-
-        //        return await BookContent.AnalyzeContent(
-        //            bookSource: bookSource,
-        //            book: book,
-        //            chapter: bookChapter,
-        //            baseUrl: bookChapter.GetAbsoluteURL(book.TocUrl),
-        //            redirectUrl: res.Url,
-        //            body: res.Body
-        //        );
-        //    }
-        //}
-
-        ///// <summary>
-        ///// 精准搜索
-        ///// </summary>
-        ///// <param name="bookSource">书源</param>
-        ///// <param name="name">书名</param>
-        ///// <param name="author">作者</param>
-        ///// <returns>书籍信息</returns>
-        //public static Book PreciseSearchAwait(
-        //    BookSource bookSource,
-        //    string name,
-        //    string author)
-        //{
-        //    var searchResults = SearchBookAwait(
-        //        bookSource,
-        //        name,
-        //        filter: (fName, fAuthor) => fName == name && fAuthor == author,
-        //        shouldBreak: (count) => count > 0
-        //    );
-
-        //    var searchBook = searchResults.FirstOrDefault();
-        //    if (searchBook != null)
-        //    {
-        //        return searchBook.ToBook();
-        //    }
-
-        //    throw new Exception($"未搜索到 {name}({author}) 书籍");
-        //}
-
-        ///// <summary>
-        ///// 检测重定向
-        ///// </summary>
-        ///// <param name="bookSource">书源</param>
-        ///// <param name="response">响应</param>
-        //private static bool CheckRedirect(BookSource bookSource, StrResponse response)
-        //{
-        //    try
-        //    {
-        //        string finalUrl;
-        //        if (response.Raw != null && response.Raw.RequestMessage != null)
-        //        {
-        //            finalUrl = response.Raw.RequestMessage.RequestUri.ToString();
-        //        }
-        //        else
-        //        {
-        //            finalUrl = response.Url;
-        //        }
-        //        Console.WriteLine($"当前地址: {finalUrl}");
-        //        return finalUrl != bookSource.SearchUrl;
-        //    }
-        //    catch (Exception)
-        //    {
-        //        Console.WriteLine($"当前地址: {response.Url}");
-        //        return response.Url != bookSource.SearchUrl;
-        //    }
-        //}
-    }
-
-    /// <summary>
-    /// 搜索书籍实体类
-    /// </summary>
-    public class SearchBook
-    {
-        public string Name { get; set; }
-        public string Author { get; set; }
-        public string BookUrl { get; set; }
-        public string CoverUrl { get; set; }
-        public string Kind { get; set; }
-        public string LastChapter { get; set; }
-        public string Intro { get; set; }
+            return await BookContent.AnalyzeContent(
+                bookSource: bookSource,
+                book: book,
+                bookChapter: bookChapter,
+                baseUrl: chapterUrl,
+                redirectUrl: resBody.Url,
+                body: resBody.Body,
+                nextChapterUrl: nextChapterUrl
+            );
+        }
 
         /// <summary>
-        /// 转换为Book对象
+        /// 精准搜索
         /// </summary>
-        /// <returns>Book对象</returns>
-        public Book ToBook()
+        /// <param name="bookSource">书源</param>
+        /// <param name="name">书名</param>
+        /// <param name="author">作者</param>
+        /// <returns>书籍信息</returns>
+        public async Task<Book> PreciseSearchAwait(
+            BookSource bookSource,
+            string name,
+            string author)
         {
-            return new Book
+            var searchResults = await SearchBookAwait(
+                bookSource,
+                name,
+                filter: (fName, fAuthor) => fName == name && fAuthor == author,
+                shouldBreak: (count) => count > 0
+            );
+
+            var searchBook = searchResults.FirstOrDefault();
+            if (searchBook != null)
             {
-                Name = this.Name,
-                Author = this.Author,
-                BookUrl = this.BookUrl,
-                CoverUrl = this.CoverUrl,
-                Kind = this.Kind,
-                Intro = this.Intro
-            };
+                return searchBook.ToBook();
+            }
+
+            throw new Exception($"未搜索到 {name}({author}) 书籍");
         }
     }
 }

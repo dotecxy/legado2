@@ -5,6 +5,10 @@ using System.Text;
 
 namespace Legado.Core.Helps.Http
 {
+    /// <summary>
+    /// Cookie 存储管理器 (对应 Kotlin: CookieStore.kt)
+    /// 实现 Cookie 的保存、获取、替换、删除等功能
+    /// </summary>
     public class CookieStore : ICookieManager
     {
         public static CookieStore Instance { get; } = new CookieStore();

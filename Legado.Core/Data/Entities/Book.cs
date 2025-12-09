@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Legado.Core.Models;
+using Newtonsoft.Json;
 using SQLite; // 对应 sqlite-net-pcl
 
 namespace Legado.Core.Data.Entities
@@ -7,7 +8,7 @@ namespace Legado.Core.Data.Entities
     /// 书籍实体 (对应 Book.kt)
     /// </summary>
     [Table("books")]
-    public class Book
+    public class Book : IRuleData
     {
         // 书籍 URL，作为主键
         [PrimaryKey, Column("bookUrl")]
@@ -121,5 +122,28 @@ namespace Legado.Core.Data.Entities
         [Column("group")]
         [JsonProperty("group")]
         public int Group { get; set; } = 0;
+
+        // IRuleData 接口实现
+        public virtual bool putVariable(string key, string value)
+        {
+            // TODO: 实现变量存储
+            return true;
+        }
+
+        public string getVariable()
+        {
+            return Variable;
+        }
+
+        public void putBigVariable(string key, string value)
+        {
+            // TODO: 实现大变量存储
+        }
+
+        public string getBigVariable(string key)
+        {
+            // TODO: 实现大变量读取
+            return null;
+        }
     }
 }

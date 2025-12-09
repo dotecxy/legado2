@@ -4,6 +4,10 @@ using System.Text;
 
 namespace Legado.Core.Helps.Http.Api
 {
+    /// <summary>
+    /// Cookie 管理器接口 (对应 Kotlin: ICookieManager 接口)
+    /// 定义 Cookie 管理的标准接口
+    /// </summary>
     public interface ICookieManager
     {
         /// <summary>

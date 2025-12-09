@@ -101,7 +101,7 @@ namespace Legado.Core.Data.Entities
     /// <summary>
     /// 搜索与发现规则
     /// </summary>
-    public class RuleSearch
+    public class RuleSearch : IBookListRule
     {
         [JsonProperty("checkKeyWord")]
         public string CheckKeyWord { get; set; }

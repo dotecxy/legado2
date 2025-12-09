@@ -15,6 +15,10 @@ using Network = OpenQA.Selenium.DevTools.V142.Network;
 
 namespace Legado.Core.Helps
 {
+    /// <summary>
+    /// JsExtensions WebView 扩展部分 (对应 Kotlin: JsExtensions.kt 中的 WebView 相关方法)
+    /// 提供基于 Selenium 的 WebView 模拟功能
+    /// </summary>
     public partial class JsExtensions
     {
         // 设置 WebDriver 的超时时间
