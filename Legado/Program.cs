@@ -13,30 +13,30 @@ namespace Legado
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine("Legado爬虫引擎测试");
+            Console.WriteLine("引擎测试");
             Console.WriteLine("===================");
 
             try
             {
-                // 加载书源文件
-                Console.WriteLine("正在加载书源文件...");
+                // 加载文件
+                Console.WriteLine("正在加载文件...");
                 var bookSourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bookSource.json");
                 if (!File.Exists(bookSourcePath))
                 {
-                    Console.WriteLine("错误：书源文件不存在！");
+                    Console.WriteLine("错误：文件不存在！");
                     return;
                 }
 
                 var bookSourceContent = File.ReadAllText(bookSourcePath);
                 var bookSources = JsonConvert.DeserializeObject<List<BookSource>>(bookSourceContent);
 
-                Console.WriteLine($"成功加载 {bookSources.Count} 个书源");
+                Console.WriteLine($"成功加载 {bookSources.Count} 个");
                 Console.WriteLine();
 
                 // 测试搜索功能
                 Console.WriteLine("测试搜索功能：");
                 // 使用默认关键词"小说"进行测试
-                var keyword = "小说";
+                var keyword = "诡秘之主";
                 Console.WriteLine($"正在搜索关键词：{keyword}");
                 
                 if (bookSources.Count > 0)
@@ -48,7 +48,7 @@ namespace Legado
                     for (int i = 0; i < tryCount && successCount == 0; i++)
                     {
                         var bookSource = bookSources[i];
-                        Console.WriteLine($"\n正在尝试书源 [{i + 1}/{tryCount}]: '{bookSource.BookSourceName}'");
+                        Console.WriteLine($"\n正在尝试 [{i + 1}/{tryCount}]: '{bookSource.BookSourceName}'");
                         
                         try
                         {
@@ -61,9 +61,9 @@ namespace Legado
                                 {
                                     var result = searchResults[j];
                                     Console.WriteLine($"{j + 1}. {result.Name} - {result.Author}");
-                                    Console.WriteLine($"   分类：{result.Kind}");
-                                    Console.WriteLine($"   最新章节：{result.LatestChapterTitle}");
-                                    Console.WriteLine($"   链接：{result.BookUrl}");
+                                    Console.WriteLine($"   c：{result.Kind}");
+                                    Console.WriteLine($"   c：{result.LatestChapterTitle}");
+                                    Console.WriteLine($"   c：{result.BookUrl}");
                                     Console.WriteLine();
                                 }
                                 successCount++;
@@ -86,7 +86,7 @@ namespace Legado
                     
                     if (successCount == 0)
                     {
-                        Console.WriteLine($"\n没有从任何书源获取到结果。");
+                        Console.WriteLine($"\n没有从任何获取到结果。");
                     }
                 }
                 

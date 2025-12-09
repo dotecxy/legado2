@@ -649,7 +649,7 @@ namespace Legado.Core.Models.AnalyzeRules
             }
 
             // 解析JavaScript块
-            var jsPattern = new Regex(@"(?s)(?<!\\)`(.*?)(?<!\\)`|(?<!\\)@js:(.*)");
+            var jsPattern = Legado.Core.Constants.AppPattern.JS_PATTERN;
             var jsMatches = jsPattern.Matches(ruleStr);
 
             foreach (Match match in jsMatches)
@@ -663,8 +663,8 @@ namespace Legado.Core.Models.AnalyzeRules
                     }
                 }
 
-                var jsCode = !string.IsNullOrEmpty(match.Groups[1].Value) ?
-                             match.Groups[1].Value : match.Groups[2].Value;
+                var jsCode = !string.IsNullOrEmpty(match.Groups[2].Value) ?
+                             match.Groups[2].Value : match.Groups[1].Value;
                 ruleList.Add(new SourceRule(jsCode, RuleMode.Js));
                 start = match.Index + match.Length;
             }

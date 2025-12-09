@@ -55,7 +55,7 @@ namespace Legado.Core.Models.AnalyzeRules
         private string method = "GET";
         private string proxy;
         private int retry = 0;
-        private bool useWebView = false;
+        private bool useWebView = true;
         private string webJs;
         private bool enabledCookieJar;
         private string domain;
@@ -399,7 +399,7 @@ namespace Legado.Core.Models.AnalyzeRules
         {
             if (ruleData is IRuleData data)
             {
-                data.putVariable(key, value);
+                data.putBigVariable(key, value);
             }
         }
 
@@ -435,11 +435,8 @@ namespace Legado.Core.Models.AnalyzeRules
             SetCookie();
 
             if (this.useWebView && useWebView)
-            {
-                // C# 后端通常无法支持 WebView，抛出异常或降级
-                // throw new NotSupportedException("WebView is not supported in Core library.");
-                Console.WriteLine("Warning: WebView requested but not supported. Fallback to HTTP.");
-                var body = webView("", urlNoQuery, jsStr);
+            { 
+                var body = await webViewAsync("", urlNoQuery, jsStr);
                 return new StrResponse(Url, body);
             }
 
