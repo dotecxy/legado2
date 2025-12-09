@@ -579,7 +579,7 @@ namespace Legado.Core.Models.AnalyzeRules
             return _stringRuleCache.GetOrAdd(rule, r => SplitSourceRule(r));
         }
 
-        private List<SourceRule> SplitSourceRule(string ruleStr, bool allInOne = false)
+        public List<SourceRule> SplitSourceRule(string ruleStr, bool allInOne = false)
         {
             if (string.IsNullOrEmpty(ruleStr)) return new List<SourceRule>();
 

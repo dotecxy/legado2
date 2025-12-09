@@ -45,7 +45,7 @@ namespace Legado.Core.Data.Entities
         // 目录列表规则
         [Column("ruleToc")]
         [JsonProperty("ruleToc")]
-        public RuleToc RuleToc { get; set; }
+        public TocRule RuleToc { get; set; }
 
         // 正文解析规则
         [Column("ruleContent")]
@@ -134,31 +134,7 @@ namespace Legado.Core.Data.Entities
         public string WordCount { get; set; }
     }
 
-     
-
-    /// <summary>
-    /// 目录规则
-    /// </summary>
-    public class RuleToc
-    {
-        [JsonProperty("chapterList")]
-        public string ChapterList { get; set; }
-
-        [JsonProperty("chapterName")]
-        public string ChapterName { get; set; }
-
-        [JsonProperty("chapterUrl")]
-        public string ChapterUrl { get; set; }
-
-        [JsonProperty("isVolume")]
-        public string IsVolume { get; set; } // 是否卷名
-
-        [JsonProperty("preUpdateJs")]
-        public string PreUpdateJs { get; set; } // 更新前脚本
-
-        [JsonProperty("nextTocUrl")]
-        public string NextTocUrl { get; set; } // 下一页目录
-    }
+      
 
     /// <summary>
     /// 正文规则

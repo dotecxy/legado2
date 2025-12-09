@@ -3,6 +3,7 @@ using Flurl.Http;
 using Legado.Core.Data.Entities;
 using Legado.Core.Models;
 using Legado.Core.Models.AnalyzeRules;
+using Legado.Core.Models.WebBooks;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -37,10 +38,9 @@ namespace Legado.Test
         public async Task TestSearchAsync()
         {
             var first = bookList.First();
-            AnalyzeUrl analyzeUrl = new AnalyzeUrl(first.SearchUrl, page: 1, source: first,baseUrl:first.BookSourceUrl,key:"我的");
-           var result= await analyzeUrl.GetStrResponseAwait(useWebView:true);
+            WebBook wb = new WebBook();
+            await wb.SearchBookAwait(first, "我的");
 
-            webbook
         }
     }
 }
