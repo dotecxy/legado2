@@ -277,6 +277,15 @@ namespace Legado.Core.Models.AnalyzeRules
             }
         }
 
+        /// <summary>
+        /// 获取第一个字符串（对应 Kotlin 的 getString0）
+        /// </summary>
+        public string GetString0(string xPath)
+        {
+            var list = GetStringList(xPath);
+            return list.Count > 0 ? list[0] : null;
+        }
+
         private string GetNodeString(INode node)
         {
             if (node == null)

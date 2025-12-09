@@ -395,8 +395,24 @@ namespace Legado.Core.Models.AnalyzeRules
             return Regex.IsMatch(text, "%[0-9A-Fa-f]{2}");
         }
 
-        public void put(string key,string value)
-        { 
+        public void put(string key, string value)
+        {
+            if (ruleData is IRuleData data)
+            {
+                data.putVariable(key, value);
+            }
+        }
+
+        /// <summary>
+        /// 获取存储的变量值
+        /// </summary>
+        public string get(string key)
+        {
+            if (ruleData is IRuleData data)
+            {
+                return data.getBigVariable(key);
+            }
+            return null;
         }
 
         // ================= 网络请求 =================
@@ -541,6 +557,20 @@ namespace Legado.Core.Models.AnalyzeRules
             {
                 var uri = new Uri(url);
                 return uri.Scheme + "://" + uri.Host + (uri.IsDefaultPort ? "" : ":" + uri.Port);
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
+        /// 获取子域名（对应 Kotlin 的 getSubDomain）
+        /// </summary>
+        private string GetSubDomain(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return null;
+            try
+            {
+                var uri = new Uri(url);
+                return uri.Host;
             }
             catch { return null; }
         }

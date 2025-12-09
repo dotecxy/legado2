@@ -258,6 +258,16 @@ namespace Legado.Core.Models.AnalyzeRules
         }
 
         /// <summary>
+        /// 获取第一个对象（对应 Kotlin 的 getObject0）
+        /// </summary>
+        /// <param name="rule">JsonPath 规则</param>
+        /// <returns>对象结果</returns>
+        public JToken? GetObject0(string rule)
+        {
+            return GetObject(rule);
+        }
+
+        /// <summary>
         /// 获取列表结果
         /// </summary>
         /// <param name="rule">JsonPath 规则</param>

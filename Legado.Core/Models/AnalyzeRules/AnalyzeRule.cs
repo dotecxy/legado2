@@ -456,6 +456,56 @@ namespace Legado.Core.Models.AnalyzeRules
             return GetString(ruleList, content, isUrl);
         }
 
+        public List<object> GetElements(string rule)
+        {
+            if (string.IsNullOrEmpty(rule)) return new List<object>();
+
+            var ruleList = SplitSourceRuleCacheString(rule);
+            return GetElements(ruleList);
+        }
+
+        public List<object> GetElements(List<SourceRule> ruleList)
+        {
+            var result = new List<object>();
+            var currentContent = _content;
+
+            if (currentContent != null && ruleList.Any())
+            {
+                object tempResult = currentContent;
+
+                foreach (var sourceRule in ruleList)
+                {
+                    PutRule(sourceRule.PutMap);
+                    sourceRule.MakeUpRule(tempResult, this);
+
+                    if (tempResult == null) continue;
+
+                    var rule = sourceRule.Rule;
+                    if (!string.IsNullOrEmpty(rule))
+                    {
+                        tempResult = sourceRule.Mode switch
+                        {
+                            RuleMode.Js => EvalJs(rule, tempResult),
+                            RuleMode.Json => new AnalyzeByJsonPath(JsonConvert.SerializeObject(tempResult)).GetList(rule),
+                            RuleMode.XPath => new AnalyzeByXPath(tempResult).GetElements(rule).Cast<object>().ToList(),
+                            _ => new AnalyzeByAngleSharp(tempResult).GetAllElements(rule)
+                        };
+                    }
+
+                    if (tempResult is List<object> list)
+                    {
+                        result = list;
+                    }
+                    else if (tempResult != null)
+                    {
+                        result.Add(tempResult);
+                    }
+                }
+            }
+
+            return result;
+        }
+
         public string GetString(List<SourceRule> ruleList, object content = null, bool isUrl = false, bool unescape = true)
         {
             object result = null;
@@ -737,6 +787,30 @@ namespace Legado.Core.Models.AnalyzeRules
         {
             _cancellationToken = cancellationToken;
             return this;
+        }
+
+        /// <summary>
+        /// 获取原始内容
+        /// </summary>
+        public object GetContent()
+        {
+            return _content;
+        }
+
+        /// <summary>
+        /// 获取 BaseUrl
+        /// </summary>
+        public string GetBaseUrl()
+        {
+            return _baseUrl;
+        }
+
+        /// <summary>
+        /// 获取 RedirectUrl
+        /// </summary>
+        public Uri GetRedirectUrl()
+        {
+            return _redirectUrl;
         }
     }
 
