@@ -55,7 +55,7 @@ namespace Legado.Core.Data.Entities
         // 评论解析规则
         [Column("ruleReview")]
         [JsonProperty("ruleReview")]
-        public ReviewRule ruleReview { get; set; }
+        public ReviewRule RuleReview { get; set; }
     } 
 
     /// <summary>

@@ -18,7 +18,7 @@ namespace Legado.Core.Models.AnalyzeRules
 
         public AnalyzeByXPath(object doc)
         {
-            _jxNode = Parse(doc);
+            _jxNode = StrToDocument(doc as string);
         }
 
         /// <summary>

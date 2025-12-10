@@ -29,6 +29,7 @@ namespace Legado
 
                 var bookSourceContent = File.ReadAllText(bookSourcePath);
                 var bookSources = JsonConvert.DeserializeObject<List<BookSource>>(bookSourceContent);
+                bookSources = new List<BookSource>() { bookSources[0] };
 
                 Console.WriteLine($"成功加载 {bookSources.Count} 个");
                 Console.WriteLine();
@@ -90,7 +91,7 @@ namespace Legado
                     }
                 }
                 
-                Console.WriteLine("测试完成！");
+                Console.WriteLine("测试完成！"); 
             }
             catch (Exception ex)
             {

@@ -75,7 +75,14 @@ namespace Legado.Core.Helps
 
                     // 执行JavaScript代码
                     var jsResult = _engine.Evaluate(jsStr);
-
+                    if (jsResult.IsUndefined())
+                    {
+                        var list= _engine.GetValue("c").ToObject() as List<object>;
+                        if (list != null)
+                        {
+                            return list;
+                        }
+                    }
                     // 将Jint的结果转换为C#对象
                     return ConvertJsValue(jsResult);
                 }

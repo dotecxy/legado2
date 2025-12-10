@@ -22,6 +22,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using static SQLite.SQLite3;
 
 namespace Legado.Core.Models.AnalyzeRules
 {
@@ -224,7 +225,7 @@ namespace Legado.Core.Models.AnalyzeRules
             }
         }
 
-        public void MakeUpRule(object result, AnalyzeRule analyzer)
+        public void MakeUpRule(object result, AnalyzeRule analyzeRule = null)
         {
             var infoVal = new System.Text.StringBuilder();
 
@@ -250,17 +251,17 @@ namespace Legado.Core.Models.AnalyzeRules
                     if (IsRule(param))
                     {
                         var rule = new SourceRule(param);
-                        infoVal.Append(analyzer.GetString(new List<SourceRule> { rule }, result));
+                        infoVal.Append((analyzeRule ?? new AnalyzeRule()).GetString(new List<SourceRule> { rule }, result));
                     }
                     else
                     {
-                        var jsEval = analyzer.EvalJs(param, result);
+                        var jsEval = (analyzeRule ?? new AnalyzeRule()).EvalJs(param, result);
                         infoVal.Append(jsEval?.ToString() ?? "");
                     }
                 }
                 else if (regType == GetRuleType)
                 {
-                    infoVal.Append(analyzer.Get(RuleParam[i]));
+                    infoVal.Append((analyzeRule ?? new AnalyzeRule()).Get(RuleParam[i]));
                 }
                 else
                 {
@@ -402,6 +403,7 @@ namespace Legado.Core.Models.AnalyzeRules
                         {
                             result = sourceRule.Mode switch
                             {
+                                RuleMode.Regex => AnalyzeByRegex.GetElement(result?.ToString(), rule.Split(new string[] { "&&" }, StringSplitOptions.RemoveEmptyEntries)),
                                 RuleMode.Js => EvalJs(rule, result),
                                 RuleMode.Json => new AnalyzeByJsonPath(JsonConvert.SerializeObject(result)).GetStringList(rule),
                                 RuleMode.XPath => new AnalyzeByXPath(result).GetStringList(rule),
@@ -459,18 +461,55 @@ namespace Legado.Core.Models.AnalyzeRules
             return GetString(ruleList, content, isUrl);
         }
 
-        public List<object> GetElements(string rule)
+        public object GetElement(string ruleStr)
         {
-            if (string.IsNullOrEmpty(rule)) return new List<object>();
+            if (string.IsNullOrEmpty(ruleStr)) return new List<object>();
 
-            var ruleList = SplitSourceRuleCacheString(rule);
-            return GetElements(ruleList);
+            object tempResult = null;
+            var content = this._content;
+
+            var ruleList = SplitSourceRuleCacheString(ruleStr);
+
+            if (content != null && ruleList.Count > 0)
+            {
+                foreach (var sourceRule in ruleList)
+                {
+                    tempResult = content;
+                    PutRule(sourceRule.PutMap);
+                    sourceRule.MakeUpRule(tempResult, this);
+                    if (tempResult == null) continue;
+
+                    var rule = sourceRule.Rule;
+                    if (!string.IsNullOrEmpty(rule))
+                    {
+                        tempResult = sourceRule.Mode switch
+                        {
+                            RuleMode.Regex => AnalyzeByRegex.GetElement(tempResult?.ToString(), rule.Split(new string[] { "&&" }, StringSplitOptions.RemoveEmptyEntries)),
+                            RuleMode.Js => EvalJs(rule, tempResult),
+                            RuleMode.Json => new AnalyzeByJsonPath(JsonConvert.SerializeObject(tempResult)).GetList(rule),
+                            RuleMode.XPath => new AnalyzeByXPath(tempResult).GetElements(rule).Cast<object>().ToList(),
+                            _ => new AnalyzeByAngleSharp(tempResult).GetAllElements(rule)
+                        };
+                    } 
+
+                    if (tempResult != null && !string.IsNullOrEmpty(sourceRule.ReplaceRegex))
+                    {
+                        tempResult = ReplaceRegex(tempResult.ToString(), sourceRule);
+                    }
+                }
+            }
+
+            return tempResult;
         }
 
-        public List<object> GetElements(List<SourceRule> ruleList)
+        public List<object> GetElements(string ruleStr)
         {
+            if (string.IsNullOrEmpty(ruleStr)) return new List<object>();
+
             var result = new List<object>();
             var currentContent = _content;
+
+            var ruleList = SplitSourceRuleCacheString(ruleStr);
 
             if (currentContent != null && ruleList.Any())
             {
@@ -488,6 +527,7 @@ namespace Legado.Core.Models.AnalyzeRules
                     {
                         tempResult = sourceRule.Mode switch
                         {
+                            RuleMode.Regex => AnalyzeByRegex.GetElement(tempResult?.ToString(), rule.Split(new string[] { "&&" }, StringSplitOptions.RemoveEmptyEntries)), 
                             RuleMode.Js => EvalJs(rule, tempResult),
                             RuleMode.Json => new AnalyzeByJsonPath(JsonConvert.SerializeObject(tempResult)).GetList(rule),
                             RuleMode.XPath => new AnalyzeByXPath(tempResult).GetElements(rule).Cast<object>().ToList(),
@@ -508,6 +548,7 @@ namespace Legado.Core.Models.AnalyzeRules
 
             return result;
         }
+         
 
         public string GetString(List<SourceRule> ruleList, object content = null, bool isUrl = false, bool unescape = true)
         {
@@ -708,7 +749,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 return _ruleData.getBigVariable(key);
             }
             return "";
-        } 
+        }
 
         public object EvalJs(string jsCode, object result = null)
         {

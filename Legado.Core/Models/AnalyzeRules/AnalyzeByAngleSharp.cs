@@ -155,7 +155,14 @@ namespace Legado.Core.Models.AnalyzeRules
                         {
                             var cssSelector = ruleStrX.Substring(0, lastIndex);
                             var attrName = ruleStrX.Substring(lastIndex + 1);
-                            temp = GetResultLast(_element.QuerySelectorAll(cssSelector).ToList(), attrName);
+
+                            var parts = cssSelector.Split('@');
+                            List<IElement> elements2 = new List<IElement>();
+                            foreach (var part in parts)
+                            {
+                                elements2 = new ElementsSingle().GetElementsSingle(_element, part).ToList();
+                            } 
+                            temp = GetResultLast(elements2, attrName);
                         }
                     }
                     else
@@ -529,10 +536,10 @@ namespace Legado.Core.Models.AnalyzeRules
             {
                 foreach (var ruleStr in ruleStrS)
                 {
-                    var tempS = temp.QuerySelectorAll(ruleStr);
+                    var tempS = new ElementsSingle().GetElementsSingle(temp, ruleStr);
                     elementsList.AddRange(tempS);
 
-                    if (tempS.Length > 0 && ruleAnalyzer.ElementsType == "||")
+                    if (tempS.Count > 0 && ruleAnalyzer.ElementsType == "||")
                         break;
                 }
             }

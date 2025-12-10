@@ -53,7 +53,7 @@ namespace Legado.Core.Models.WebBooks
                 try
                 {
                     // TODO: 执行 JS 脚本
-                    // analyzeRule.SetContent(analyzeRule.GetString(infoRule.Init));
+                     analyzeRule.SetContent(analyzeRule.GetString(infoRule.Init));
                 }
                 catch (Exception e)
                 {
