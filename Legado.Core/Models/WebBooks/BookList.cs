@@ -4,132 +4,298 @@ using Legado.Core.Models.AnalyzeRules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks; 
+using System.Threading.Tasks;
+
 namespace Legado.Core.Models.WebBooks
 {
     /// <summary>
-    /// 书籍列表解析类
+    /// 获取书籍列表（对应 Kotlin 的 BookList.kt）
     /// </summary>
     public static class BookList
     {
         /// <summary>
-        /// 解析书籍列表
+        /// 解析书籍列表（对应 Kotlin 的 analyzeBookList）
         /// </summary>
-        /// <param name="bookSource">书源</param>
-        /// <param name="ruleData">规则数据</param>
-        /// <param name="analyzeUrl">URL分析器</param>
-        /// <param name="baseUrl">基础URL</param>
-        /// <param name="body">HTML内容</param>
-        /// <param name="isSearch">是否为搜索</param>
-        /// <param name="isRedirect">是否为重定向</param>
-        /// <param name="filter">过滤函数</param>
-        /// <param name="shouldBreak">中断条件</param>
-        /// <returns>书籍列表</returns>
         public static List<SearchBook> AnalyzeBookList(
             BookSource bookSource,
             RuleData ruleData,
             AnalyzeUrl analyzeUrl,
             string baseUrl,
             string body,
-            bool isSearch,
+            bool isSearch = true,
             bool isRedirect = false,
             Func<string, string, bool> filter = null,
             Func<int, bool> shouldBreak = null)
         {
+            if (string.IsNullOrEmpty(body))
+            {
+                throw new Exception($"Error getting web content: {analyzeUrl.RuleUrl}");
+            }
+
             var bookList = new List<SearchBook>();
-            
-            // 获取搜索或发现规则
-            IBookListRule searchRule = isSearch ? (IBookListRule)bookSource.RuleSearch : (IBookListRule)bookSource.RuleExplore;
-            if (searchRule == null)
+            // Debug.Log(bookSource.BookSourceUrl, "≡获取成功:" + analyzeUrl.RuleUrl);
+
+            var analyzeRule = new AnalyzeRule(ruleData, bookSource);
+            analyzeRule.SetContent(body);
+            analyzeRule.SetBaseUrl(baseUrl);
+            analyzeRule.SetRedirectUrl(baseUrl);
+
+            // 检查是否为详情页
+            // TODO: 实现 bookUrlPattern 匹配逻辑
+
+            // 获取书籍列表规则
+            IBookListRule bookListRule;
+            if (isSearch)
+            {
+                bookListRule = bookSource.RuleSearch;
+            }
+            else if (bookSource.RuleExplore != null && !string.IsNullOrWhiteSpace(bookSource.RuleExplore.BookList))
+            {
+                bookListRule = bookSource.RuleExplore;
+            }
+            else
+            {
+                bookListRule = bookSource.RuleSearch;
+            }
+
+            if (bookListRule == null)
             {
                 return bookList;
             }
 
-            string listRule = searchRule.BookList;
-            string nameRule = searchRule.Name;
-            string authorRule = searchRule.Author;
-            string bookUrlRule = searchRule.BookUrl;
-            string coverUrlRule = searchRule.CoverUrl;
-            string kindRule = searchRule.Kind;
-            string lastChapterRule = searchRule.LastChapter;
-            string introRule = searchRule.Intro;
-            
-            // 创建解析规则
-            var analyzeRule = new AnalyzeRule(ruleData, bookSource);
-            analyzeRule.SetContent(body, baseUrl);
-            analyzeRule.SetRedirectUrl(baseUrl);
-            
-            // 解析列表规则 - 获取列表元素
-            var list = analyzeRule.GetStringList(listRule);
-            if (list == null || !list.Any())
+            var ruleList = bookListRule.BookList ?? "";
+            var reverse = false;
+
+            if (ruleList.StartsWith("-"))
             {
-                // 可能是单个结果，尝试直接解析
-                list = new List<string> { body };
+                reverse = true;
+                ruleList = ruleList.Substring(1);
             }
-            
-            foreach (var item in list)
+            if (ruleList.StartsWith("+"))
             {
-                try
+                ruleList = ruleList.Substring(1);
+            }
+
+            // Debug.Log(bookSource.BookSourceUrl, "┌获取书籍列表");
+            var collections = analyzeRule.GetElements(ruleList);
+
+            if (collections.Count == 0)
+            {
+                // Debug.Log(bookSource.BookSourceUrl, "└列表为空,按详情页解析");
+                var infoItem = GetInfoItem(
+                    bookSource, analyzeRule, analyzeUrl, body, baseUrl,
+                    ruleData.getVariable(), isRedirect, filter
+                );
+
+                if (infoItem != null)
                 {
-                    var elementAnalyzeRule = new AnalyzeRule(ruleData, bookSource);
-                    elementAnalyzeRule.SetContent(item, baseUrl);
-                    elementAnalyzeRule.SetRedirectUrl(baseUrl);
-                    
-                    var book = new SearchBook();
-                    book.Origin = bookSource.BookSourceUrl;
-                    
-                    // 解析书名
-                    book.Name = elementAnalyzeRule.GetString(nameRule);
-                    if (string.IsNullOrWhiteSpace(book.Name))
+                    infoItem.InfoHtml = body;
+                    bookList.Add(infoItem);
+                }
+            }
+            else
+            {
+                // Debug.Log(bookSource.BookSourceUrl, $"└列表大小:{collections.Count}");
+
+                // 拆分规则
+                var ruleName = analyzeRule.SplitSourceRule(bookListRule.Name);
+                var ruleBookUrl = analyzeRule.SplitSourceRule(bookListRule.BookUrl);
+                var ruleAuthor = analyzeRule.SplitSourceRule(bookListRule.Author);
+                var ruleCoverUrl = analyzeRule.SplitSourceRule(bookListRule.CoverUrl);
+                var ruleIntro = analyzeRule.SplitSourceRule(bookListRule.Intro);
+                var ruleKind = analyzeRule.SplitSourceRule(bookListRule.Kind);
+                var ruleLastChapter = analyzeRule.SplitSourceRule(bookListRule.LastChapter);
+                var ruleWordCount = analyzeRule.SplitSourceRule(bookListRule.WordCount);
+
+                for (int index = 0; index < collections.Count; index++)
+                {
+                    var item = collections[index];
+                    var searchBook = GetSearchItem(
+                        bookSource, analyzeRule, item, baseUrl,
+                        ruleData.getVariable(), index == 0, filter,
+                        ruleName, ruleBookUrl, ruleAuthor, ruleCoverUrl,
+                        ruleIntro, ruleKind, ruleLastChapter, ruleWordCount
+                    );
+
+                    if (searchBook != null)
                     {
-                        continue;
+                        if (baseUrl == searchBook.BookUrl)
+                        {
+                            searchBook.InfoHtml = body;
+                        }
+                        bookList.Add(searchBook);
                     }
-                    
-                    // 解析作者
-                    book.Author = elementAnalyzeRule.GetString(authorRule);
-                    
-                    // 解析书籍URL
-                    book.BookUrl = elementAnalyzeRule.GetString(bookUrlRule, isUrl: true);
-                    if (string.IsNullOrWhiteSpace(book.BookUrl))
-                    {
-                        continue;
-                    }
-                    
-                    // 应用过滤
-                    if (filter != null && !filter(book.Name, book.Author))
-                    {
-                        continue;
-                    }
-                    
-                    // 解析封面URL
-                    book.CoverUrl = elementAnalyzeRule.GetString(coverUrlRule, isUrl: true);
-                    
-                    // 解析分类
-                    book.Kind = elementAnalyzeRule.GetString(kindRule);
-                    
-                    // 解析最新章节
-                    book.LatestChapterTitle = elementAnalyzeRule.GetString(lastChapterRule);
-                    
-                    // 解析简介
-                    book.Intro = elementAnalyzeRule.GetString(introRule);
-                    
-                    // 添加到列表
-                    bookList.Add(book);
-                    
-                    // 检查中断条件
-                    if (shouldBreak != null && shouldBreak(bookList.Count))
+
+                    if (shouldBreak?.Invoke(bookList.Count) == true)
                     {
                         break;
                     }
                 }
-                catch (Exception)
+
+                // 去重
+                var uniqueBooks = bookList.Distinct().ToList();
+                bookList = uniqueBooks;
+
+                if (reverse)
                 {
-                    // 忽略单个条目的解析错误，继续下一个
-                    continue;
+                    bookList.Reverse();
                 }
             }
-            
+
+            // Debug.Log(bookSource.BookSourceUrl, $"◇书籍总数:{bookList.Count}");
             return bookList;
+        }
+
+        /// <summary>
+        /// 获取详情页书籍信息（对应 Kotlin 的 getInfoItem）
+        /// </summary>
+        private static SearchBook GetInfoItem(
+            BookSource bookSource,
+            AnalyzeRule analyzeRule,
+            AnalyzeUrl analyzeUrl,
+            string body,
+            string baseUrl,
+            string variable,
+            bool isRedirect,
+            Func<string, string, bool> filter)
+        {
+            var book = new Book { Variable = variable };
+            book.BookUrl = isRedirect ? baseUrl : analyzeUrl.RuleUrl;
+            book.Origin = bookSource.BookSourceUrl;
+            book.OriginName = bookSource.BookSourceName;
+            book.OriginOrder = bookSource.CustomOrder;
+            book.Type = bookSource.BookSourceType;
+
+            // 解析书籍信息
+            BookInfo.AnalyzeBookInfo(
+                bookSource, book, baseUrl, baseUrl, body, canReName: false
+            ).Wait();
+
+            if (filter?.Invoke(book.Name, book.Author) == false)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(book.Name))
+            {
+                // 创建 SearchBook 对象
+                var searchBook = new SearchBook
+                {
+                    BookUrl = book.BookUrl,
+                    Origin = book.Origin,
+                    OriginName = book.OriginName,
+                    OriginOrder = book.OriginOrder,
+                    Type = book.Type,
+                    Name = book.Name,
+                    Author = book.Author,
+                    Kind = book.Kind,
+                    CoverUrl = book.CoverUrl,
+                    Intro = book.Intro,
+                    WordCount = book.WordCount,
+                    LatestChapterTitle = book.LatestChapterTitle,
+                    TocUrl = book.TocUrl,
+                    Variable = book.Variable
+                };
+                return searchBook;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 获取搜索结果条目（对应 Kotlin 的 getSearchItem）
+        /// </summary>
+        private static SearchBook GetSearchItem(
+            BookSource bookSource,
+            AnalyzeRule analyzeRule,
+            object item,
+            string baseUrl,
+            string variable,
+            bool log,
+            Func<string, string, bool> filter,
+            List<SourceRule> ruleName,
+            List<SourceRule> ruleBookUrl,
+            List<SourceRule> ruleAuthor,
+            List<SourceRule> ruleCoverUrl,
+            List<SourceRule> ruleIntro,
+            List<SourceRule> ruleKind,
+            List<SourceRule> ruleLastChapter,
+            List<SourceRule> ruleWordCount)
+        {
+            var searchBook = new SearchBook { Variable = variable };
+            searchBook.Type = bookSource.BookSourceType;
+            searchBook.Origin = bookSource.BookSourceUrl;
+            searchBook.OriginName = bookSource.BookSourceName;
+            searchBook.OriginOrder = bookSource.CustomOrder;
+
+            analyzeRule.SetContent(item);
+
+            // Debug.Log(bookSource.BookSourceUrl, "┌获取书名", log);
+            searchBook.Name = analyzeRule.GetString(ruleName)?.Trim() ?? "";
+            // Debug.Log(bookSource.BookSourceUrl, $"└{searchBook.Name}", log);
+
+            if (!string.IsNullOrWhiteSpace(searchBook.Name))
+            {
+                // Debug.Log(bookSource.BookSourceUrl, "┌获取作者", log);
+                searchBook.Author = analyzeRule.GetString(ruleAuthor)?.Trim() ?? "";
+                // Debug.Log(bookSource.BookSourceUrl, $"└{searchBook.Author}", log);
+
+                if (filter?.Invoke(searchBook.Name, searchBook.Author) == false)
+                {
+                    return null;
+                }
+
+                // 获取分类
+                try
+                {
+                    var kindList = analyzeRule.GetStringList(ruleKind);
+                    searchBook.Kind = kindList != null ? string.Join(",", kindList) : null;
+                }
+                catch { }
+
+                // 获取字数
+                try
+                {
+                    searchBook.WordCount = analyzeRule.GetString(ruleWordCount);
+                }
+                catch { }
+
+                // 获取最新章节
+                try
+                {
+                    searchBook.LatestChapterTitle = analyzeRule.GetString(ruleLastChapter);
+                }
+                catch { }
+
+                // 获取简介
+                try
+                {
+                    searchBook.Intro = analyzeRule.GetString(ruleIntro);
+                }
+                catch { }
+
+                // 获取封面URL
+                try
+                {
+                    var coverUrl = analyzeRule.GetString(ruleCoverUrl);
+                    if (!string.IsNullOrWhiteSpace(coverUrl))
+                    {
+                        searchBook.CoverUrl = coverUrl;
+                    }
+                }
+                catch { }
+
+                // 获取详情页URL
+                searchBook.BookUrl = analyzeRule.GetString(ruleBookUrl, isUrl: true);
+                if (string.IsNullOrWhiteSpace(searchBook.BookUrl))
+                {
+                    searchBook.BookUrl = baseUrl;
+                }
+
+                return searchBook;
+            }
+
+            return null;
         }
     }
 }

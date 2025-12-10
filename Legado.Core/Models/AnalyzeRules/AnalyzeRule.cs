@@ -4,10 +4,13 @@ using AngleSharp.Html.Parser;
 using AngleSharp.XPath;
 using Jint;
 using Jint.Native;
+using Jint.Runtime.Interop;
 using Legado.Core.Data.Entities;
+using Legado.Core.Helps;
 using Legado.Core.Helps.Http;
 using Legado.Core.Models;
 using Legado.Core.Models.AnalyzeRules;
+using Legado.Core.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -295,8 +298,8 @@ namespace Legado.Core.Models.AnalyzeRules
             new ConcurrentDictionary<string, List<SourceRule>>();
         private readonly ConcurrentDictionary<string, Regex> _regexCache =
             new ConcurrentDictionary<string, Regex>();
-        private readonly ConcurrentDictionary<string, Engine> _scriptCache =
-            new ConcurrentDictionary<string, Engine>();
+        private readonly ConcurrentDictionary<string, JsEvaluator> _scriptCache =
+            new ConcurrentDictionary<string, JsEvaluator>();
 
         private readonly HtmlParser _htmlParser = new HtmlParser();
         private static readonly MemoryCache _memoryCache = new MemoryCache(new MemoryCacheOptions());
@@ -435,7 +438,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 {
                     foreach (var url in resultList)
                     {
-                        var absoluteUrl = GetAbsoluteUrl(_redirectUrl, url.ToString());
+                        var absoluteUrl = NetworkUtils.GetAbsoluteUrl(_redirectUrl, url.ToString());
                         if (!string.IsNullOrEmpty(absoluteUrl) && !urlList.Contains(absoluteUrl))
                         {
                             urlList.Add(absoluteUrl);
@@ -577,13 +580,13 @@ namespace Legado.Core.Models.AnalyzeRules
             {
                 return string.IsNullOrEmpty(resultStr) ?
                        (_baseUrl ?? "") :
-                       GetAbsoluteUrl(_redirectUrl, resultStr);
+                     NetworkUtils.GetAbsoluteUrl(_redirectUrl, resultStr);
             }
 
             return resultStr;
         }
 
-        
+
 
         private string ReplaceRegex(string input, SourceRule rule)
         {
@@ -691,13 +694,19 @@ namespace Legado.Core.Models.AnalyzeRules
 
         public string Put(string key, string value)
         {
-            // 实现变量存储逻辑
+            if (_ruleData != null)
+            {
+                _ruleData.putVariable(key, value);
+            }
             return value;
         }
 
         public string Get(string key)
         {
-            // 实现变量获取逻辑
+            if (_ruleData != null)
+            {
+                return _ruleData.getBigVariable(key);
+            }
             return "";
         }
 
@@ -705,52 +714,35 @@ namespace Legado.Core.Models.AnalyzeRules
         {
             var engine = _scriptCache.GetOrAdd(jsCode, code =>
             {
-                var eng = new Engine(options =>
-                {
-                    options.AllowClr();
-                });
-
+                var jsEvaluator = new JsEvaluator();
+                var bindingds = new Dictionary<string, object>();
                 // 添加全局对象
-                eng.SetValue("java", this);
-                eng.SetValue("cookie", CookieStore.Instance);
-                eng.SetValue("cache", _memoryCache);
-                eng.SetValue("source", _source);
-                eng.SetValue("book", _ruleData as Book);
-                eng.SetValue("result", result);
-                eng.SetValue("baseUrl", _baseUrl);
-                eng.SetValue("chapter", _chapter);
-                eng.SetValue("title", _chapter?.Title);
-                eng.SetValue("src", _content);
-                eng.SetValue("nextChapterUrl", _nextChapterUrl);
-                //eng.SetValue("rssArticle", _ruleData as RssArticle);
-
-                return eng;
+                bindingds.Add("java", this);
+                bindingds.Add("cookie", CookieStore.Instance);
+                bindingds.Add("cache", _memoryCache);
+                bindingds.Add("source", _source);
+                bindingds.Add("book", _ruleData as Book);
+                bindingds.Add("result", result);
+                bindingds.Add("baseUrl", _baseUrl);
+                bindingds.Add("chapter", _chapter);
+                bindingds.Add("title", _chapter?.Title);
+                bindingds.Add("src", _content);
+                bindingds.Add("nextChapterUrl", _nextChapterUrl);
+                bindingds.Add("rssArticle", _ruleData as RssArticle);
+                jsEvaluator.Bindings = bindingds;
+                return jsEvaluator;
             });
 
             try
             {
-                return engine.Evaluate(jsCode).ToObject();
+                return engine.EvalJs(jsCode);
             }
             catch (Exception ex)
             {
-                // 记录错误
-                return null;
+                throw ex;
             }
         }
 
-        private string GetAbsoluteUrl(Uri baseUri, string relativeUrl)
-        {
-            if (string.IsNullOrEmpty(relativeUrl)) return "";
-            if (Uri.TryCreate(relativeUrl, UriKind.Absolute, out var absoluteUri))
-            {
-                return absoluteUri.ToString();
-            }
-            if (baseUri != null && Uri.TryCreate(baseUri, relativeUrl, out absoluteUri))
-            {
-                return absoluteUri.ToString();
-            }
-            return relativeUrl;
-        }
 
         private bool IsJson(string str)
         {
@@ -811,6 +803,22 @@ namespace Legado.Core.Models.AnalyzeRules
         public Uri GetRedirectUrl()
         {
             return _redirectUrl;
+        }
+
+        /// <summary>
+        /// 获取 Source
+        /// </summary>
+        public BaseSource GetSource()
+        {
+            return _source;
+        }
+
+        /// <summary>
+        /// 获取 RuleData
+        /// </summary>
+        public IRuleData GetRuleData()
+        {
+            return _ruleData;
         }
     }
 

@@ -8,7 +8,7 @@ namespace Legado.Core.Data.Entities
     /// 书籍实体 (对应 Book.kt)
     /// </summary>
     [Table("books")]
-    public class Book : IRuleData
+    public class Book : IBaseBook
     {
         // 书籍 URL，作为主键
         [PrimaryKey, Column("bookUrl")]
@@ -121,7 +121,21 @@ namespace Legado.Core.Data.Entities
         // 分组 (0: 未分组)
         [Column("group")]
         [JsonProperty("group")]
-        public int Group { get; set; } = 0;
+        public long Group { get; set; } = 0;
+
+        // 书源排序
+        [Column("originOrder")]
+        [JsonProperty("originOrder")]
+        public int OriginOrder { get; set; } = 0;
+
+        // IBaseBook 接口实现
+        [Ignore]
+        [JsonIgnore]
+        public string InfoHtml { get; set; }
+
+        [Ignore]
+        [JsonIgnore]
+        public string TocHtml { get; set; }
 
         // IRuleData 接口实现
         public virtual bool putVariable(string key, string value)
@@ -133,6 +147,12 @@ namespace Legado.Core.Data.Entities
         public string getVariable()
         {
             return Variable;
+        }
+
+        public string getVariable(string key)
+        {
+            // TODO: 实现变量读取
+            return "";
         }
 
         public void putBigVariable(string key, string value)

@@ -35,6 +35,7 @@ namespace Legado.Core.Models.AnalyzeRules
         public long? ServerID { get; private set; }
 
         public CookieStore CookieStore { get; private set; } = new CookieStore();
+        public CacheManager CacheManager { get => CacheManager.Instance; }
 
         private string mUrl;
         private string key;
@@ -216,9 +217,8 @@ namespace Legado.Core.Models.AnalyzeRules
             Match match = PARAM_PATTERN.Match(RuleUrl);
             string urlNoOption = match.Success ? RuleUrl.Substring(0, match.Index) : RuleUrl;
 
-            // 处理绝对路径
-            // TODO: 实现 NetworkUtils.GetAbsoluteURL
-            Url = GetAbsoluteUrl(baseUrl, urlNoOption);
+            // 处理绝对路径 
+            Url = NetworkUtils.GetAbsoluteUrl(baseUrl, urlNoOption);
 
             // 更新 baseUrl
             string newBase = GetBaseUrl(Url);
@@ -418,7 +418,7 @@ namespace Legado.Core.Models.AnalyzeRules
         // ================= 网络请求 =================
 
         /// <summary>
-        /// 异步获取字符串响应
+        /// 异步获取字符串响应（对应 Kotlin 的 getStrResponseAwait）
         /// </summary>
         public async Task<StrResponse> GetStrResponseAwait(string jsStr = null, string sourceRegex = null, bool useWebView = true)
         {
@@ -435,7 +435,7 @@ namespace Legado.Core.Models.AnalyzeRules
             SetCookie();
 
             if (this.useWebView && useWebView)
-            { 
+            {
                 var body = await webViewAsync("", urlNoQuery, jsStr);
                 return new StrResponse(Url, body);
             }
@@ -480,6 +480,14 @@ namespace Legado.Core.Models.AnalyzeRules
             }
         }
 
+        /// <summary>
+        /// 同步获取字符串响应（对应 Kotlin 的 getStrResponse）
+        /// </summary>
+        public StrResponse GetStrResponse(string jsStr = null, string sourceRegex = null, bool useWebView = true)
+        {
+            return GetStrResponseAwait(jsStr, sourceRegex, useWebView).GetAwaiter().GetResult();
+        }
+
         public async Task<byte[]> GetByteArrayAwait()
         {
             // Data URI 处理
@@ -501,7 +509,107 @@ namespace Legado.Core.Models.AnalyzeRules
             }
         }
 
-        // ================= 辅助方法 =================
+        /// <summary>
+        /// 同步获取字节数组（对应 Kotlin 的 getByteArray）
+        /// </summary>
+        public byte[] GetByteArray()
+        {
+            return GetByteArrayAwait().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// 异步获取 HttpResponseMessage（对应 Kotlin 的 getResponseAwait）
+        /// </summary>
+        public async Task<HttpResponseMessage> GetResponseAwait()
+        {
+            SetCookie();
+
+            using (var client = CreateHttpClient())
+            {
+                var request = new HttpRequestMessage(new HttpMethod(method), urlNoQuery);
+
+                // Headers
+                foreach (var kv in HeaderMap)
+                    request.Headers.TryAddWithoutValidation(kv.Key, kv.Value);
+
+                // Body / Query
+                if (method == "GET" && !string.IsNullOrEmpty(encodedQuery))
+                {
+                    request.RequestUri = new Uri(urlNoQuery + "?" + encodedQuery);
+                }
+                else if (method == "POST")
+                {
+                    if (!string.IsNullOrEmpty(encodedForm))
+                    {
+                        request.Content = new StringContent(encodedForm, Encoding.UTF8, "application/x-www-form-urlencoded");
+                    }
+                    else if (!string.IsNullOrEmpty(body))
+                    {
+                        var contentType = HeaderMap.ContainsKey("Content-Type") ? HeaderMap["Content-Type"] : "application/json";
+                        request.Content = new StringContent(body, Encoding.UTF8, contentType);
+                    }
+                }
+
+                return await client.SendAsync(request);
+            }
+        }
+
+        /// <summary>
+        /// 同步获取 HttpResponseMessage（对应 Kotlin 的 getResponse）
+        /// </summary>
+        public HttpResponseMessage GetResponse()
+        {
+            return GetResponseAwait().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// 异步获取输入流（对应 Kotlin 的 getInputStreamAwait）
+        /// </summary>
+        public async Task<System.IO.Stream> GetInputStreamAwait()
+        {
+            // Data URI 处理
+            if (urlNoQuery.StartsWith("data:"))
+            {
+                var match = DATA_URI_REGEX.Match(urlNoQuery);
+                if (match.Success)
+                {
+                    var bytes = Convert.FromBase64String(match.Groups[1].Value);
+                    return new System.IO.MemoryStream(bytes);
+                }
+            }
+
+            var response = await GetResponseAwait();
+            return await response.Content.ReadAsStreamAsync();
+        }
+
+        /// <summary>
+        /// 同步获取输入流（对应 Kotlin 的 getInputStream）
+        /// </summary>
+        public System.IO.Stream GetInputStream()
+        {
+            return GetInputStreamAwait().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// 是否为 POST 请求（对应 Kotlin 的 isPost）
+        /// </summary>
+        public bool IsPost()
+        {
+            return method == "POST";
+        }
+
+        /// <summary>
+        /// 获取 User-Agent（对应 Kotlin 的 getUserAgent）
+        /// </summary>
+        public string GetUserAgent()
+        {
+            if (HeaderMap.ContainsKey("User-Agent"))
+                return HeaderMap["User-Agent"];
+            // 返回默认 UA
+            return "Mozilla/5.0";
+        }
+
+        // ================= 辅助方法 ================
 
         private HttpClient CreateHttpClient()
         {
@@ -540,38 +648,30 @@ namespace Legado.Core.Models.AnalyzeRules
             }
         }
 
-        // 简单的 Mock Utils
-        private string GetAbsoluteUrl(string baseUrl, string relativeUrl)
-        {
-            if (string.IsNullOrEmpty(baseUrl)) return relativeUrl;
-            try { return new Uri(new Uri(baseUrl), relativeUrl).AbsoluteUri; }
-            catch { return relativeUrl; }
-        }
-
-        private string GetBaseUrl(string url)
-        {
-            try
-            {
-                var uri = new Uri(url);
-                return uri.Scheme + "://" + uri.Host + (uri.IsDefaultPort ? "" : ":" + uri.Port);
-            }
-            catch { return null; }
-        }
 
         /// <summary>
-        /// 获取子域名（对应 Kotlin 的 getSubDomain）
+        /// 执行 JS（对应 Kotlin 的 evalJS）
         /// </summary>
-        private string GetSubDomain(string url)
+        public object EvalJS(string jsStr, object result = null)
         {
-            if (string.IsNullOrEmpty(url)) return null;
-            try
-            {
-                var uri = new Uri(url);
-                return uri.Host;
-            }
-            catch { return null; }
+            // 调用父类 JsExtensions 的 evalJS 方法
+            using JsEvaluator evaluator = new JsEvaluator();
+            Dictionary<string, object> bindings = new Dictionary<string, object>();
+            bindings.Add("java", this);
+            bindings.Add("baseUrl", this.baseUrl);
+            bindings.Add("cookie", this.CookieStore);
+            bindings.Add("cache", CacheManager);
+            bindings.Add("page", page);
+            bindings.Add("key", key);
+            bindings.Add("speakText", speakText);
+            bindings.Add("speakSpeed", speakSpeed);
+            bindings.Add("book", this.ruleData as Book);
+            bindings.Add("source", this.source);
+            bindings.Add("result", result);
+            evaluator.Bindings = bindings;
+            return evaluator.EvalJs(jsStr, result);
         }
-         
+
     }
 
     /// <summary>

@@ -258,7 +258,18 @@ namespace Legado.Core.Models.AnalyzeRules
         }
 
         /// <summary>
-        /// 获取第一个对象（对应 Kotlin 的 getObject0）
+        /// 获取第一个字符串(对应 Kotlin 的 getString0)
+        /// </summary>
+        /// <param name="rule">JsonPath 规则</param>
+        /// <returns>字符串结果</returns>
+        public string GetString0(string rule)
+        {
+            var list = GetStringList(rule);
+            return list.Count > 0 ? list[0] : null;
+        }
+        
+        /// <summary>
+        /// 获取第一个对象(对应 Kotlin 的 getObject0)
         /// </summary>
         /// <param name="rule">JsonPath 规则</param>
         /// <returns>对象结果</returns>

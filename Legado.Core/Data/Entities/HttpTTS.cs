@@ -1,0 +1,102 @@
+using Newtonsoft.Json;
+using SQLite;
+using System;
+
+namespace Legado.Core.Data.Entities
+{
+    /// <summary>
+    /// 在线朗读引擎（对应 HttpTTS.kt）
+    /// </summary>
+    [Table("httpTTS")]
+    public class HttpTTS
+    {
+        /// <summary>
+        /// ID
+        /// </summary>
+        [PrimaryKey]
+        [JsonProperty("id")]
+        public long Id { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
+        /// <summary>
+        /// 名称
+        /// </summary>
+        [JsonProperty("name")]
+        public string Name { get; set; } = "";
+
+        /// <summary>
+        /// URL
+        /// </summary>
+        [JsonProperty("url")]
+        public string Url { get; set; } = "";
+
+        /// <summary>
+        /// 内容类型
+        /// </summary>
+        [JsonProperty("contentType")]
+        public string ContentType { get; set; }
+
+        /// <summary>
+        /// 并发率
+        /// </summary>
+        [JsonProperty("concurrentRate")]
+        public string ConcurrentRate { get; set; } = "0";
+
+        /// <summary>
+        /// 登录URL
+        /// </summary>
+        [JsonProperty("loginUrl")]
+        public string LoginUrl { get; set; }
+
+        /// <summary>
+        /// 登录UI
+        /// </summary>
+        [JsonProperty("loginUi")]
+        public string LoginUi { get; set; }
+
+        /// <summary>
+        /// 请求头
+        /// </summary>
+        [JsonProperty("header")]
+        public string Header { get; set; }
+
+        /// <summary>
+        /// JS库
+        /// </summary>
+        [JsonProperty("jsLib")]
+        public string JsLib { get; set; }
+
+        /// <summary>
+        /// 启用CookieJar
+        /// </summary>
+        [JsonProperty("enabledCookieJar")]
+        public bool EnabledCookieJar { get; set; } = false;
+
+        /// <summary>
+        /// 登录检测JS
+        /// </summary>
+        [JsonProperty("loginCheckJs")]
+        public string LoginCheckJs { get; set; }
+
+        /// <summary>
+        /// 最后更新时间
+        /// </summary>
+        [JsonProperty("lastUpdateTime")]
+        public long LastUpdateTime { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
+        /// <summary>
+        /// 获取标签（对应 Kotlin 的 getTag）
+        /// </summary>
+        public string GetTag()
+        {
+            return Name;
+        }
+
+        /// <summary>
+        /// 获取键（对应 Kotlin 的 getKey）
+        /// </summary>
+        public string GetKey()
+        {
+            return $"httpTts:{Id}";
+        }
+    }
+}

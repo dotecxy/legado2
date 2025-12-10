@@ -124,6 +124,9 @@ namespace Legado.Core.Data.Entities
         [JsonProperty("lastChapter")]
         public string LastChapter { get; set; }
 
+        [JsonProperty("updateTime")]
+        public string UpdateTime { get; set; }
+
         [JsonProperty("coverUrl")]
         public string CoverUrl { get; set; }
 

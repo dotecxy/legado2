@@ -432,5 +432,29 @@ namespace Legado.Core.Models.AnalyzeRules
             st.Append(queue.Substring(startX));
             return st.ToString();
         }
+
+        /// <summary>
+        /// 获取字符串长度（对应 Kotlin 的 length）
+        /// </summary>
+        public int Length()
+        {
+            return queue?.Length ?? 0;
+        }
+
+        /// <summary>
+        /// 判断是否为空（对应 Kotlin 的 isEmpty）
+        /// </summary>
+        public bool IsEmpty()
+        {
+            return string.IsNullOrEmpty(queue);
+        }
+
+        /// <summary>
+        /// 判断是否非空（对应 Kotlin 的 isNotEmpty）
+        /// </summary>
+        public bool IsNotEmpty()
+        {
+            return !string.IsNullOrEmpty(queue);
+        }
     }
 }

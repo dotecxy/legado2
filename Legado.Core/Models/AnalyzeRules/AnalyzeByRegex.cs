@@ -163,6 +163,61 @@ namespace Legado.Core.Models.AnalyzeRules
         }
 
         /// <summary>
+        /// 获取字符串（对应 Kotlin 的 getString）
+        /// </summary>
+        /// <param name="res">输入字符串</param>
+        /// <param name="regs">正则表达式字符串（用 && 分割）</param>
+        /// <returns>匹配的字符串，如果没有匹配则返回 null</returns>
+        public static string GetString(string res, string regs)
+        {
+            var element = GetElement(res, regs);
+            if (element == null || element.Count == 0)
+                return null;
+            
+            return element[0];
+        }
+
+        /// <summary>
+        /// 获取第一个字符串（对应 Kotlin 的 getString0）
+        /// </summary>
+        /// <param name="res">输入字符串</param>
+        /// <param name="regs">正则表达式字符串（用 && 分割）</param>
+        /// <returns>匹配的字符串，如果没有匹配则返回空字符串</returns>
+        public static string GetString0(string res, string regs)
+        {
+            var element = GetElement(res, regs);
+            if (element == null || element.Count == 0)
+                return string.Empty;
+            
+            return element[0];
+        }
+
+        /// <summary>
+        /// 获取字符串列表（对应 Kotlin 的 getStringList）
+        /// </summary>
+        /// <param name="res">输入字符串</param>
+        /// <param name="regs">正则表达式字符串（用 && 分割）</param>
+        /// <returns>匹配的字符串列表</returns>
+        public static List<string> GetStringList(string res, string regs)
+        {
+            var elements = GetElements(res, regs);
+            var result = new List<string>();
+            
+            if (elements == null || elements.Count == 0)
+                return result;
+            
+            foreach (var element in elements)
+            {
+                if (element != null && element.Count > 0)
+                {
+                    result.Add(element[0]);
+                }
+            }
+            
+            return result;
+        }
+
+        /// <summary>
         /// 获取正则表达式匹配的单个结果
         /// </summary>
         /// <param name="res">输入字符串</param>

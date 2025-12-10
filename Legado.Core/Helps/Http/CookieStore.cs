@@ -9,9 +9,10 @@ namespace Legado.Core.Helps.Http
     /// Cookie 存储管理器 (对应 Kotlin: CookieStore.kt)
     /// 实现 Cookie 的保存、获取、替换、删除等功能
     /// </summary>
-    public class CookieStore : ICookieManager
+    public sealed class CookieStore : ICookieManager
     {
         public static CookieStore Instance { get; } = new CookieStore();
+         
 
         public IDictionary<string, string> CookieToMap(string cookie)
         {

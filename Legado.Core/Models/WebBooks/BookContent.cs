@@ -16,7 +16,7 @@ namespace Legado.Core.Models.WebBooks
     public static class BookContent
     {
         /// <summary>
-        /// 解析章节内容
+        /// 解析章节内容（对应 Kotlin 的 analyzeContent）
         /// </summary>
         /// <param name="bookSource">书源</param>
         /// <param name="book">书籍</param>
@@ -25,6 +25,7 @@ namespace Legado.Core.Models.WebBooks
         /// <param name="redirectUrl">重定向URL</param>
         /// <param name="body">HTML内容</param>
         /// <param name="nextChapterUrl">下一章节URL</param>
+        /// <param name="needSave">是否需要保存</param>
         /// <returns>解析后的章节内容</returns>
         public static async Task<string> AnalyzeContent(
             BookSource bookSource,
@@ -33,7 +34,8 @@ namespace Legado.Core.Models.WebBooks
             string baseUrl,
             string redirectUrl,
             string body,
-            string nextChapterUrl = null)
+            string nextChapterUrl = null,
+            bool needSave = true)
         {
             if (string.IsNullOrEmpty(body))
             {
@@ -151,6 +153,22 @@ namespace Legado.Core.Models.WebBooks
             content = Regex.Replace(content, "\n{3,}", "\n\n"); // 最多保留两个换行
 
             return content;
+        }
+
+        /// <summary>
+        /// 解析章节内容（便捷方法，对应 Kotlin 的 analyzeContent）
+        /// </summary>
+        public static async Task<string> analyzeContent(
+            BookSource bookSource,
+            Book book,
+            BookChapter bookChapter,
+            string baseUrl,
+            string redirectUrl,
+            string body,
+            string nextChapterUrl = null,
+            bool needSave = true)
+        {
+            return await AnalyzeContent(bookSource, book, bookChapter, baseUrl, redirectUrl, body, nextChapterUrl, needSave);
         }
     }
 }

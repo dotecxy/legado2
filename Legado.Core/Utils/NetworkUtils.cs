@@ -143,6 +143,20 @@ namespace Legado.Core.Utils
             }
         }
 
+        public static string GetAbsoluteUrl(string baseUrl, string relativeUrl)
+        {
+            if (string.IsNullOrEmpty(baseUrl)) return relativeUrl;
+            try { return new Uri(new Uri(baseUrl), relativeUrl).AbsoluteUri; }
+            catch { return relativeUrl; }
+        }
+
+        public static string GetAbsoluteUrl(Uri baseUri, string relativeUrl)
+        {
+            if (baseUri == null) return relativeUrl;
+            try { return new Uri(baseUri, relativeUrl).AbsoluteUri; }
+            catch { return relativeUrl; }
+        }
+
         /// <summary>
         /// 判断是否为IP地址
         /// </summary>
@@ -175,6 +189,7 @@ namespace Legado.Core.Utils
 
             return false;
         }
+         
     }
 
     // 默认的公共后缀数据库实现

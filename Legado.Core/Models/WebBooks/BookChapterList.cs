@@ -24,7 +24,7 @@ namespace Legado.Core.Models.WebBooks
         private static bool TocCountWords => false; // AppConfig.tocCountWords
 
         /// <summary>
-        /// 分析章节列表 (主入口)
+        /// 分析章节列表 (主入口，对应 Kotlin 的 analyzeChapterList)
         /// </summary>
         public static async Task<List<BookChapter>> AnalyzeChapterList(
             BookSource bookSource,
@@ -346,7 +346,23 @@ namespace Legado.Core.Models.WebBooks
             // logic...
         }
 
-        // 辅助方法：模拟 String.isTrue()
+        /// <summary>
+        /// 获取章节列表（便捷方法，对应 Kotlin 的 getChapterList）
+        /// </summary>
+        public static async Task<List<BookChapter>> getChapterList(
+            BookSource bookSource,
+            Book book,
+            string baseUrl,
+            string redirectUrl,
+            string body,
+            CancellationToken cancellationToken = default)
+        {
+            return await AnalyzeChapterList(bookSource, book, baseUrl, redirectUrl, body, cancellationToken);
+        }
+
+        /// <summary>
+        /// 辅助方法：模拟 String.isTrue()（对应 Kotlin 的 isTrue 扩展函数）
+        /// </summary>
         private static bool IsTrue(string val)
         {
             if (string.IsNullOrEmpty(val)) return false;

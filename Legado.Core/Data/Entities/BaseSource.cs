@@ -1,6 +1,8 @@
 ﻿using Jint;
 using Jint.Native;
+using Jint.Runtime.Interop;
 using Legado.Core.Helps.Http.Api;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SQLite; // 对应 sqlite-net-pcl
 using System;
@@ -81,6 +83,21 @@ namespace Legado.Core.Data.Entities
         [JsonProperty("enabledCookieJar")]
         public bool EnabledCookieJar { get; set; } = true; // 默认为 true
 
+        // 并发率
+        [Column("concurrentRate")]
+        [JsonProperty("concurrentRate")]
+        public string ConcurrentRate { get; set; }
+
+        // JS库
+        [Column("jsLib")]
+        [JsonProperty("jsLib")]
+        public string JsLib { get; set; }
+
+        // 变量说明
+        [Column("variableComment")]
+        [JsonProperty("variableComment")]
+        public string VariableComment { get; set; }
+
         // 请求头 (存储为 JSON 字符串)
         [Column("header")]
         [JsonProperty("header")]
@@ -92,16 +109,116 @@ namespace Legado.Core.Data.Entities
 
         // **************** 辅助方法 ****************
 
-        // 获取 Header 的字典对象 (不存库)
+        /// <summary>
+        /// 获取标签（对应 Kotlin 的 getTag）
+        /// </summary>
+        public virtual string GetTag()
+        {
+            return BookSourceName;
+        }
+
+        /// <summary>
+        /// 获取 Header 的字典对象 (不存库)
+        /// </summary>
         [Ignore, JsonIgnore]
         public Dictionary<string, string> HeaderMap
         {
             get
             {
-                if (string.IsNullOrEmpty(Header)) return null;
-                try { return JsonConvert.DeserializeObject<Dictionary<string, string>>(Header); }
-                catch { return null; }
+                if (string.IsNullOrEmpty(Header)) return new Dictionary<string, string>();
+                try
+                {
+                    return JsonConvert.DeserializeObject<Dictionary<string, string>>(Header)
+                        ?? new Dictionary<string, string>();
+                }
+                catch
+                {
+                    return new Dictionary<string, string>();
+                }
             }
+        }
+
+        /// <summary>
+        /// 获取请求头（对应 Kotlin 的 getHeaderMap）
+        /// </summary>
+        public virtual Dictionary<string, string> GetHeaderMap(bool hasLoginHeader = false)
+        {
+            var headers = new Dictionary<string, string>();
+
+            if (!string.IsNullOrEmpty(Header))
+            {
+                try
+                {
+                    var json = Header;
+                    if (Header.StartsWith("@js:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        json = EvalJS(Header.Substring(4))?.ToString() ?? "";
+                    }
+                    else if (Header.StartsWith("<js>", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var endIndex = Header.LastIndexOf("<");
+                        json = EvalJS(Header.Substring(4, endIndex - 4))?.ToString() ?? "";
+                    }
+
+                    var map = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                    if (map != null)
+                    {
+                        foreach (var kv in map)
+                        {
+                            headers[kv.Key] = kv.Value;
+                        }
+                    }
+                }
+                catch
+                {
+                    // 忽略解析错误
+                }
+            }
+
+            if (!headers.ContainsKey("User-Agent"))
+            {
+                headers["User-Agent"] = "Mozilla/5.0";
+            }
+
+            if (hasLoginHeader)
+            {
+                var loginHeaders = GetLoginHeaderMap();
+                if (loginHeaders != null)
+                {
+                    foreach (var kv in loginHeaders)
+                    {
+                        headers[kv.Key] = kv.Value;
+                    }
+                }
+            }
+
+            return headers;
+        }
+
+        /// <summary>
+        /// 获取登录头部信息（对应 Kotlin 的 getLoginHeaderMap）
+        /// </summary>
+        public virtual Dictionary<string, string> GetLoginHeaderMap()
+        {
+            // TODO: 实现缓存读取
+            return null;
+        }
+
+        /// <summary>
+        /// 获取变量（对应 Kotlin 的 getVariable）
+        /// </summary>
+        public virtual string GetVariable()
+        {
+            // TODO: 实现缓存读取
+            return "";
+        }
+
+        /// <summary>
+        /// 设置变量（对应 Kotlin 的 setVariable）
+        /// </summary>
+        public virtual void SetVariable(string variable)
+        {
+            // TODO: 实现缓存存储
         }
 
         public virtual string GetKey() => BookSourceUrl;
@@ -115,9 +232,13 @@ namespace Legado.Core.Data.Entities
 
         public object EvalJS(string jsStr, Action<Engine> bindgingsConfig = null)
         {
-            using var engine = new Engine(cfg =>
+            using var engine = new Engine(options =>
             {
-                cfg.AllowClr(); // 允许访问 C# 类和方法
+                options.AllowClr(); // 允许访问 C# 类和方法
+                options.SetTypeResolver(new TypeResolver
+                {
+                    MemberNameComparer = StringComparer.Ordinal
+                });
             });
             engine.SetValue("java", this);
             engine.SetValue("source", this);

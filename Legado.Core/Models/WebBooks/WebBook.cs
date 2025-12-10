@@ -14,7 +14,7 @@ namespace Legado.Core.Models.WebBooks
     public class WebBook
     {
         /// <summary>
-        /// 搜索书籍
+        /// 搜索书籍（对应 Kotlin 的 searchBookAwait）
         /// </summary>
         /// <param name="bookSource">书源</param>
         /// <param name="key">搜索关键词</param>
@@ -67,13 +67,13 @@ namespace Legado.Core.Models.WebBooks
             );
         }
 
-        ///// <summary>
-        ///// 发现书籍
-        ///// </summary>
-        ///// <param name="bookSource">书源</param>
-        ///// <param name="url">发现地址</param>
-        ///// <param name="page">页码</param>
-        ///// <returns>发现结果列表</returns>
+        /// <summary>
+        /// 发现书籍（对应 Kotlin 的 exploreBookAwait）
+        /// </summary>
+        /// <param name="bookSource">书源</param>
+        /// <param name="url">发现地址</param>
+        /// <param name="page">页码</param>
+        /// <returns>发现结果列表</returns>
         public async Task<List<SearchBook>> ExploreBookAwait(
             BookSource bookSource,
             string url,
@@ -111,7 +111,7 @@ namespace Legado.Core.Models.WebBooks
         }
 
         /// <summary>
-        /// 获取书籍信息
+        /// 获取书籍信息（对应 Kotlin 的 getBookInfoAwait）
         /// </summary>
         /// <param name="bookSource">书源</param>
         /// <param name="book">书籍</param>
@@ -151,7 +151,7 @@ namespace Legado.Core.Models.WebBooks
         }
 
         /// <summary>
-        /// 获取章节列表
+        /// 获取章节列表（对应 Kotlin 的 getChapterListAwait）
         /// </summary>
         /// <param name="bookSource">书源</param>
         /// <param name="book">书籍</param>
@@ -222,7 +222,7 @@ namespace Legado.Core.Models.WebBooks
         //}
 
         /// <summary>
-        /// 获取章节内容
+        /// 获取章节内容（对应 Kotlin 的 getContentAwait）
         /// </summary>
         /// <param name="bookSource">书源</param>
         /// <param name="book">书籍</param>
@@ -276,7 +276,7 @@ namespace Legado.Core.Models.WebBooks
         }
 
         /// <summary>
-        /// 精准搜索
+        /// 精准搜索（对应 Kotlin 的 preciseSearchAwait）
         /// </summary>
         /// <param name="bookSource">书源</param>
         /// <param name="name">书名</param>
@@ -301,6 +301,76 @@ namespace Legado.Core.Models.WebBooks
             }
 
             throw new Exception($"未搜索到 {name}({author}) 书籍");
+        }
+
+        /// <summary>
+        /// 搜索书籍（便捷方法，对应 Kotlin 的 searchBookAwait）
+        /// </summary>
+        public async Task<List<SearchBook>> searchBookAwait(
+            BookSource bookSource,
+            string key,
+            int? page = 1,
+            Func<string, string, bool> filter = null,
+            Func<int, bool> shouldBreak = null)
+        {
+            return await SearchBookAwait(bookSource, key, page, filter, shouldBreak);
+        }
+
+        /// <summary>
+        /// 发现书籍（便捷方法，对应 Kotlin 的 exploreBookAwait）
+        /// </summary>
+        public async Task<List<SearchBook>> exploreBookAwait(
+            BookSource bookSource,
+            string url,
+            int? page = 1)
+        {
+            return await ExploreBookAwait(bookSource, url, page);
+        }
+
+        /// <summary>
+        /// 获取书籍信息（便捷方法，对应 Kotlin 的 getBookInfoAwait）
+        /// </summary>
+        public async Task<Book> getBookInfoAwait(
+            BookSource bookSource,
+            Book book,
+            bool canReName = true)
+        {
+            return await GetBookInfoAwait(bookSource, book, canReName);
+        }
+
+        /// <summary>
+        /// 获取章节列表（便捷方法，对应 Kotlin 的 getChapterListAwait）
+        /// </summary>
+        public async Task<List<BookChapter>> getChapterListAwait(
+            BookSource bookSource,
+            Book book,
+            bool runPreUpdateJs = false,
+            CancellationToken cancellationToken = default)
+        {
+            return await GetChapterListAwait(bookSource, book, runPreUpdateJs, cancellationToken);
+        }
+
+        /// <summary>
+        /// 获取章节内容（便捷方法，对应 Kotlin 的 getContentAwait）
+        /// </summary>
+        public async Task<string> getContentAwait(
+            BookSource bookSource,
+            Book book,
+            BookChapter bookChapter,
+            string nextChapterUrl = null)
+        {
+            return await GetContentAwait(bookSource, book, bookChapter, nextChapterUrl);
+        }
+
+        /// <summary>
+        /// 精准搜索（便捷方法，对应 Kotlin 的 preciseSearchAwait）
+        /// </summary>
+        public async Task<Book> preciseSearchAwait(
+            BookSource bookSource,
+            string name,
+            string author)
+        {
+            return await PreciseSearchAwait(bookSource, name, author);
         }
     }
 }

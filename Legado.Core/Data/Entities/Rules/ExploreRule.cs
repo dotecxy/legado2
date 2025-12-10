@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 namespace Legado.Core.Data.Entities.Rules
 {
     /// <summary>
-    /// 发现结果规则
+    /// 发现结果规则（对应 Kotlin 的 ExploreRule.kt）
     /// </summary>
     public class ExploreRule : IBookListRule
     {
