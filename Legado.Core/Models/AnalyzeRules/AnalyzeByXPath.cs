@@ -1,146 +1,145 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Xml;
-using System.Xml.Linq;
-using AngleSharp;
+﻿using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Parser;
 using AngleSharp.XPath;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace Legado.Core.Models.AnalyzeRules
-{ 
+{
+    /// <summary>
+    /// XPath 解析类
+    /// </summary>
     public class AnalyzeByXPath
     {
-        private readonly object _jxNode;
+        private object _jxNode;
 
         public AnalyzeByXPath(object doc)
         {
             _jxNode = Parse(doc);
         }
 
+        /// <summary>
+        /// 解析文档对象
+        /// </summary>
         private object Parse(object doc)
         {
-            if (doc is INode node)
-            {
-                return node;
-            }
-            else if (doc is IDocument document)
-            {
-                return document.DocumentElement;
-            }
-            else if (doc is IElement element)
-            {
-                return element;
-            }
-            else if (doc is IEnumerable<INode> nodes)
-            {
-                // 如果有多个节点，返回第一个
-                return nodes.FirstOrDefault() ?? ParseString(doc.ToString());
-            }
-            else
-            {
-                return ParseString(doc.ToString());
-            }
+            if (doc == null)
+                return null;
+
+            // 如果已经是 IDocument，直接返回
+            if (doc is IDocument document)
+                return document;
+
+            // 如果是 IElement，返回其 Owner
+            if (doc is IElement element)
+                return element.Owner;
+
+            // 如果是 INodeList，返回第一个元素的 Owner
+            if (doc is IHtmlCollection<IElement> elements && elements.Length > 0)
+                return elements[0].Owner;
+
+            // 否则当作字符串解析
+            return StrToDocument(doc.ToString());
         }
 
-        private INode ParseString(string html)
+        /// <summary>
+        /// 字符串转文档
+        /// </summary>
+        private IDocument StrToDocument(string html)
         {
             if (string.IsNullOrEmpty(html))
                 return null;
 
             var html1 = html;
 
-            // 处理表格单元格特殊情况
-            if (html1.Trim().EndsWith("</td>"))
+            // 自动补全表格标签
+            if (html1.EndsWith("</td>"))
             {
-                html1 = "<tr>" + html1 + "</tr>";
+                html1 = $"<tr>{html1}</tr>";
             }
-            if (html1.Trim().EndsWith("</tr>") || html1.Trim().EndsWith("</tbody>"))
+            if (html1.EndsWith("</tr>") || html1.EndsWith("</tbody>"))
             {
-                html1 = "<table>" + html1 + "</table>";
+                html1 = $"<table>{html1}</table>";
             }
 
             try
             {
+                // 检查是否为 XML
                 if (html1.Trim().StartsWith("<?xml", StringComparison.OrdinalIgnoreCase))
                 {
-                    // 使用XML解析器
-                    var xmlDoc = new XmlDocument();
-                    xmlDoc.LoadXml(html1);
+                    var parser = new HtmlParser(new HtmlParserOptions
+                    {
+                        IsStrictMode = false,
+                        IsEmbedded = false
+                    });
+                    return parser.ParseDocument(html1);
+                }
+            }
+            catch { }
 
-                    // 将XmlDocument转换为AngleSharp文档
-                    var config = Configuration.Default.WithXPath();
-                    var context = BrowsingContext.New(config);
-                    var parser = context.GetService<IHtmlParser>();
+            // 默认按 HTML 解析
+            var htmlParser = new HtmlParser();
+            return htmlParser.ParseDocument(html1);
+        }
 
-                    // 解析XML
-                    var doc = parser.ParseDocument("<root>" + html1 + "</root>");
-                    return doc.DocumentElement;
+        /// <summary>
+        /// 获取 XPath 查询结果
+        /// </summary>
+        private List<INode> GetResult(string xPath)
+        {
+            if (_jxNode == null || string.IsNullOrEmpty(xPath))
+                return null;
+
+            try
+            {
+                if (_jxNode is IDocument doc)
+                {
+                    var nodes = doc.Body?.SelectNodes(xPath);
+                    return nodes?.Cast<INode>().ToList();
+                }
+                else if (_jxNode is IElement elem)
+                {
+                    var nodes = elem.SelectNodes(xPath);
+                    return nodes?.Cast<INode>().ToList();
                 }
             }
             catch
             {
-                // 如果XML解析失败，回退到HTML解析
+                // XPath 查询失败
             }
 
-            // 使用HTML解析器
-            var htmlConfig = Configuration.Default.WithXPath();
-            var htmlContext = BrowsingContext.New(htmlConfig);
-            var htmlParser = htmlContext.GetService<IHtmlParser>();
-
-            var document = htmlParser.ParseDocument(html1);
-            return document.DocumentElement;
+            return null;
         }
 
-        private IEnumerable<INode> GetResult(string xPath)
-        {
-            if (string.IsNullOrEmpty(xPath) || _jxNode == null)
-                return Enumerable.Empty<INode>();
-
-            if (_jxNode is INode node)
-            {
-                try
-                {
-                    return node.SelectNodes(xPath) ?? Enumerable.Empty<INode>();
-                }
-                catch (Exception ex)
-                {
-                    // XPath表达式可能无效
-                    Console.WriteLine($"XPath error: {ex.Message}");
-                    return Enumerable.Empty<INode>();
-                }
-            }
-
-            return Enumerable.Empty<INode>();
-        }
-
-        public List<INode> GetElements(string xPath)
+        /// <summary>
+        /// 获取元素列表
+        /// </summary>
+        internal List<INode> GetElements(string xPath)
         {
             if (string.IsNullOrEmpty(xPath))
                 return null;
 
             var jxNodes = new List<INode>();
-            var ruleAnalyzer = new RuleAnalyzer(xPath);
-            var rules = ruleAnalyzer.SplitRule("&&", "||", "%%");
+            var ruleAnalyzes = new RuleAnalyzer(xPath);
+            var rules = ruleAnalyzes.SplitRule("&&", "||", "%%");
 
             if (rules.Count == 1)
             {
-                var result = GetResult(rules[0]);
-                return result?.ToList();
+                return GetResult(rules[0]);
             }
             else
             {
                 var results = new List<List<INode>>();
-
                 foreach (var rl in rules)
                 {
                     var temp = GetElements(rl);
                     if (temp != null && temp.Count > 0)
                     {
                         results.Add(temp);
-                        if (temp.Count > 0 && ruleAnalyzer.ElementsType == "||")
+                        if (temp.Count > 0 && ruleAnalyzes.ElementsType == "||")
                         {
                             break;
                         }
@@ -149,9 +148,9 @@ namespace Legado.Core.Models.AnalyzeRules
 
                 if (results.Count > 0)
                 {
-                    if ("%%" == ruleAnalyzer.ElementsType)
+                    if ("%%" == ruleAnalyzes.ElementsType)
                     {
-                        // 交叉组合结果
+                        // 交替合并
                         for (int i = 0; i < results[0].Count; i++)
                         {
                             foreach (var temp in results)
@@ -165,7 +164,7 @@ namespace Legado.Core.Models.AnalyzeRules
                     }
                     else
                     {
-                        // 普通组合结果
+                        // 顺序合并
                         foreach (var temp in results)
                         {
                             jxNodes.AddRange(temp);
@@ -174,14 +173,17 @@ namespace Legado.Core.Models.AnalyzeRules
                 }
             }
 
-            return jxNodes;
+            return jxNodes.Count > 0 ? jxNodes : null;
         }
 
-        public List<string> GetStringList(string xPath)
+        /// <summary>
+        /// 获取字符串列表
+        /// </summary>
+        internal List<string> GetStringList(string xPath)
         {
             var result = new List<string>();
-            var ruleAnalyzer = new RuleAnalyzer(xPath);
-            var rules = ruleAnalyzer.SplitRule("&&", "||", "%%");
+            var ruleAnalyzes = new RuleAnalyzer(xPath);
+            var rules = ruleAnalyzes.SplitRule("&&", "||", "%%");
 
             if (rules.Count == 1)
             {
@@ -190,7 +192,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 {
                     foreach (var node in nodes)
                     {
-                        result.Add(GetNodeString(node));
+                        result.Add(node.TextContent ?? "");
                     }
                 }
                 return result;
@@ -198,14 +200,13 @@ namespace Legado.Core.Models.AnalyzeRules
             else
             {
                 var results = new List<List<string>>();
-
                 foreach (var rl in rules)
                 {
                     var temp = GetStringList(rl);
-                    if (temp != null && temp.Count > 0)
+                    if (temp.Count > 0)
                     {
                         results.Add(temp);
-                        if (temp.Count > 0 && ruleAnalyzer.ElementsType == "||")
+                        if (temp.Count > 0 && ruleAnalyzes.ElementsType == "||")
                         {
                             break;
                         }
@@ -214,9 +215,9 @@ namespace Legado.Core.Models.AnalyzeRules
 
                 if (results.Count > 0)
                 {
-                    if ("%%" == ruleAnalyzer.ElementsType)
+                    if ("%%" == ruleAnalyzes.ElementsType)
                     {
-                        // 交叉组合结果
+                        // 交替合并
                         for (int i = 0; i < results[0].Count; i++)
                         {
                             foreach (var temp in results)
@@ -230,7 +231,7 @@ namespace Legado.Core.Models.AnalyzeRules
                     }
                     else
                     {
-                        // 普通组合结果
+                        // 顺序合并
                         foreach (var temp in results)
                         {
                             result.AddRange(temp);
@@ -242,138 +243,48 @@ namespace Legado.Core.Models.AnalyzeRules
             return result;
         }
 
+        /// <summary>
+        /// 获取字符串
+        /// </summary>
         public string GetString(string rule)
         {
-            var ruleAnalyzer = new RuleAnalyzer(rule);
-            var rules = ruleAnalyzer.SplitRule("&&", "||");
+            var ruleAnalyzes = new RuleAnalyzer(rule);
+            var rules = ruleAnalyzes.SplitRule("&&", "||");
 
             if (rules.Count == 1)
             {
                 var nodes = GetResult(rule);
-                if (nodes != null && nodes.Any())
+                if (nodes != null && nodes.Count > 0)
                 {
-                    return string.Join("\n", nodes.Select(GetNodeString));
+                    return string.Join("\n", nodes.Select(n => n.TextContent ?? ""));
                 }
                 return null;
             }
             else
             {
                 var textList = new List<string>();
-
                 foreach (var rl in rules)
                 {
                     var temp = GetString(rl);
                     if (!string.IsNullOrEmpty(temp))
                     {
                         textList.Add(temp);
-                        if (ruleAnalyzer.ElementsType == "||")
+                        if (ruleAnalyzes.ElementsType == "||")
                         {
                             break;
                         }
                     }
                 }
-
-                return textList.Count > 0 ? string.Join("\n", textList) : null;
+                return string.Join("\n", textList);
             }
         }
 
         /// <summary>
-        /// 获取第一个字符串（对应 Kotlin 的 getString0）
+        /// 获取字符串（便捷方法，小写命名）
         /// </summary>
-        public string GetString0(string xPath)
+        public string getString(string rule)
         {
-            var list = GetStringList(xPath);
-            return list.Count > 0 ? list[0] : null;
-        }
-
-        private string GetNodeString(INode node)
-        {
-            if (node == null)
-                return string.Empty;
-
-            // 根据节点类型返回不同的字符串表示
-            switch (node.NodeType)
-            {
-                case NodeType.Element:
-                    return (node as IElement)?.TextContent ?? string.Empty;
-
-                case NodeType.Attribute:
-                    return (node as IAttr)?.Value ?? string.Empty;
-
-                case NodeType.Text:
-                case NodeType.Comment:
-                case NodeType.ProcessingInstruction:
-                    return node.TextContent ?? string.Empty;
-
-                default:
-                    return node.ToString() ?? string.Empty;
-            }
-        }
-    }
-
-    // 为方便使用，创建扩展方法
-    public static class XPathExtensions
-    {
-        /// <summary>
-        /// 在节点上执行XPath查询
-        /// </summary>
-        public static IEnumerable<INode> SelectNodes(this INode node, string xpath)
-        {
-            try
-            {
-                return node.SelectNodes(xpath);
-            }
-            catch
-            {
-                return Enumerable.Empty<INode>();
-            }
-        }
-
-        /// <summary>
-        /// 在节点上执行XPath查询，返回第一个匹配的节点
-        /// </summary>
-        public static INode SelectSingleNode(this INode node, string xpath)
-        {
-            try
-            {
-                return node.SelectNodes(xpath).FirstOrDefault();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// 在元素上执行XPath查询
-        /// </summary>
-        public static IEnumerable<INode> SelectNodes(this IElement element, string xpath)
-        {
-            return (element as INode).SelectNodes(xpath);
-        }
-
-        /// <summary>
-        /// 在元素上执行XPath查询，返回第一个匹配的节点
-        /// </summary>
-        public static INode SelectSingleNode(this IElement element, string xpath)
-        {
-            return (element as INode).SelectSingleNode(xpath);
-        }
-
-        /// <summary>
-        /// 在文档上执行XPath查询
-        /// </summary>
-        public static IEnumerable<INode> SelectNodes(this IDocument document, string xpath)
-        {
-            return (document.DocumentElement as INode).SelectNodes(xpath);
-        }
-
-        /// <summary>
-        /// 在文档上执行XPath查询，返回第一个匹配的节点
-        /// </summary>
-        public static INode SelectSingleNode(this IDocument document, string xpath)
-        {
-            return (document.DocumentElement as INode).SelectSingleNode(xpath);
+            return GetString(rule);
         }
     }
 }
