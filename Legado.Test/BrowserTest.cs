@@ -16,7 +16,7 @@ namespace Legado.Test
 
             // 方式1: 通过 URL 加载
             var result1 = await browser.WebViewAsync(
-                url: "https://qidian.com/so/诡异之主.html",
+                url: "htts://sinsam.com",
                 js: "document.title"
             );
 

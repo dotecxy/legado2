@@ -708,7 +708,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 return _ruleData.getBigVariable(key);
             }
             return "";
-        }
+        } 
 
         public object EvalJs(string jsCode, object result = null)
         {

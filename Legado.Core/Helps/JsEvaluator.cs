@@ -2,8 +2,10 @@
 using Jint.Native;
 using Jint.Runtime;
 using Jint.Runtime.Interop;
+using Legado.Core.Utils;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace Legado.Core.Helps
@@ -27,9 +29,16 @@ namespace Legado.Core.Helps
 
                 options.SetTypeResolver(new TypeResolver
                 {
-                    MemberNameComparer = StringComparer.Ordinal
+                    MemberNameComparer = StringComparer.Ordinal,
+                    MemberNameCreator = new Func<System.Reflection.MemberInfo, IEnumerable<string>>(NameCreator)
+
                 });
             });
+        }
+
+        private static IEnumerable<string> NameCreator(MemberInfo info)
+        {
+            yield return info.Name.FirstCharToLower();
         }
 
         public void Dispose()

@@ -1,6 +1,7 @@
 ﻿using Jint;
 using Jint.Native;
 using Jint.Runtime.Interop;
+using Legado.Core.Helps;
 using Legado.Core.Helps.Http.Api;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -230,46 +231,20 @@ namespace Legado.Core.Data.Entities
         }
 
 
-        public object EvalJS(string jsStr, Action<Engine> bindgingsConfig = null)
+        public object EvalJS(string jsStr, Action<Dictionary<string, object>> bindgingsAction = null)
         {
-            using var engine = new Engine(options =>
-            {
-                options.AllowClr(); // 允许访问 C# 类和方法
-                options.SetTypeResolver(new TypeResolver
-                {
-                    MemberNameComparer = StringComparer.Ordinal
-                });
-            });
-            engine.SetValue("java", this);
-            engine.SetValue("source", this);
-
-            engine.SetValue("baseUrl", GetKey());
-            engine.SetValue("cookie", CookieStore);
+            using var engine = new JsEvaluator();
+            Dictionary<string, object> bindings = new Dictionary<string, object>();
+            bindings.Add("java", this);
+            bindings.Add("source", this); 
+            bindings.Add("baseUrl", GetKey());
+            bindings.Add("cookie", CookieStore);
             //engine.SetValue("cache", CacheManager);
-            bindgingsConfig.Invoke(engine);
+            bindgingsAction?.Invoke(bindings);
+            engine.Bindings = bindings;
 
-            return ConvertJsValue(engine.Evaluate(jsStr));
-        }
-
-        /// <summary>
-        /// 辅助方法：将 Jint 的 JsValue 转换为 C# 原生对象
-        /// </summary>
-        private object ConvertJsValue(JsValue value)
-        {
-            if (value == null || value.IsNull() || value.IsUndefined()) return null;
-            if (value.IsString()) return value.ToString();
-            if (value.IsBoolean()) return value.AsBoolean();
-            if (value.IsNumber()) return value.AsNumber();
-            if (value.IsArray())
-            {
-                var arr = value.AsArray();
-                var list = new List<object>();
-                foreach (var item in arr) list.Add(ConvertJsValue(item));
-                return list;
-            }
-            // 对于复杂对象，返回原始 JsValue 或继续转换
-            return value.ToString();
-        }
+            return engine.EvalJs(jsStr);
+        } 
 
     }
 }
