@@ -16,6 +16,7 @@ namespace Legado.Test
     internal class AnalyzeTest
     {
         const string URL = "https://jihulab.com/aoaostar/legado/-/raw/release/cache/71e56d4f1d8f1bff61fdd3582ef7513600a9e108.json";
+        const string URL2 = "https://legado.aoaostar.com/sources/e29e19ee.json";
         List<BookSource> bookList;
         string webViewTrue = JsonConvert.SerializeObject(new { webView = true });
 
