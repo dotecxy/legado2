@@ -1,11 +1,12 @@
+using Legado.Core.Data.Entities;
+using Legado.Core.Data.Entities.Rules;
+using Legado.Core.Models.WebBooks;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Legado.Core.Data.Entities;
-using Legado.Core.Models.WebBooks;
-using Newtonsoft.Json;
 
 namespace Legado
 {
@@ -38,7 +39,7 @@ namespace Legado
                 Console.WriteLine("测试搜索功能：");
                 // 使用默认关键词"小说"进行测试
                 var keyword = "诡秘之主";
-                Console.WriteLine($"正在搜索关键词：{keyword}");
+                Console.WriteLine($"正在搜索");
                 
                 if (bookSources.Count > 0)
                 {
@@ -49,7 +50,7 @@ namespace Legado
                     for (int i = 0; i < tryCount && successCount == 0; i++)
                     {
                         var bookSource = bookSources[i];
-                        Console.WriteLine($"\n正在尝试 [{i + 1}/{tryCount}]: '{bookSource.BookSourceName}'");
+                        Console.WriteLine($"\n正在尝试 [{i + 1}/{tryCount}]");
                         
                         try
                         {
@@ -66,7 +67,12 @@ namespace Legado
                                     Console.WriteLine($"   c：{result.LatestChapterTitle}");
                                     Console.WriteLine($"   c：{result.BookUrl}");
                                     Console.WriteLine();
+
+                                    var book =  result.ToBook();
+                                    var chapterList= await webBook.GetChapterListAwait(bookSource, book);
                                 }
+                                 
+
                                 successCount++;
                             }
                             else
@@ -89,8 +95,16 @@ namespace Legado
                     {
                         Console.WriteLine($"\n没有从任何获取到结果。");
                     }
+                 
                 }
+
+                var wb = new WebBook();
+                var url =  bookSources[0].ExploreUrl;
+                var urls= JsonConvert.DeserializeObject<List<ExploreKind>>(bookSources[0].ExploreUrl);
+                await wb.ExploreBookAwait(bookSources[0], urls[0].Url);
+
                 
+
                 Console.WriteLine("测试完成！"); 
             }
             catch (Exception ex)

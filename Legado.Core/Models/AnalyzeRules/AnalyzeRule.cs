@@ -19,6 +19,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,249 +36,302 @@ namespace Legado.Core.Models.AnalyzeRules
         Regex
     }
 
+    /// <summary>
+    /// 规则类
+    /// </summary>
     public class SourceRule
     {
-        public string Rule { get; set; }
-        public RuleMode Mode { get; set; }
-        public string ReplaceRegex { get; set; } = "";
-        public string Replacement { get; set; } = "";
-        public bool ReplaceFirst { get; set; }
-        public Dictionary<string, string> PutMap { get; } = new Dictionary<string, string>();
-        public List<string> RuleParam { get; } = new List<string>();
-        public List<int> RuleType { get; } = new List<int>();
+        internal string Rule { get; set; }
+        internal RuleMode Mode { get; set; }
+        internal string ReplaceRegex { get; set; } = "";
+        internal string Replacement { get; set; } = "";
+        internal bool ReplaceFirst { get; set; } = false;
+        internal Dictionary<string, string> PutMap { get; } = new Dictionary<string, string>();
+        internal List<string> RuleParam { get; private set; } = new List<string>();
+        private List<int> RuleType { get; set; } = new List<int>();
+
         private const int GetRuleType = -2;
         private const int JsRuleType = -1;
         private const int DefaultRuleType = 0;
 
-        private static readonly Regex PutPattern = new Regex("@put:(\\{[^}]+?\\})", RegexOptions.IgnoreCase);
-        private static readonly Regex EvalPattern = new Regex("@get:\\{[^}]+?\\}|\\{\\{[\\w\\W]*?\\}\\}", RegexOptions.IgnoreCase);
-        private static readonly Regex RegexPattern = new Regex("\\$\\d{1,2}");
+        // 正则表达式模式
+        private static readonly Regex EvalPattern = new Regex(@"@get:\{[^}]+\}|(?<!\\)\{\{[^}]*\}\}", RegexOptions.Compiled);
+        private static readonly Regex RegexPattern = new Regex(@"\$\d{1,2}", RegexOptions.Compiled);
+        private static readonly Regex putPattern = new Regex(@"@put:\{([^:]+):([^}]+)\}", RegexOptions.Compiled);
 
-        public SourceRule(string ruleStr, RuleMode mode = RuleMode.Default)
+        internal SourceRule(string ruleStr, RuleMode mode = RuleMode.Default)
         {
             Mode = mode;
+            var rule = ruleStr;
 
+            // 确定规则模式
             if (mode == RuleMode.Js || mode == RuleMode.Regex)
             {
-                Rule = ruleStr;
+                rule = ruleStr;
             }
-            else
-            {
-                Rule = ParseRule(ruleStr);
-            }
-
-            Rule = SplitPutRule(Rule, PutMap);
-
-            ParseRuleComponents(Rule);
-        }
-
-        private string ParseRule(string ruleStr)
-        {
-            if (ruleStr.StartsWith("@CSS:", StringComparison.OrdinalIgnoreCase))
+            else if (ruleStr.StartsWith("@CSS:", StringComparison.OrdinalIgnoreCase))
             {
                 Mode = RuleMode.Default;
-                return ruleStr.Substring("@CSS:".Length);
+                rule = ruleStr;
             }
             else if (ruleStr.StartsWith("@@"))
             {
                 Mode = RuleMode.Default;
-                return ruleStr.Substring(2);
+                rule = ruleStr.Substring(2);
             }
             else if (ruleStr.StartsWith("@XPath:", StringComparison.OrdinalIgnoreCase))
             {
                 Mode = RuleMode.XPath;
-                return ruleStr.Substring("@XPath:".Length);
+                rule = ruleStr.Substring(7);
             }
             else if (ruleStr.StartsWith("@Json:", StringComparison.OrdinalIgnoreCase))
             {
                 Mode = RuleMode.Json;
-                return ruleStr.Substring("@Json:".Length);
+                rule = ruleStr.Substring(6);
             }
-            else if (ruleStr.StartsWith("$.") || ruleStr.StartsWith("$[") || ruleStr.StartsWith("{"))
+            else if (ruleStr.StartsWith("$.") || ruleStr.StartsWith("$["))
             {
                 Mode = RuleMode.Json;
-                return ruleStr;
+                rule = ruleStr;
             }
-            else if (ruleStr.StartsWith("/"))
+            else if (ruleStr.StartsWith("/")) // XPath特征很明显,无需配置单独的识别标头
             {
                 Mode = RuleMode.XPath;
-                return ruleStr;
+                rule = ruleStr;
             }
-            else
-            {
-                return ruleStr;
-            }
-        }
 
-        private string SplitPutRule(string rule, Dictionary<string, string> putMap)
-        {
-            var matches = PutPattern.Matches(rule);
-            foreach (Match match in matches)
+            // 分离put规则
+            rule = SplitPutRule(rule, PutMap);
+
+            // @get, {{, 拆分
+            var start = 0;
+            var evalMatches = EvalPattern.Matches(rule);
+
+            if (evalMatches.Count > 0)
             {
-                rule = rule.Replace(match.Value, "");
-                var putJsonStr = match.Groups[1].Value;
-                try
+                var firstMatch = evalMatches[0];
+                var tmp = rule.Substring(start, firstMatch.Index);
+                if (Mode != RuleMode.Js && Mode != RuleMode.Regex &&
+                    (firstMatch.Index == 0 || !tmp.Contains("##")))
                 {
-                    var dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(putJsonStr);
-                    if (dict != null)
+                    Mode = RuleMode.Regex;
+                }
+
+                foreach (Match evalMatch in evalMatches)
+                {
+                    if (evalMatch.Index > start)
                     {
-                        foreach (var kv in dict)
-                        {
-                            putMap[kv.Key] = kv.Value;
-                        }
+                        tmp = rule.Substring(start, evalMatch.Index - start);
+                        SplitRegex(tmp);
                     }
-                }
-                catch
-                {
-                    // 忽略JSON解析错误
-                }
-            }
-            return rule;
-        }
 
-        private void ParseRuleComponents(string rule)
-        {
-            var matches = EvalPattern.Matches(rule);
-            int start = 0;
-
-            foreach (Match match in matches)
-            {
-                if (match.Index > start)
-                {
-                    var tmp = rule.Substring(start, match.Index - start).Trim();
-                    if (!string.IsNullOrEmpty(tmp))
+                    tmp = evalMatch.Value;
+                    if (tmp.StartsWith("@get:", StringComparison.OrdinalIgnoreCase))
                     {
-                        SplitRegexPart(tmp);
+                        RuleType.Add(GetRuleType);
+                        RuleParam.Add(tmp.Substring(6, tmp.Length - 7)); // 去掉 @get:{ 和 }
                     }
-                }
+                    else if (tmp.StartsWith("{{"))
+                    {
+                        RuleType.Add(JsRuleType);
+                        RuleParam.Add(tmp.Substring(2, tmp.Length - 4)); // 去掉 {{ 和 }}
+                    }
+                    else
+                    {
+                        SplitRegex(tmp);
+                    }
 
-                var tmpMatch = match.Value;
-                if (tmpMatch.StartsWith("@get:", StringComparison.OrdinalIgnoreCase))
-                {
-                    RuleType.Add(GetRuleType);
-                    RuleParam.Add(tmpMatch.Substring(6, tmpMatch.Length - 7));
+                    start = evalMatch.Index + evalMatch.Length;
                 }
-                else if (tmpMatch.StartsWith("{{"))
-                {
-                    RuleType.Add(JsRuleType);
-                    RuleParam.Add(tmpMatch.Substring(2, tmpMatch.Length - 4));
-                }
-                else
-                {
-                    SplitRegexPart(tmpMatch);
-                }
-
-                start = match.Index + match.Length;
             }
 
             if (rule.Length > start)
             {
-                var tmp = rule.Substring(start).Trim();
-                if (!string.IsNullOrEmpty(tmp))
-                {
-                    SplitRegexPart(tmp);
-                }
+                var tmp = rule.Substring(start);
+                SplitRegex(tmp);
             }
+
+            Rule = rule;
         }
 
-        private void SplitRegexPart(string ruleStr)
+        /// <summary>
+        /// 拆分 $\d{1,2}
+        /// </summary>
+        private void SplitRegex(string ruleStr)
         {
-            var parts = ruleStr.Split(new[] { "##" }, 2, StringSplitOptions.None);
-            var mainPart = parts[0];
+            var start = 0;
+            var ruleStrArray = ruleStr.Split(new[] { "##" }, StringSplitOptions.None);
+            var regexMatches = RegexPattern.Matches(ruleStrArray[0]);
 
-            var matches = RegexPattern.Matches(mainPart);
-            int start = 0;
-
-            foreach (Match match in matches)
+            if (regexMatches.Count > 0)
             {
-                if (match.Index > start)
+                if (Mode != RuleMode.Js && Mode != RuleMode.Regex)
                 {
-                    var tmp = mainPart.Substring(start, match.Index - start);
-                    RuleType.Add(DefaultRuleType);
-                    RuleParam.Add(tmp);
+                    Mode = RuleMode.Regex;
                 }
 
-                var tmpMatch = match.Value;
-                RuleType.Add(int.Parse(tmpMatch.Substring(1)));
-                RuleParam.Add(tmpMatch);
+                foreach (Match regexMatch in regexMatches)
+                {
+                    if (regexMatch.Index > start)
+                    {
+                        var tmp = ruleStr.Substring(start, regexMatch.Index - start);
+                        RuleType.Add(DefaultRuleType);
+                        RuleParam.Add(tmp);
+                    }
 
-                start = match.Index + match.Length;
+                    var tmp2 = regexMatch.Value;
+                    RuleType.Add(int.Parse(tmp2.Substring(1)));
+                    RuleParam.Add(tmp2);
+                    start = regexMatch.Index + regexMatch.Length;
+                }
             }
 
-            if (mainPart.Length > start)
+            if (ruleStr.Length > start)
             {
-                var tmp = mainPart.Substring(start);
+                var tmp = ruleStr.Substring(start);
                 RuleType.Add(DefaultRuleType);
                 RuleParam.Add(tmp);
             }
+        }
 
-            if (parts.Length > 1)
+        /// <summary>
+        /// 替换 @get, {{, $\d
+        /// </summary>
+        internal void MakeUpRule(object result, AnalyzeRule analyzeRule)
+        {
+            var infoVal = new StringBuilder();
+
+            if (RuleParam.Count > 0)
             {
-                ReplaceRegex = parts[1];
+                for (int index = RuleParam.Count - 1; index >= 0; index--)
+                {
+                    var regType = RuleType[index];
+
+                    if (regType > DefaultRuleType)
+                    {
+                        // 处理 $\d 替换
+                        if (result is List<string> resultList)
+                        {
+                            if (resultList.Count > regType && regType < resultList.Count)
+                            {
+                                var value = resultList[regType];
+                                if (value != null)
+                                {
+                                    infoVal.Insert(0, value);
+                                }
+                            }
+                            else
+                            {
+                                infoVal.Insert(0, RuleParam[index]);
+                            }
+                        }
+                        else
+                        {
+                            infoVal.Insert(0, RuleParam[index]);
+                        }
+                    }
+                    else if (regType == JsRuleType)
+                    {
+                        // 处理 {{ }} JavaScript 规则
+                        if (IsRule(RuleParam[index]))
+                        {
+                            var ruleList = new List<SourceRule> { new SourceRule(RuleParam[index]) };
+                            var value = analyzeRule.GetString(ruleList);
+                            infoVal.Insert(0, value ?? "");
+                        }
+                        else
+                        {
+                            try
+                            {
+                                var jsEval = analyzeRule.EvalJs(RuleParam[index], result);
+                                if (jsEval != null)
+                                {
+                                    if (jsEval is string strValue)
+                                    {
+                                        infoVal.Insert(0, strValue);
+                                    }
+                                    else if (jsEval is double doubleValue && doubleValue % 1.0 == 0.0)
+                                    {
+                                        infoVal.Insert(0, string.Format("{0:F0}", doubleValue));
+                                    }
+                                    else
+                                    {
+                                        infoVal.Insert(0, jsEval.ToString());
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                // JavaScript 执行失败，忽略
+                            }
+                        }
+                    }
+                    else if (regType == GetRuleType)
+                    {
+                        // 处理 @get 规则
+                        infoVal.Insert(0, analyzeRule.Get(RuleParam[index]));
+                    }
+                    else
+                    {
+                        // 默认类型，直接插入
+                        infoVal.Insert(0, RuleParam[index]);
+                    }
+                }
+
+                Rule = infoVal.ToString();
             }
-            if (parts.Length > 2)
+
+            // 分离正则表达式
+            var ruleStrS = Rule.Split(new[] { "##" }, StringSplitOptions.None);
+            Rule = ruleStrS[0].Trim();
+
+            if (ruleStrS.Length > 1)
             {
-                Replacement = parts[2];
+                ReplaceRegex = ruleStrS[1];
             }
-            if (parts.Length > 3)
+            if (ruleStrS.Length > 2)
+            {
+                Replacement = ruleStrS[2];
+            }
+            if (ruleStrS.Length > 3)
             {
                 ReplaceFirst = true;
             }
         }
 
-        public void MakeUpRule(object result, AnalyzeRule analyzeRule = null)
-        {
-            var infoVal = new System.Text.StringBuilder();
-
-            for (int i = 0; i < RuleParam.Count; i++)
-            {
-                var regType = RuleType[i];
-
-                if (regType > DefaultRuleType)
-                {
-                    var list = result as IList<string>;
-                    if (list != null && list.Count > regType)
-                    {
-                        infoVal.Append(list[regType]);
-                    }
-                    else
-                    {
-                        infoVal.Append(RuleParam[i]);
-                    }
-                }
-                else if (regType == JsRuleType)
-                {
-                    var param = RuleParam[i];
-                    if (IsRule(param))
-                    {
-                        var rule = new SourceRule(param);
-                        infoVal.Append((analyzeRule ?? new AnalyzeRule()).GetString(new List<SourceRule> { rule }, result));
-                    }
-                    else
-                    {
-                        var jsEval = (analyzeRule ?? new AnalyzeRule()).EvalJs(param, result);
-                        infoVal.Append(jsEval?.ToString() ?? "");
-                    }
-                }
-                else if (regType == GetRuleType)
-                {
-                    infoVal.Append((analyzeRule ?? new AnalyzeRule()).Get(RuleParam[i]));
-                }
-                else
-                {
-                    infoVal.Append(RuleParam[i]);
-                }
-            }
-
-            Rule = infoVal.ToString();
-        }
-
+        /// <summary>
+        /// 判断是否为规则
+        /// </summary>
         private bool IsRule(string ruleStr)
         {
-            return ruleStr.StartsWith("@") ||
-                   ruleStr.StartsWith("$.") ||
-                   ruleStr.StartsWith("$[") ||
-                   ruleStr.StartsWith("//");
+            return ruleStr.StartsWith("@") // js首个字符不可能是@，除非是装饰器，所以@开头规定为规则
+                || ruleStr.StartsWith("$.")
+                || ruleStr.StartsWith("$[")
+                || ruleStr.StartsWith("//");
+        }
+
+        /// <summary>
+        /// 获取参数数量
+        /// </summary>
+        internal int GetParamSize()
+        {
+            return RuleParam.Count;
+        }
+
+
+        /// <summary>
+        /// 分离 put 规则
+        /// </summary>
+        private static string SplitPutRule(string ruleStr, Dictionary<string, string> putMap)
+        {
+            // 提取 @put:{key:value} 格式的规则
+            return putPattern.Replace(ruleStr, match =>
+            {
+                var key = match.Groups[1].Value.Trim();
+                var value = match.Groups[2].Value.Trim();
+                putMap[key] = value;
+                return "";
+            });
         }
     }
 
@@ -595,6 +649,7 @@ namespace Legado.Core.Models.AnalyzeRules
                         {
                             result = sourceRule.Mode switch
                             {
+                                RuleMode.Regex => AnalyzeByRegex.GetElement(result?.ToString(), rule.Split(new string[] { "&&" }, StringSplitOptions.RemoveEmptyEntries)),
                                 RuleMode.Js => EvalJs(rule, result),
                                 RuleMode.Json => new AnalyzeByJsonPath(JsonConvert.SerializeObject(result)).GetString(rule),
                                 RuleMode.XPath => new AnalyzeByXPath(result).GetString(rule),

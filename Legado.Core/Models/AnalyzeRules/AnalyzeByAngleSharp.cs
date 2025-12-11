@@ -156,12 +156,7 @@ namespace Legado.Core.Models.AnalyzeRules
                             var cssSelector = ruleStrX.Substring(0, lastIndex);
                             var attrName = ruleStrX.Substring(lastIndex + 1);
 
-                            var parts = cssSelector.Split('@');
-                            List<IElement> elements2 = new List<IElement>();
-                            foreach (var part in parts)
-                            {
-                                elements2 = new ElementsSingle().GetElementsSingle(_element, part).ToList();
-                            } 
+                            List<IElement> elements2 = InnerGetElements(_element, cssSelector);
                             temp = GetResultLast(elements2, attrName);
                         }
                     }
@@ -210,12 +205,12 @@ namespace Legado.Core.Models.AnalyzeRules
         }
 
         /// <summary>
-        /// 获取 HTML 列表（对应 Kotlin 的 getHtmlList）
+        /// 获取列表
         /// </summary>
         public List<string> GetHtmlList(string ruleStr)
         {
             var htmlList = new List<string>();
-            
+
             if (string.IsNullOrEmpty(ruleStr))
                 return htmlList;
 
@@ -239,10 +234,10 @@ namespace Legado.Core.Models.AnalyzeRules
             var htmlList = GetHtmlList(ruleStr);
             if (htmlList.Count == 0)
                 return null;
-            
+
             if (htmlList.Count == 1)
                 return htmlList[0];
-            
+
             return string.Join("\n", htmlList);
         }
 
@@ -261,7 +256,7 @@ namespace Legado.Core.Models.AnalyzeRules
         public List<string> GetAttributeList(string ruleStr, string attrName)
         {
             var attrList = new List<string>();
-            
+
             if (string.IsNullOrEmpty(ruleStr) || string.IsNullOrEmpty(attrName))
                 return attrList;
 
@@ -289,10 +284,10 @@ namespace Legado.Core.Models.AnalyzeRules
             var attrList = GetAttributeList(ruleStr, attrName);
             if (attrList.Count == 0)
                 return null;
-            
+
             if (attrList.Count == 1)
                 return attrList[0];
-            
+
             return string.Join("\n", attrList);
         }
 
@@ -311,7 +306,7 @@ namespace Legado.Core.Models.AnalyzeRules
         public List<string> GetTextList(string ruleStr)
         {
             var textList = new List<string>();
-            
+
             if (string.IsNullOrEmpty(ruleStr))
                 return textList;
 
@@ -339,10 +334,10 @@ namespace Legado.Core.Models.AnalyzeRules
             var textList = GetTextList(ruleStr);
             if (textList.Count == 0)
                 return null;
-            
+
             if (textList.Count == 1)
                 return textList[0];
-            
+
             return string.Join("\n", textList);
         }
 
@@ -361,7 +356,7 @@ namespace Legado.Core.Models.AnalyzeRules
         public List<string> GetOwnTextList(string ruleStr)
         {
             var textList = new List<string>();
-            
+
             if (string.IsNullOrEmpty(ruleStr))
                 return textList;
 
@@ -394,10 +389,10 @@ namespace Legado.Core.Models.AnalyzeRules
             var textList = GetOwnTextList(ruleStr);
             if (textList.Count == 0)
                 return null;
-            
+
             if (textList.Count == 1)
                 return textList[0];
-            
+
             return string.Join("\n", textList);
         }
 
@@ -416,7 +411,7 @@ namespace Legado.Core.Models.AnalyzeRules
         public List<string> GetTextNodesList(string ruleStr)
         {
             var textList = new List<string>();
-            
+
             if (string.IsNullOrEmpty(ruleStr))
                 return textList;
 
@@ -427,7 +422,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 {
                     var textNodes = element.ChildNodes.OfType<IText>().ToList();
                     var nodeTexts = new List<string>();
-                    
+
                     foreach (var node in textNodes)
                     {
                         var text = node.Text?.Trim();
@@ -436,7 +431,7 @@ namespace Legado.Core.Models.AnalyzeRules
                             nodeTexts.Add(text);
                         }
                     }
-                    
+
                     if (nodeTexts.Count > 0)
                     {
                         textList.Add(string.Join("\n", nodeTexts));
@@ -455,10 +450,10 @@ namespace Legado.Core.Models.AnalyzeRules
             var textList = GetTextNodesList(ruleStr);
             if (textList.Count == 0)
                 return null;
-            
+
             if (textList.Count == 1)
                 return textList[0];
-            
+
             return string.Join("\n", textList);
         }
 
@@ -477,7 +472,7 @@ namespace Legado.Core.Models.AnalyzeRules
         public List<string> GetAllInnerHtmlList(string ruleStr)
         {
             var htmlList = new List<string>();
-            
+
             if (string.IsNullOrEmpty(ruleStr))
                 return htmlList;
 
@@ -501,10 +496,10 @@ namespace Legado.Core.Models.AnalyzeRules
             var htmlList = GetAllInnerHtmlList(ruleStr);
             if (htmlList.Count == 0)
                 return null;
-            
+
             if (htmlList.Count == 1)
                 return htmlList[0];
-            
+
             return string.Join("\n", htmlList);
         }
 
@@ -532,11 +527,13 @@ namespace Legado.Core.Models.AnalyzeRules
 
             var elementsList = new List<IElement>();
 
-            if (sourceRule.Mode== RuleMode.Default)
+            if (sourceRule.Mode == RuleMode.Default)
             {
                 foreach (var ruleStr in ruleStrS)
                 {
-                    var tempS = new ElementsSingle().GetElementsSingle(temp, ruleStr);
+
+                    var tempS = InnerGetElements(temp, ruleStr);
+                    //var tempS = new ElementsSingle().GetElementsSingle(temp, ruleStr);
                     elementsList.AddRange(tempS);
 
                     if (tempS.Count > 0 && ruleAnalyzer.ElementsType == "||")
@@ -587,7 +584,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 if (ruleAnalyzer.ElementsType == "%%")
                 {
                     // 交叉组合
-                    var firstList = elementsList[0]; 
+                    var firstList = elementsList[0];
                     for (int i = 0; i < firstList.ChildElementCount; i++)
                     {
                         foreach (var es in elementsList)
@@ -610,6 +607,28 @@ namespace Legado.Core.Models.AnalyzeRules
             }
 
             return elements;
+        }
+
+        private List<IElement> InnerGetElements(IElement inputElement, string ruleStr)
+        {
+            if (string.IsNullOrEmpty(ruleStr) || inputElement == null)
+            {
+                return new List<IElement>();
+            }
+            var parts = ruleStr.Split('@');
+            List<IElement> elements2 = new List<IElement>() { inputElement };
+            foreach (var part in parts)
+            {
+                List<IElement> element3 = new List<IElement>();
+                foreach (var tempElement in elements2)
+                {
+                    var resultElements = new ElementsSingle().GetElementsSingle(tempElement, part);
+                    if (resultElements?.Count > 0) element3.AddRange(resultElements);
+                }
+                elements2.Clear();
+                if (element3.Count > 0) elements2.AddRange(element3);
+            }
+            return elements2;
         }
 
         /// <summary>
@@ -743,7 +762,7 @@ namespace Legado.Core.Models.AnalyzeRules
 
             return textS;
         }
-    } 
+    }
 
     /// <summary>
     /// 元素选择器
@@ -940,7 +959,7 @@ namespace Legado.Core.Models.AnalyzeRules
             {
                 len--; // 跳过尾部 ']'
 
-                while (len-- >= 0)
+                while (len-- >= 0 && len >= 0 && len < rus.Length)
                 {
                     var rl = rus[len];
                     if (rl == ' ') continue;

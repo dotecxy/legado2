@@ -75,13 +75,9 @@ namespace Legado.Core.Helps
 
                     // 执行JavaScript代码
                     var jsResult = _engine.Evaluate(jsStr);
-                    if (jsResult.IsUndefined())
+                    if (jsResult?.IsUndefined() == true && _engine.GetValue("c")?.IsUndefined() == false)
                     {
-                        var list= _engine.GetValue("c").ToObject() as List<object>;
-                        if (list != null)
-                        {
-                            return list;
-                        }
+                        jsResult = _engine.GetValue("c");
                     }
                     // 将Jint的结果转换为C#对象
                     return ConvertJsValue(jsResult);
@@ -143,13 +139,18 @@ namespace Legado.Core.Helps
             if (jsValue.IsObject())
             {
                 // 对于对象，我们可以返回一个字典
-                var obj = jsValue.AsObject();
-                var dict = new Dictionary<string, object>();
-                foreach (var property in obj.GetOwnProperties())
+                var obj = jsValue.ToObject();
+                if(obj is List<object> listObj)
                 {
-                    dict[property.Key.ToString()] = ConvertJsValue(property.Value.Value);
+                    return listObj;
                 }
-                return dict;
+
+                //var dict = new Dictionary<string, object>();
+                //foreach (var property in obj.GetOwnProperties())
+                //{
+                //    dict[property.Key.ToString()] = ConvertJsValue(property.Value.Value);
+                //}
+                //return dict;
             }
 
             // 默认返回字符串
