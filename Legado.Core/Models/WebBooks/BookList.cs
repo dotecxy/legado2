@@ -1,9 +1,14 @@
 using Legado.Core.Data.Entities;
 using Legado.Core.Data.Entities.Rules;
 using Legado.Core.Models.AnalyzeRules;
+using Legado.Core.Utils;
+using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Legado.Core.Models.WebBooks
@@ -14,9 +19,10 @@ namespace Legado.Core.Models.WebBooks
     public static class BookList
     {
         /// <summary>
-        /// 解析书籍列表（对应 Kotlin 的 analyzeBookList）
+        /// 分析书籍列表
+        /// 对应 Kotlin 的 analyzeBookList()
         /// </summary>
-        public static List<SearchBook> AnalyzeBookList(
+        public static async Task<List<SearchBook>> AnalyzeBookList(
             BookSource bookSource,
             RuleData ruleData,
             AnalyzeUrl analyzeUrl,
@@ -25,7 +31,8 @@ namespace Legado.Core.Models.WebBooks
             bool isSearch = true,
             bool isRedirect = false,
             Func<string, string, bool> filter = null,
-            Func<int, bool> shouldBreak = null)
+            Func<int, bool> shouldBreak = null,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(body))
             {
@@ -33,15 +40,49 @@ namespace Legado.Core.Models.WebBooks
             }
 
             var bookList = new List<SearchBook>();
-            // Debug.Log(bookSource.BookSourceUrl, "≡获取成功:" + analyzeUrl.RuleUrl);
+            // Debug.Log($"≡获取成功:{analyzeUrl.RuleUrl}");
+            // Debug.Log(body, state: 10);
 
             var analyzeRule = new AnalyzeRule(ruleData, bookSource);
-            analyzeRule.SetContent(body);
-            analyzeRule.SetBaseUrl(baseUrl);
+            analyzeRule.SetContent(body).SetBaseUrl(baseUrl);
             analyzeRule.SetRedirectUrl(baseUrl);
+            // analyzeRule.SetCoroutineContext(coroutineContext);
+
+            if (!isSearch)
+            {
+                CheckExploreJson(bookSource);
+            }
 
             // 检查是否为详情页
-            // TODO: 实现 bookUrlPattern 匹配逻辑
+            // TODO: 实现 BookUrlPattern 检查
+            /*
+            if (isSearch && !string.IsNullOrWhiteSpace(bookSource.BookUrlPattern))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var regex = new Regex(bookSource.BookUrlPattern);
+                if (regex.IsMatch(baseUrl))
+                {
+                    // Debug.Log("≡链接为详情页");
+                    var searchBook = await GetInfoItem(
+                        bookSource,
+                        analyzeRule,
+                        analyzeUrl,
+                        body,
+                        baseUrl,
+                        ruleData.getVariable(),
+                        isRedirect,
+                        filter,
+                        cancellationToken
+                    );
+                    if (searchBook != null)
+                    {
+                        searchBook.InfoHtml = body;
+                        bookList.Add(searchBook);
+                    }
+                    return bookList;
+                }
+            }
+            */
 
             // 获取书籍列表规则
             IBookListRule bookListRule;
@@ -58,12 +99,7 @@ namespace Legado.Core.Models.WebBooks
                 bookListRule = bookSource.RuleSearch;
             }
 
-            if (bookListRule == null)
-            {
-                return bookList;
-            }
-
-            var ruleList = bookListRule.BookList ?? "";
+            var ruleList = bookListRule?.BookList ?? "";
             var reverse = false;
 
             if (ruleList.StartsWith("-"))
@@ -76,28 +112,33 @@ namespace Legado.Core.Models.WebBooks
                 ruleList = ruleList.Substring(1);
             }
 
-            // Debug.Log(bookSource.BookSourceUrl, "┌获取书籍列表");
+            // Debug.Log("┌获取书籍列表");
             var collections = analyzeRule.GetElements(ruleList);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            if (collections.Count == 0)
+            // TODO: 实现 BookUrlPattern 检查
+            if (collections.Count == 0) // && string.IsNullOrEmpty(bookSource.BookUrlPattern))
             {
-                // Debug.Log(bookSource.BookSourceUrl, "└列表为空,按详情页解析");
-                var infoItem = GetInfoItem(
-                    bookSource, analyzeRule, analyzeUrl, body, baseUrl,
-                    ruleData.getVariable(), isRedirect, filter
+                // Debug.Log("└列表为空,按详情页解析");
+                var searchBook = await GetInfoItem(
+                    bookSource,
+                    analyzeRule,
+                    analyzeUrl,
+                    body,
+                    baseUrl,
+                    ruleData.GetVariable(),
+                    isRedirect,
+                    filter,
+                    cancellationToken
                 );
-
-                if (infoItem != null)
+                if (searchBook != null)
                 {
-                    infoItem.InfoHtml = body;
-                    bookList.Add(infoItem);
+                    searchBook.InfoHtml = body;
+                    bookList.Add(searchBook);
                 }
             }
             else
             {
-                // Debug.Log(bookSource.BookSourceUrl, $"└列表大小:{collections.Count}");
-
-                // 拆分规则
                 var ruleName = analyzeRule.SplitSourceRule(bookListRule.Name);
                 var ruleBookUrl = analyzeRule.SplitSourceRule(bookListRule.BookUrl);
                 var ruleAuthor = analyzeRule.SplitSourceRule(bookListRule.Author);
@@ -107,14 +148,28 @@ namespace Legado.Core.Models.WebBooks
                 var ruleLastChapter = analyzeRule.SplitSourceRule(bookListRule.LastChapter);
                 var ruleWordCount = analyzeRule.SplitSourceRule(bookListRule.WordCount);
 
+                // Debug.Log($"└列表大小:{collections.Count}");
+
                 for (int index = 0; index < collections.Count; index++)
                 {
                     var item = collections[index];
-                    var searchBook = GetSearchItem(
-                        bookSource, analyzeRule, item, baseUrl,
-                        ruleData.getVariable(), index == 0, filter,
-                        ruleName, ruleBookUrl, ruleAuthor, ruleCoverUrl,
-                        ruleIntro, ruleKind, ruleLastChapter, ruleWordCount
+                    var searchBook = await GetSearchItem(
+                        bookSource,
+                        analyzeRule,
+                        item,
+                        baseUrl,
+                        ruleData.GetVariable(),
+                        index == 0,
+                        filter,
+                        ruleName,
+                        ruleBookUrl,
+                        ruleAuthor,
+                        ruleKind,
+                        ruleCoverUrl,
+                        ruleWordCount,
+                        ruleIntro,
+                        ruleLastChapter,
+                        cancellationToken
                     );
 
                     if (searchBook != null)
@@ -133,8 +188,9 @@ namespace Legado.Core.Models.WebBooks
                 }
 
                 // 去重
-                var uniqueBooks = bookList.Distinct().ToList();
-                bookList = uniqueBooks;
+                var uniqueBooks = new LinkedHashSet<SearchBook>(bookList);
+                bookList.Clear();
+                bookList.AddRange(uniqueBooks);
 
                 if (reverse)
                 {
@@ -142,14 +198,15 @@ namespace Legado.Core.Models.WebBooks
                 }
             }
 
-            // Debug.Log(bookSource.BookSourceUrl, $"◇书籍总数:{bookList.Count}");
+            // Debug.Log($"◇书籍总数:{bookList.Count}");
             return bookList;
         }
 
         /// <summary>
-        /// 获取详情页书籍信息（对应 Kotlin 的 getInfoItem）
+        /// 获取详情页信息项
+        /// 对应 Kotlin 的 getInfoItem()
         /// </summary>
-        private static SearchBook GetInfoItem(
+        private static async Task<SearchBook> GetInfoItem(
             BookSource bookSource,
             AnalyzeRule analyzeRule,
             AnalyzeUrl analyzeUrl,
@@ -157,19 +214,28 @@ namespace Legado.Core.Models.WebBooks
             string baseUrl,
             string variable,
             bool isRedirect,
-            Func<string, string, bool> filter)
+            Func<string, string, bool> filter,
+            CancellationToken cancellationToken = default)
         {
             var book = new Book { Variable = variable };
-            book.BookUrl = isRedirect ? baseUrl : analyzeUrl.RuleUrl;
+            book.BookUrl = isRedirect
+                ? baseUrl
+                : NetworkUtils.GetAbsoluteURL(analyzeUrl.Url, analyzeUrl.RuleUrl);
             book.Origin = bookSource.BookSourceUrl;
             book.OriginName = bookSource.BookSourceName;
             book.OriginOrder = bookSource.CustomOrder;
-            book.Type = bookSource.BookSourceType;
+            book.Type = GetBookType(bookSource);
 
-            // 解析书籍信息
-            BookInfo.AnalyzeBookInfo(
-                bookSource, book, baseUrl, baseUrl, body, canReName: false
-            ).Wait();
+            analyzeRule.SetRuleData(book);
+            await BookInfo.AnalyzeBookInfo(
+                book,
+                body,
+                analyzeRule,
+                bookSource,
+                baseUrl,
+                baseUrl,
+                false
+            );
 
             if (filter?.Invoke(book.Name, book.Author) == false)
             {
@@ -178,34 +244,17 @@ namespace Legado.Core.Models.WebBooks
 
             if (!string.IsNullOrWhiteSpace(book.Name))
             {
-                // 创建 SearchBook 对象
-                var searchBook = new SearchBook
-                {
-                    BookUrl = book.BookUrl,
-                    Origin = book.Origin,
-                    OriginName = book.OriginName,
-                    OriginOrder = book.OriginOrder,
-                    Type = book.Type,
-                    Name = book.Name,
-                    Author = book.Author,
-                    Kind = book.Kind,
-                    CoverUrl = book.CoverUrl,
-                    Intro = book.Intro,
-                    WordCount = book.WordCount,
-                    LatestChapterTitle = book.LatestChapterTitle,
-                    TocUrl = book.TocUrl,
-                    Variable = book.Variable
-                };
-                return searchBook;
+                return ToSearchBook(book);
             }
 
             return null;
         }
 
         /// <summary>
-        /// 获取搜索结果条目（对应 Kotlin 的 getSearchItem）
+        /// 获取搜索项
+        /// 对应 Kotlin 的 getSearchItem()
         /// </summary>
-        private static SearchBook GetSearchItem(
+        private static async Task<SearchBook> GetSearchItem(
             BookSource bookSource,
             AnalyzeRule analyzeRule,
             object item,
@@ -216,86 +265,287 @@ namespace Legado.Core.Models.WebBooks
             List<SourceRule> ruleName,
             List<SourceRule> ruleBookUrl,
             List<SourceRule> ruleAuthor,
-            List<SourceRule> ruleCoverUrl,
-            List<SourceRule> ruleIntro,
             List<SourceRule> ruleKind,
+            List<SourceRule> ruleCoverUrl,
+            List<SourceRule> ruleWordCount,
+            List<SourceRule> ruleIntro,
             List<SourceRule> ruleLastChapter,
-            List<SourceRule> ruleWordCount)
+            CancellationToken cancellationToken = default)
         {
             var searchBook = new SearchBook { Variable = variable };
-            searchBook.Type = bookSource.BookSourceType;
+            searchBook.Type = GetBookType(bookSource);
             searchBook.Origin = bookSource.BookSourceUrl;
             searchBook.OriginName = bookSource.BookSourceName;
             searchBook.OriginOrder = bookSource.CustomOrder;
 
+            analyzeRule.SetRuleData(searchBook);
             analyzeRule.SetContent(item);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            // Debug.Log(bookSource.BookSourceUrl, "┌获取书名", log);
-            searchBook.Name = analyzeRule.GetString(ruleName)?.Trim() ?? "";
-            // Debug.Log(bookSource.BookSourceUrl, $"└{searchBook.Name}", log);
+            // Debug.Log("┌获取书名", log);
+            searchBook.Name = FormatBookName(analyzeRule.GetString(ruleName));
+            // Debug.Log($"└{searchBook.Name}", log);
 
-            if (!string.IsNullOrWhiteSpace(searchBook.Name))
+            if (!string.IsNullOrEmpty(searchBook.Name))
             {
-                // Debug.Log(bookSource.BookSourceUrl, "┌获取作者", log);
-                searchBook.Author = analyzeRule.GetString(ruleAuthor)?.Trim() ?? "";
-                // Debug.Log(bookSource.BookSourceUrl, $"└{searchBook.Author}", log);
+                cancellationToken.ThrowIfCancellationRequested();
+                // Debug.Log("┌获取作者", log);
+                searchBook.Author = FormatBookAuthor(analyzeRule.GetString(ruleAuthor));
+                // Debug.Log($"└{searchBook.Author}", log);
 
                 if (filter?.Invoke(searchBook.Name, searchBook.Author) == false)
                 {
                     return null;
                 }
 
-                // 获取分类
+                cancellationToken.ThrowIfCancellationRequested();
+                // Debug.Log("┌获取分类", log);
                 try
                 {
                     var kindList = analyzeRule.GetStringList(ruleKind);
-                    searchBook.Kind = kindList != null ? string.Join(",", kindList) : null;
+                    if (kindList != null && kindList.Count > 0)
+                    {
+                        searchBook.Kind = string.Join(",", kindList);
+                    }
+                    // Debug.Log($"└{searchBook.Kind ?? ""}", log);
                 }
-                catch { }
+                catch (Exception e)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    // Debug.Log($"└{e.Message}", log);
+                }
 
-                // 获取字数
+                cancellationToken.ThrowIfCancellationRequested();
+                // Debug.Log("┌获取字数", log);
                 try
                 {
-                    searchBook.WordCount = analyzeRule.GetString(ruleWordCount);
+                    searchBook.WordCount = WordCountFormat(analyzeRule.GetString(ruleWordCount));
+                    // Debug.Log($"└{searchBook.WordCount}", log);
                 }
-                catch { }
+                catch (Exception e)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    // Debug.Log($"└{e.Message}", log);
+                }
 
-                // 获取最新章节
+                cancellationToken.ThrowIfCancellationRequested();
+                // Debug.Log("┌获取最新章节", log);
                 try
                 {
                     searchBook.LatestChapterTitle = analyzeRule.GetString(ruleLastChapter);
+                    // Debug.Log($"└{searchBook.LatestChapterTitle}", log);
                 }
-                catch { }
+                catch (Exception e)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    // Debug.Log($"└{e.Message}", log);
+                }
 
-                // 获取简介
+                cancellationToken.ThrowIfCancellationRequested();
+                // Debug.Log("┌获取简介", log);
                 try
                 {
-                    searchBook.Intro = analyzeRule.GetString(ruleIntro);
+                    var intro = analyzeRule.GetString(ruleIntro);
+                    searchBook.Intro = FormatHtml(intro);
+                    // Debug.Log($"└{searchBook.Intro}", log);
                 }
-                catch { }
+                catch (Exception e)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    // Debug.Log($"└{e.Message}", log);
+                }
 
-                // 获取封面URL
+                cancellationToken.ThrowIfCancellationRequested();
+                // Debug.Log("┌获取封面链接", log);
                 try
                 {
                     var coverUrl = analyzeRule.GetString(ruleCoverUrl);
-                    if (!string.IsNullOrWhiteSpace(coverUrl))
+                    if (!string.IsNullOrEmpty(coverUrl))
                     {
-                        searchBook.CoverUrl = coverUrl;
+                        searchBook.CoverUrl = NetworkUtils.GetAbsoluteURL(baseUrl, coverUrl);
                     }
+                    // Debug.Log($"└{searchBook.CoverUrl ?? ""}", log);
                 }
-                catch { }
+                catch (Exception e)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    // Debug.Log($"└{e.Message}", log);
+                }
 
-                // 获取详情页URL
+                cancellationToken.ThrowIfCancellationRequested();
+                // Debug.Log("┌获取详情页链接", log);
                 searchBook.BookUrl = analyzeRule.GetString(ruleBookUrl, isUrl: true);
-                if (string.IsNullOrWhiteSpace(searchBook.BookUrl))
+                if (string.IsNullOrEmpty(searchBook.BookUrl))
                 {
                     searchBook.BookUrl = baseUrl;
                 }
+                // Debug.Log($"└{searchBook.BookUrl}", log);
 
                 return searchBook;
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// 检查发现规则 JSON 格式
+        /// 对应 Kotlin 的 checkExploreJson()
+        /// </summary>
+        private static void CheckExploreJson(BookSource bookSource)
+        {
+            // TODO: 实现 Debug.callback 检查
+            // if (Debug.callback == null) return;
+            
+            var json = ExploreKindsJson(bookSource);
+            if (string.IsNullOrEmpty(json))
+            {
+                return;
+            }
+
+            try
+            {
+                var kinds = JsonConvert.DeserializeObject<List<ExploreKind>>(json);
+                if (kinds != null)
+                {
+                    return;
+                }
+            }
+            catch
+            {
+                // Debug.Log("≡发现地址规则 JSON 格式不规范，请改为规范格式");
+            }
+        }
+
+        /// <summary>
+        /// 获取发现规则 JSON
+        /// 对应 Kotlin 的 BookSource.exploreKindsJson()
+        /// </summary>
+        private static string ExploreKindsJson(BookSource bookSource)
+        {
+            return bookSource.ExploreUrl ?? "";
+        }
+
+        /// <summary>
+        /// 获取书籍类型
+        /// 对应 Kotlin 的 BookSource.getBookType()
+        /// </summary>
+        private static int GetBookType(BookSource bookSource)
+        {
+            return bookSource.BookSourceType;
+        }
+
+        /// <summary>
+        /// Book 转换为 SearchBook
+        /// 对应 Kotlin 的 Book.toSearchBook()
+        /// </summary>
+        private static SearchBook ToSearchBook(Book book)
+        {
+            return new SearchBook
+            {
+                BookUrl = book.BookUrl,
+                Origin = book.Origin,
+                OriginName = book.OriginName,
+                OriginOrder = book.OriginOrder,
+                Type = book.Type,
+                Name = book.Name,
+                Author = book.Author,
+                Kind = book.Kind,
+                CoverUrl = book.CoverUrl,
+                Intro = book.Intro,
+                WordCount = book.WordCount,
+                LatestChapterTitle = book.LatestChapterTitle,
+                TocUrl = book.TocUrl,
+                Variable = book.Variable
+            };
+        }
+
+        /// <summary>
+        /// 格式化书名
+        /// 对应 Kotlin 的 BookHelp.formatBookName()
+        /// </summary>
+        private static string FormatBookName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return "";
+            return name.Trim();
+        }
+
+        /// <summary>
+        /// 格式化作者名
+        /// 对应 Kotlin 的 BookHelp.formatBookAuthor()
+        /// </summary>
+        private static string FormatBookAuthor(string author)
+        {
+            if (string.IsNullOrWhiteSpace(author))
+                return "";
+            return author.Trim();
+        }
+
+        /// <summary>
+        /// 格式化 HTML 内容
+        /// 对应 Kotlin 的 HtmlFormatter.format()
+        /// </summary>
+        private static string FormatHtml(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+                return "";
+            // TODO: 实现完整的 HTML 格式化逻辑
+            return html.Trim();
+        }
+
+        /// <summary>
+        /// 格式化字数
+        /// 对应 Kotlin 的 StringUtils.wordCountFormat()
+        /// </summary>
+        private static string WordCountFormat(string wordCount)
+        {
+            if (string.IsNullOrWhiteSpace(wordCount))
+                return "";
+            // TODO: 实现字数格式化逻辑（如：10000 -> 1万字）
+            return wordCount.Trim();
+        }
+    }
+
+    /// <summary>
+    /// LinkedHashSet 实现（保持插入顺序的去重集合）
+    /// </summary>
+    internal class LinkedHashSet<T> : IEnumerable<T>
+    {
+        private readonly Dictionary<T, LinkedListNode<T>> _dict;
+        private readonly LinkedList<T> _list;
+
+        public LinkedHashSet()
+        {
+            _dict = new Dictionary<T, LinkedListNode<T>>();
+            _list = new LinkedList<T>();
+        }
+
+        public LinkedHashSet(IEnumerable<T> collection) : this()
+        {
+            foreach (var item in collection)
+            {
+                Add(item);
+            }
+        }
+
+        public bool Add(T item)
+        {
+            if (_dict.ContainsKey(item))
+                return false;
+
+            var node = _list.AddLast(item);
+            _dict[item] = node;
+            return true;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return _list.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

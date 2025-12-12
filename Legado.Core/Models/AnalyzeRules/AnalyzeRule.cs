@@ -338,7 +338,7 @@ namespace Legado.Core.Models.AnalyzeRules
     public class AnalyzeRule
     {
         private IRuleData _ruleData;
-        private readonly BaseSource _source;
+        private readonly IBaseSource _source;
         private readonly bool _preUpdateJs;
 
         private BookChapter _chapter;
@@ -360,7 +360,7 @@ namespace Legado.Core.Models.AnalyzeRules
         private static readonly MemoryCache _memoryCache = new MemoryCache(new MemoryCacheOptions());
         private CancellationToken _cancellationToken = CancellationToken.None;
 
-        public AnalyzeRule(IRuleData ruleData = null, BaseSource source = null, bool preUpdateJs = false)
+        public AnalyzeRule(IRuleData ruleData = null, IBaseSource source = null, bool preUpdateJs = false)
         {
             _ruleData = ruleData;
             _source = source;
@@ -544,7 +544,7 @@ namespace Legado.Core.Models.AnalyzeRules
                             RuleMode.XPath => new AnalyzeByXPath(tempResult).GetElements(rule).Cast<object>().ToList(),
                             _ => new AnalyzeByAngleSharp(tempResult).GetAllElements(rule)
                         };
-                    } 
+                    }
 
                     if (tempResult != null && !string.IsNullOrEmpty(sourceRule.ReplaceRegex))
                     {
@@ -581,7 +581,7 @@ namespace Legado.Core.Models.AnalyzeRules
                     {
                         tempResult = sourceRule.Mode switch
                         {
-                            RuleMode.Regex => AnalyzeByRegex.GetElement(tempResult?.ToString(), rule.Split(new string[] { "&&" }, StringSplitOptions.RemoveEmptyEntries)), 
+                            RuleMode.Regex => AnalyzeByRegex.GetElement(tempResult?.ToString(), rule.Split(new string[] { "&&" }, StringSplitOptions.RemoveEmptyEntries)),
                             RuleMode.Js => EvalJs(rule, tempResult),
                             RuleMode.Json => new AnalyzeByJsonPath(JsonConvert.SerializeObject(tempResult)).GetList(rule),
                             RuleMode.XPath => new AnalyzeByXPath(tempResult).GetElements(rule).Cast<object>().ToList(),
@@ -602,7 +602,7 @@ namespace Legado.Core.Models.AnalyzeRules
 
             return result;
         }
-         
+
 
         public string GetString(List<SourceRule> ruleList, object content = null, bool isUrl = false, bool unescape = true)
         {
@@ -649,7 +649,7 @@ namespace Legado.Core.Models.AnalyzeRules
                         {
                             result = sourceRule.Mode switch
                             {
-                                RuleMode.Regex => AnalyzeByRegex.GetElement(result?.ToString(), rule.Split(new string[] { "&&" }, StringSplitOptions.RemoveEmptyEntries)),
+                                //RuleMode.Regex => AnalyzeByRegex.GetElement(result?.ToString(), rule.Split(new string[] { "&&" }, StringSplitOptions.RemoveEmptyEntries)),
                                 RuleMode.Js => EvalJs(rule, result),
                                 RuleMode.Json => new AnalyzeByJsonPath(JsonConvert.SerializeObject(result)).GetString(rule),
                                 RuleMode.XPath => new AnalyzeByXPath(result).GetString(rule),
@@ -667,10 +667,22 @@ namespace Legado.Core.Models.AnalyzeRules
 
             var resultStr = result?.ToString() ?? "";
 
+
             if (unescape && resultStr.Contains('&'))
             {
                 resultStr = WebUtility.HtmlDecode(resultStr);
             }
+
+            if (string.IsNullOrEmpty(resultStr))
+            {
+                var tempRule = string.Join("", ruleList.Select(r => r.Rule));
+                if (tempRule.StartsWith("/") && !tempRule.StartsWith("//"))
+                {
+                    resultStr = tempRule;
+                    isUrl = true;
+                }
+            }
+
 
             if (isUrl)
             {
@@ -792,7 +804,7 @@ namespace Legado.Core.Models.AnalyzeRules
         {
             if (_ruleData != null)
             {
-                _ruleData.putVariable(key, value);
+                _ruleData.PutVariable(key, value);
             }
             return value;
         }
@@ -801,7 +813,7 @@ namespace Legado.Core.Models.AnalyzeRules
         {
             if (_ruleData != null)
             {
-                return _ruleData.getBigVariable(key);
+                return _ruleData.GetBigVariable(key);
             }
             return "";
         }
@@ -904,7 +916,7 @@ namespace Legado.Core.Models.AnalyzeRules
         /// <summary>
         /// 获取 Source
         /// </summary>
-        public BaseSource GetSource()
+        public IBaseSource GetSource()
         {
             return _source;
         }

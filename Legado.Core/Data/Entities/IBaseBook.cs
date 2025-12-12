@@ -34,7 +34,7 @@ namespace Legado.Core.Data.Entities
         /// </summary>
         public static void PutCustomVariable(this IBaseBook book, string value)
         {
-            book.putVariable("custom", value);
+            book.PutVariable("custom", value);
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Legado.Core.Data.Entities
         /// </summary>
         public static string GetCustomVariable(this IBaseBook book)
         {
-            return book.getVariable("custom");
+            return book.GetVariable("custom");
         }
 
         /// <summary>

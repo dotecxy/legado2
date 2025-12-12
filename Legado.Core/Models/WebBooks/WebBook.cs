@@ -54,7 +54,7 @@ namespace Legado.Core.Models.WebBooks
             }
 
             // 解析书籍列表
-            return BookList.AnalyzeBookList(
+            return await BookList.AnalyzeBookList(
                 bookSource: bookSource,
                 ruleData: ruleData,
                 analyzeUrl: analyzeUrl,
@@ -97,7 +97,7 @@ namespace Legado.Core.Models.WebBooks
             }
 
             // 解析书籍列表
-            return BookList.AnalyzeBookList(
+            return await BookList.AnalyzeBookList(
                 bookSource: bookSource,
                 ruleData: ruleData,
                 analyzeUrl: analyzeUrl,

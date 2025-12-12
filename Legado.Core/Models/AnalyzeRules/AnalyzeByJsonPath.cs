@@ -46,6 +46,12 @@ namespace Legado.Core.Models.AnalyzeRules
             {
                 try
                 {
+                    var tempObj = JsonConvert.DeserializeObject(jsonStr);
+                    if (tempObj is string tempStr)
+                    {
+                        jsonStr = tempStr;
+                    }
+
                     if (jsonStr.TrimStart().StartsWith("["))
                         return JArray.Parse(jsonStr);
                     else
@@ -93,7 +99,14 @@ namespace Legado.Core.Models.AnalyzeRules
                     // 如果没有成功替换的内嵌规则，直接执行 JsonPath
                     try
                     {
-                        var resultToken = _jToken.SelectToken(rule);
+                        JToken resultToken = null;
+                        if (_jToken is JArray tempArray)
+                        {
+                            resultToken = tempArray.First.SelectToken(rule);
+                            return resultToken?.ToString() ?? "";
+                        }
+
+                        resultToken = _jToken.SelectToken(rule);
                         if (resultToken == null)
                             return null;
 
@@ -267,7 +280,7 @@ namespace Legado.Core.Models.AnalyzeRules
             var list = GetStringList(rule);
             return list.Count > 0 ? list[0] : null;
         }
-        
+
         /// <summary>
         /// 获取第一个对象(对应 Kotlin 的 getObject0)
         /// </summary>
@@ -276,6 +289,15 @@ namespace Legado.Core.Models.AnalyzeRules
         public JToken? GetObject0(string rule)
         {
             return GetObject(rule);
+        }
+
+        private List<object> AddToList(JArray array, List<object> list)
+        {
+            foreach (var item in array)
+            {
+                list.Add(item);
+            }
+            return list;
         }
 
         /// <summary>
@@ -306,7 +328,16 @@ namespace Legado.Core.Models.AnalyzeRules
                         foreach (var token in tokens)
                         {
                             if (token != null)
-                                result.Add(token);
+                            {
+                                if (token is JArray array)
+                                {
+                                    AddToList(array, result);
+                                }
+                                else
+                                {
+                                    result.Add(token);
+                                }
+                            }
                         }
                     }
                 }

@@ -1,0 +1,230 @@
+using Legado.Core.Data.Entities;
+using SQLite;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reactive.Linq;
+using System.Threading.Tasks;
+
+namespace Legado.Core.Data.Dao
+{
+    /// <summary>
+    /// 书籍分组数据访问实现（对应 Kotlin 的 BookGroupDao.kt）
+    /// </summary>
+    public class BookGroupDao : IBookGroupDao
+    {
+        private readonly SQLiteAsyncConnection _database;
+
+        public BookGroupDao(SQLiteAsyncConnection database)
+        {
+            _database = database ?? throw new ArgumentNullException(nameof(database));
+        }
+
+        // ================= 查询方法 =================
+
+        /// <summary>
+        /// 根据 ID 获取分组
+        /// </summary>
+        public async Task<BookGroup> GetByIdAsync(long id)
+        {
+            return await _database.Table<BookGroup>()
+                .Where(g => g.GroupId == id)
+                .FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// 根据名称获取分组
+        /// </summary>
+        public async Task<BookGroup> GetByNameAsync(string groupName)
+        {
+            return await _database.Table<BookGroup>()
+                .Where(g => g.GroupName == groupName)
+                .FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// 获取所有分组
+        /// </summary>
+        public async Task<List<BookGroup>> GetAllAsync()
+        {
+            return await _database.Table<BookGroup>()
+                .OrderBy(g => g.Order)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// 获取可选择的分组（groupId >= 0）
+        /// </summary>
+        public async Task<List<BookGroup>> GetSelectAsync()
+        {
+            return await _database.Table<BookGroup>()
+                .Where(g => g.GroupId >= 0)
+                .OrderBy(g => g.Order)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// 获取显示的分组（复杂逻辑，需要联表查询）
+        /// </summary>
+        public async Task<List<BookGroup>> GetShowAsync()
+        {
+            // TODO: 实现复杂的联表查询逻辑
+            // 涉及 books 表的联合查询
+            var groups = await GetAllAsync();
+            return groups.Where(g => g.Show).ToList();
+        }
+
+        /// <summary>
+        /// 获取分组名称（按 ID）
+        /// </summary>
+        public async Task<List<string>> GetGroupNamesAsync(long id)
+        {
+            var groups = await GetAllAsync();
+            return groups
+                .Where(g => g.GroupId > 0 && (g.GroupId & id) > 0)
+                .Select(g => g.GroupName)
+                .ToList();
+        }
+
+        // ================= 统计方法 =================
+
+        /// <summary>
+        /// 获取所有分组 ID 之和
+        /// </summary>
+        public async Task<long> GetIdsSumAsync()
+        {
+            var groups = await GetAllAsync();
+            return groups.Where(g => g.GroupId >= 0).Sum(g => g.GroupId);
+        }
+
+        /// <summary>
+        /// 获取最大排序值
+        /// </summary>
+        public async Task<int> GetMaxOrderAsync()
+        {
+            var groups = await GetAllAsync();
+            var selectGroups = groups.Where(g => g.GroupId >= 0);
+            return selectGroups.Any() ? selectGroups.Max(g => g.Order) : 0;
+        }
+
+        /// <summary>
+        /// 检查是否可以添加分组（少于 64 个）
+        /// </summary>
+        public async Task<bool> CanAddGroupAsync()
+        {
+            var count = await _database.Table<BookGroup>()
+                .Where(g => g.GroupId >= 0 || g.GroupId == long.MinValue)
+                .CountAsync();
+            return count < 64;
+        }
+
+        // ================= 增删改操作 =================
+
+        /// <summary>
+        /// 插入分组
+        /// </summary>
+        public async Task InsertAsync(params BookGroup[] bookGroups)
+        {
+            if (bookGroups == null || bookGroups.Length == 0)
+                return;
+
+            foreach (var group in bookGroups)
+            {
+                await _database.InsertOrReplaceAsync(group);
+            }
+        }
+
+        /// <summary>
+        /// 更新分组
+        /// </summary>
+        public async Task UpdateAsync(params BookGroup[] bookGroups)
+        {
+            if (bookGroups == null || bookGroups.Length == 0)
+                return;
+
+            foreach (var group in bookGroups)
+            {
+                await _database.UpdateAsync(group);
+            }
+        }
+
+        /// <summary>
+        /// 删除分组
+        /// </summary>
+        public async Task DeleteAsync(params BookGroup[] bookGroups)
+        {
+            if (bookGroups == null || bookGroups.Length == 0)
+                return;
+
+            foreach (var group in bookGroups)
+            {
+                await _database.DeleteAsync(group);
+            }
+        }
+
+        /// <summary>
+        /// 启用分组
+        /// </summary>
+        public async Task EnableGroupAsync(long groupId)
+        {
+            await _database.ExecuteAsync(
+                "UPDATE book_groups SET show = 1 WHERE groupId = ?",
+                groupId
+            );
+        }
+
+        // ================= 辅助方法 =================
+
+        /// <summary>
+        /// 检查 ID 是否在规则内（对应 Kotlin 的 isInRules）
+        /// </summary>
+        public bool IsInRules(long id)
+        {
+            if (id < 0)
+                return true;
+            return (id & (id - 1)) == 0L;
+        }
+
+        /// <summary>
+        /// 获取未使用的 ID（对应 Kotlin 的 getUnusedId）
+        /// </summary>
+        public async Task<long> GetUnusedIdAsync()
+        {
+            long id = 1L;
+            var idsSum = await GetIdsSumAsync();
+            while ((id & idsSum) != 0L)
+            {
+                id = id << 1;
+            }
+            return id;
+        }
+
+        // ================= Observable 数据流 =================
+
+        /// <summary>
+        /// 观察所有分组
+        /// </summary>
+        public IObservable<List<BookGroup>> ObserveAll()
+        {
+            return Observable.Create<List<BookGroup>>(async observer =>
+            {
+                var groups = await GetAllAsync();
+                observer.OnNext(groups);
+                observer.OnCompleted();
+            });
+        }
+
+        /// <summary>
+        /// 观察可选择的分组
+        /// </summary>
+        public IObservable<List<BookGroup>> ObserveSelect()
+        {
+            return Observable.Create<List<BookGroup>>(async observer =>
+            {
+                var groups = await GetSelectAsync();
+                observer.OnNext(groups);
+                observer.OnCompleted();
+            });
+        }
+    }
+}

@@ -138,29 +138,29 @@ namespace Legado.Core.Data.Entities
         public string TocHtml { get; set; }
 
         // IRuleData 接口实现
-        public virtual bool putVariable(string key, string value)
+        public virtual bool PutVariable(string key, string value)
         {
             // TODO: 实现变量存储
             return true;
         }
 
-        public string getVariable()
+        public string GetVariable()
         {
             return Variable;
         }
 
-        public string getVariable(string key)
+        public string GetVariable(string key)
         {
             // TODO: 实现变量读取
             return "";
         }
 
-        public void putBigVariable(string key, string value)
+        public void PutBigVariable(string key, string value)
         {
             // TODO: 实现大变量存储
         }
 
-        public string getBigVariable(string key)
+        public string GetBigVariable(string key)
         {
             // TODO: 实现大变量读取
             return null;

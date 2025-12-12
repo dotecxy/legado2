@@ -34,7 +34,7 @@ namespace Legado.Core.Models.AnalyzeRules
         public Dictionary<string, string> HeaderMap { get; private set; } = new Dictionary<string, string>();
         public long? ServerID { get; private set; }
 
-        public CookieStore CookieStore { get; private set; } = new CookieStore();
+        public CookieStore CookieStore { get; private set; } = CookieStore.Instance;
         public CacheManager CacheManager { get => CacheManager.Instance; }
 
         private string mUrl;
@@ -56,7 +56,7 @@ namespace Legado.Core.Models.AnalyzeRules
         private string method = "GET";
         private string proxy;
         private int retry = 0;
-        private bool useWebView = true;
+        private bool useWebView = false;
         private string webJs;
         private bool enabledCookieJar;
         private string domain;
@@ -399,7 +399,7 @@ namespace Legado.Core.Models.AnalyzeRules
         {
             if (ruleData is IRuleData data)
             {
-                data.putBigVariable(key, value);
+                data.PutBigVariable(key, value);
             }
         }
 
@@ -410,7 +410,7 @@ namespace Legado.Core.Models.AnalyzeRules
         {
             if (ruleData is IRuleData data)
             {
-                return data.getBigVariable(key);
+                return data.GetBigVariable(key);
             }
             return null;
         }
@@ -436,14 +436,14 @@ namespace Legado.Core.Models.AnalyzeRules
 
             if (this.useWebView && useWebView)
             {
-                var body = await webViewAsync("", urlNoQuery, jsStr);
+                var body = await webViewAsync("", this.Url, jsStr);
                 return new StrResponse(Url, body);
             }
 
             using (var client = CreateHttpClient())
             {
                 // 构建请求
-                var request = new HttpRequestMessage(new HttpMethod(method), urlNoQuery);
+                var request = new HttpRequestMessage(new HttpMethod(method), Url);
 
                 // Headers
                 foreach (var kv in HeaderMap) request.Headers.TryAddWithoutValidation(kv.Key, kv.Value);

@@ -153,29 +153,29 @@ namespace Legado.Core.Data.Entities
         }
 
         // IRuleData 接口实现
-        public virtual bool putVariable(string key, string value)
+        public virtual bool PutVariable(string key, string value)
         {
             VariableMap[key] = value;
             Variable = JsonConvert.SerializeObject(VariableMap);
             return true;
         }
 
-        public virtual string getVariable()
+        public virtual string GetVariable()
         {
             return Variable;
         }
 
-        public virtual string getVariable(string key)
+        public virtual string GetVariable(string key)
         {
             return VariableMap.TryGetValue(key, out var value) ? value : "";
         }
 
-        public virtual void putBigVariable(string key, string value)
+        public virtual void PutBigVariable(string key, string value)
         {
             // TODO: 实现大变量存储
         }
 
-        public virtual string getBigVariable(string key)
+        public virtual string GetBigVariable(string key)
         {
             // TODO: 实现大变量读取
             return null;

@@ -68,18 +68,18 @@ namespace Legado.Core.Data.Entities
         public Dictionary<string, string> VariableMap { get; set; } = new Dictionary<string, string>();
 
         // IRuleData 接口实现
-        public virtual bool putVariable(string key, string value)
+        public virtual bool PutVariable(string key, string value)
         {
             VariableMap[key] = value;
             return true;
         }
 
-        public virtual void putBigVariable(string key, string value)
+        public virtual void PutBigVariable(string key, string value)
         {
             VariableMap[key] = value;
         }
 
-        public virtual string getBigVariable(string key)
+        public virtual string GetBigVariable(string key)
         {
             if (VariableMap.TryGetValue(key, out var value))
             {
@@ -88,7 +88,7 @@ namespace Legado.Core.Data.Entities
             return null;
         }
 
-        public virtual string getVariable()
+        public virtual string GetVariable()
         {
             if (VariableMap.Count == 0)
             {
@@ -97,7 +97,7 @@ namespace Legado.Core.Data.Entities
             return JsonConvert.SerializeObject(VariableMap);
         }
 
-        public virtual string getVariable(string key)
+        public virtual string GetVariable(string key)
         {
             if (VariableMap.TryGetValue(key, out var value))
             {
