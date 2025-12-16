@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,50 +9,42 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 阅读记录数据访问实现（对应 Kotlin 的 ReadRecordDao.kt）
     /// </summary>
-    public class ReadRecordDao : IReadRecordDao
+    public class ReadRecordDao : DapperDao<ReadRecord>, IReadRecordDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public ReadRecordDao(SQLiteAsyncConnection database)
+        public ReadRecordDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
-        public async Task<List<ReadRecord>> GetAllAsync()
+        public override async Task<List<ReadRecord>> GetAllAsync()
         {
-            return await _database.Table<ReadRecord>()
-                .OrderByDescending(r => r.ReadTime)
-                .ToListAsync();
+            var sql = "SELECT * FROM readRecord ORDER BY readTime DESC";
+            var result = await QueryAsync<ReadRecord>(sql);
+            return result;
         }
 
         public async Task<ReadRecord> GetAsync(string bookName)
         {
-            return await _database.Table<ReadRecord>()
-                .Where(r => r.BookName == bookName)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(r => r.BookName == bookName);
         }
 
         public async Task InsertAsync(params ReadRecord[] records)
         {
-            foreach (var record in records)
-                await _database.InsertOrReplaceAsync(record);
+            await InsertOrReplaceAllAsync(records);
         }
 
         public async Task UpdateAsync(params ReadRecord[] records)
         {
-            foreach (var record in records)
-                await _database.UpdateAsync(record);
+            await base.UpdateAllAsync(records);
         }
 
         public async Task DeleteAsync(params ReadRecord[] records)
         {
-            foreach (var record in records)
-                await _database.DeleteAsync(record);
+            await base.DeleteAllAsync(records);
         }
 
         public async Task ClearAsync()
         {
-            await _database.ExecuteAsync("DELETE FROM read_record");
+            await ExecuteAsync("DELETE FROM readRecord");
         }
     }
 }

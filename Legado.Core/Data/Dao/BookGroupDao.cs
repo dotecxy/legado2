@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +10,10 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 书籍分组数据访问实现（对应 Kotlin 的 BookGroupDao.kt）
     /// </summary>
-    public class BookGroupDao : IBookGroupDao
+    public class BookGroupDao : DapperDao<BookGroup>, IBookGroupDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public BookGroupDao(SQLiteAsyncConnection database)
+        public BookGroupDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         // ================= 查询方法 =================
@@ -27,9 +23,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<BookGroup> GetByIdAsync(long id)
         {
-            return await _database.Table<BookGroup>()
-                .Where(g => g.GroupId == id)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(g => g.GroupId == id);
         }
 
         /// <summary>
@@ -37,19 +31,17 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<BookGroup> GetByNameAsync(string groupName)
         {
-            return await _database.Table<BookGroup>()
-                .Where(g => g.GroupName == groupName)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(g => g.GroupName == groupName);
         }
 
         /// <summary>
         /// 获取所有分组
         /// </summary>
-        public async Task<List<BookGroup>> GetAllAsync()
+        public override async Task<List<BookGroup>> GetAllAsync()
         {
-            return await _database.Table<BookGroup>()
-                .OrderBy(g => g.Order)
-                .ToListAsync();
+            var sql = "SELECT * FROM book_groups ORDER BY `order`";
+            var result = await QueryAsync<BookGroup>(sql);
+            return result;
         }
 
         /// <summary>
@@ -57,10 +49,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookGroup>> GetSelectAsync()
         {
-            return await _database.Table<BookGroup>()
-                .Where(g => g.GroupId >= 0)
-                .OrderBy(g => g.Order)
-                .ToListAsync();
+            var sql = "SELECT * FROM book_groups WHERE groupId >= 0 ORDER BY `order`";
+            var result = await QueryAsync<BookGroup>(sql);
+            return result;
         }
 
         /// <summary>
@@ -112,9 +103,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<bool> CanAddGroupAsync()
         {
-            var count = await _database.Table<BookGroup>()
-                .Where(g => g.GroupId >= 0 || g.GroupId == long.MinValue)
-                .CountAsync();
+            var sql = "SELECT COUNT(*) FROM book_groups WHERE groupId >= 0 OR groupId = ?";
+            var count = await ExecuteScalarAsync<int>(sql, long.MinValue);
             return count < 64;
         }
 
@@ -128,10 +118,7 @@ namespace Legado.Core.Data.Dao
             if (bookGroups == null || bookGroups.Length == 0)
                 return;
 
-            foreach (var group in bookGroups)
-            {
-                await _database.InsertOrReplaceAsync(group);
-            }
+            await InsertOrReplaceAllAsync(bookGroups);
         }
 
         /// <summary>
@@ -142,10 +129,7 @@ namespace Legado.Core.Data.Dao
             if (bookGroups == null || bookGroups.Length == 0)
                 return;
 
-            foreach (var group in bookGroups)
-            {
-                await _database.UpdateAsync(group);
-            }
+            await base.UpdateAllAsync(bookGroups);
         }
 
         /// <summary>
@@ -156,10 +140,7 @@ namespace Legado.Core.Data.Dao
             if (bookGroups == null || bookGroups.Length == 0)
                 return;
 
-            foreach (var group in bookGroups)
-            {
-                await _database.DeleteAsync(group);
-            }
+            await base.DeleteAllAsync(bookGroups);
         }
 
         /// <summary>
@@ -167,10 +148,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task EnableGroupAsync(long groupId)
         {
-            await _database.ExecuteAsync(
-                "UPDATE book_groups SET show = 1 WHERE groupId = ?",
-                groupId
-            );
+            var sql = "UPDATE book_groups SET show = 1 WHERE groupId = ?";
+            await ExecuteAsync(sql, groupId);
         }
 
         // ================= 辅助方法 =================

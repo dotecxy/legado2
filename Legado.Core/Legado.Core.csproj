@@ -9,18 +9,33 @@
 
 
   <ItemGroup>
+    <PackageReference Include="Autofac" Version="9.0.0" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" /> 
+    <PackageReference Include="AutoMapper" Version="10.1.1" />
     <PackageReference Include="AngleSharp" Version="1.4.0" />
-    <PackageReference Include="AngleSharp.XPath" Version="2.0.5" /> 
+    <PackageReference Include="AngleSharp.XPath" Version="2.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.1" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="Jint" Version="4.4.2" /> 
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.1" />  
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" /> 
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" /> 
     <PackageReference Include="SharpCompress" Version="0.42.0" />
     <PackageReference Include="Flurl" Version="4.0.0" />
-    <PackageReference Include="Flurl.Http" Version="4.0.2" />
-    <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-    <PackageReference Include="Microsoft.Playwright" Version="1.57.0" />
+    <PackageReference Include="Flurl.Http" Version="4.0.2" /> 
+    <PackageReference Include="Microsoft.Playwright" Version="1.57.0" />  
+    <PackageReference Include="System.Collections.Immutable" Version="10.0.1" />
     <PackageReference Include="System.Reactive" Version="6.0.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+  </ItemGroup>
+
+
+
+  <ItemGroup>
+    <Folder Include="Helps\Source\" />
   </ItemGroup>
  
 

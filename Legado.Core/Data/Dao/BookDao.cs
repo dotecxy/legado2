@@ -1,23 +1,26 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 
 namespace Legado.Core.Data.Dao
 {
+
+    [SingletonDependency]
+    [ExposeServices(typeof(IBookDao), IncludeSelf = true)]
+    [ConnectionStringName("Book")]
     /// <summary>
     /// 书籍数据访问实现（对应 Kotlin 的 BookDao.kt）
+    /// 使用 SQLite-net-pcl 进行数据库访问
     /// </summary>
-    public class BookDao : IBookDao
+    public class BookDao : DapperDao<Book>, IBookDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public BookDao(SQLiteAsyncConnection database)
+        public BookDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
+            
         }
 
         // ================= 按分组查询 =================
@@ -35,11 +38,9 @@ namespace Legado.Core.Data.Dao
         /// <summary>
         /// 获取所有书籍
         /// </summary>
-        public async Task<List<Book>> GetAllAsync()
+        public override async Task<List<Book>> GetAllAsync()
         {
-            return await _database.Table<Book>()
-                .OrderByDescending(b => b.DurChapterTime)
-                .ToListAsync();
+            return await base.GetAllAsync();
         }
 
         /// <summary>
@@ -96,13 +97,19 @@ namespace Legado.Core.Data.Dao
         // ================= 单个查询 =================
 
         /// <summary>
+        /// 获取书籍总数
+        /// </summary>
+        public async Task<int> GetCountAsync()
+        {
+            return await base.CountAsync();
+        }
+
+        /// <summary>
         /// 根据 URL 获取书籍
         /// </summary>
         public async Task<Book> GetByUrlAsync(string bookUrl)
         {
-            return await _database.Table<Book>()
-                .Where(b => b.BookUrl == bookUrl)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(b => b.BookUrl == bookUrl);
         }
 
         /// <summary>
@@ -118,9 +125,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<Book> GetAsync(string name, string author)
         {
-            return await _database.Table<Book>()
-                .Where(b => b.Name == name && b.Author == author)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(b => b.Name == name && b.Author == author);
         }
 
         /// <summary>
@@ -136,9 +141,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<Book> GetByFileNameAsync(string fileName)
         {
-            return await _database.Table<Book>()
-                .Where(b => b.OriginName == fileName)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(b => b.OriginName == fileName);
         }
 
         /// <summary>
@@ -154,9 +157,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<Book> GetByOriginAsync(string name, string origin)
         {
-            return await _database.Table<Book>()
-                .Where(b => b.Name == name && b.Origin == origin)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(b => b.Name == name && b.Origin == origin);
         }
 
         /// <summary>
@@ -176,44 +177,23 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookSource>> GetAllUseBookSourceAsync()
         {
-            // TODO: 需要联表查询 books 和 book_sources
-            // SELECT DISTINCT bs.* FROM books, book_sources bs 
-            // WHERE origin == bookSourceUrl
-            
-            var books = await GetAllAsync();
-            var sourceUrls = books.Select(b => b.Origin).Distinct().ToList();
-            
-            var sources = new List<BookSource>();
-            foreach (var url in sourceUrls)
-            {
-                var source = await _database.Table<BookSource>()
-                    .Where(s => s.BookSourceUrl == url)
-                    .FirstOrDefaultAsync();
-                if (source != null)
-                    sources.Add(source);
-            }
-            return sources;
+            var sql = @"
+                SELECT DISTINCT bs.* 
+                FROM books b
+                INNER JOIN book_sources bs ON b.origin = bs.bookSourceUrl
+            ";
+            var result = await QueryAsync<BookSource>(sql);
+            return result;
         }
 
         // ================= 统计查询 =================
-
-        /// <summary>
-        /// 获取书籍总数
-        /// </summary>
-        public async Task<int> GetCountAsync()
-        {
-            return await _database.Table<Book>().CountAsync();
-        }
 
         /// <summary>
         /// 检查书籍是否存在（按 URL）
         /// </summary>
         public async Task<bool> HasAsync(string bookUrl)
         {
-            var count = await _database.Table<Book>()
-                .Where(b => b.BookUrl == bookUrl)
-                .CountAsync();
-            return count > 0;
+            return await ExistsAsync(b => b.BookUrl == bookUrl);
         }
 
         /// <summary>
@@ -221,10 +201,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<bool> HasAsync(string name, string author)
         {
-            var count = await _database.Table<Book>()
-                .Where(b => b.Name == name && b.Author == author)
-                .CountAsync();
-            return count > 0;
+            return await ExistsAsync(b => b.Name == name && b.Author == author);
         }
 
         /// <summary>
@@ -232,10 +209,10 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<bool> HasFileAsync(string fileName)
         {
-            var count = await _database.Table<Book>()
-                .Where(b => b.OriginName == fileName || b.Origin.Contains(fileName))
-                .CountAsync();
-            return count > 0;
+            // 需要 LIKE 查询,不能使用 ExistsAsync,保持原有逻辑
+            var sql = "SELECT COUNT(1) FROM books WHERE originName = ? OR origin LIKE ?";
+            var result = await ExecuteScalarAsync<int>(sql, fileName, $"%{fileName}%");
+            return result > 0;
         }
 
         /// <summary>
@@ -261,9 +238,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<Book> GetLastReadBookAsync()
         {
-            return await _database.Table<Book>()
-                .OrderByDescending(b => b.DurChapterTime)
-                .FirstOrDefaultAsync();
+            var sql = "SELECT * FROM books ORDER BY durChapterTime DESC LIMIT 1";
+            var result = await QueryAsync<Book>(sql);
+            return result.FirstOrDefault();
         }
 
         /// <summary>
@@ -280,43 +257,34 @@ namespace Legado.Core.Data.Dao
         /// <summary>
         /// 插入书籍
         /// </summary>
-        public async Task InsertAsync(params Book[] books)
+        public new async Task InsertAsync(params Book[] books)
         {
             if (books == null || books.Length == 0)
                 return;
 
-            foreach (var book in books)
-            {
-                await _database.InsertOrReplaceAsync(book);
-            }
+            await InsertOrReplaceAllAsync(books);
         }
 
         /// <summary>
         /// 更新书籍
         /// </summary>
-        public async Task UpdateAsync(params Book[] books)
+        public new async Task UpdateAsync(params Book[] books)
         {
             if (books == null || books.Length == 0)
                 return;
 
-            foreach (var book in books)
-            {
-                await _database.UpdateAsync(book);
-            }
+            await base.UpdateAllAsync(books);
         }
 
         /// <summary>
         /// 删除书籍
         /// </summary>
-        public async Task DeleteAsync(params Book[] books)
+        public new async Task DeleteAsync(params Book[] books)
         {
             if (books == null || books.Length == 0)
                 return;
 
-            foreach (var book in books)
-            {
-                await _database.DeleteAsync(book);
-            }
+            await base.DeleteAllAsync(books);
         }
 
         /// <summary>
@@ -324,10 +292,11 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task ReplaceAsync(Book oldBook, Book newBook)
         {
-            await _database.RunInTransactionAsync((connection) =>
+            await RunInTransactionAsync(trans =>
             {
-                connection.Delete(oldBook);
-                connection.InsertOrReplace(newBook);
+                var sql = "DELETE FROM books WHERE bookUrl = ?";
+                trans.Execute(sql, oldBook.BookUrl);
+                trans.Insert(newBook);
             });
         }
 
@@ -336,11 +305,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateProgressAsync(string bookUrl, int pos)
         {
-            await _database.ExecuteAsync(
-                "UPDATE books SET durChapterPos = ? WHERE bookUrl = ?",
-                pos,
-                bookUrl
-            );
+            var sql = "UPDATE books SET durChapterPos = ? WHERE bookUrl = ?";
+            await ExecuteAsync(sql, pos, bookUrl);
         }
 
         /// <summary>
@@ -348,11 +314,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateGroupAsync(long oldGroupId, long newGroupId)
         {
-            await _database.ExecuteAsync(
-                "UPDATE books SET `group` = ? WHERE `group` = ?",
-                newGroupId,
-                oldGroupId
-            );
+            var sql = "UPDATE books SET `group` = ? WHERE `group` = ?";
+            await ExecuteAsync(sql, newGroupId, oldGroupId);
         }
 
         /// <summary>
@@ -360,11 +323,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task RemoveGroupAsync(long group)
         {
-            await _database.ExecuteAsync(
-                "UPDATE books SET `group` = `group` - ? WHERE (`group` & ?) > 0",
-                group,
-                group
-            );
+            var sql = "UPDATE books SET `group` = `group` - ? WHERE (`group` & ?) > 0";
+            await ExecuteAsync(sql, group, group);
         }
 
         /// <summary>
@@ -373,7 +333,8 @@ namespace Legado.Core.Data.Dao
         public async Task DeleteNotShelfBookAsync()
         {
             // TODO: 实现 BookType.notShelf 的位运算逻辑
-            await _database.ExecuteAsync("DELETE FROM books WHERE type & ? > 0", 0);
+            var sql = "DELETE FROM books WHERE type & ? > 0";
+            await ExecuteAsync(sql, 0);
         }
 
         // ================= Observable 数据流 =================
@@ -416,5 +377,6 @@ namespace Legado.Core.Data.Dao
                 observer.OnCompleted();
             });
         }
+
     }
 }

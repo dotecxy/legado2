@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +10,10 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 书源数据访问实现（对应 Kotlin 的 BookSourceDao.kt）
     /// </summary>
-    public class BookSourceDao : IBookSourceDao
+    public class BookSourceDao : DapperDao<BookSource>, IBookSourceDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public BookSourceDao(SQLiteAsyncConnection database)
+        public BookSourceDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         // ================= 查询方法 =================
@@ -36,11 +32,11 @@ namespace Legado.Core.Data.Dao
         /// <summary>
         /// 获取所有书源
         /// </summary>
-        public async Task<List<BookSource>> GetAllAsync()
+        public override async Task<List<BookSource>> GetAllAsync()
         {
-            return await _database.Table<BookSource>()
-                .OrderBy(s => s.CustomOrder)
-                .ToListAsync();
+            var sql = "SELECT * FROM book_sources ORDER BY customOrder";
+            var result = await QueryAsync<BookSource>(sql);
+            return result;
         }
 
         /// <summary>
@@ -132,7 +128,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookSource>> GetEnabledByGroupAsync(string group)
         {
-            var sources = await GetEnabledAsync();
+            var sources = await GetAllEnabledAsync();
             return sources.Where(s =>
             {
                 if (string.IsNullOrEmpty(s.BookSourceGroup))
@@ -150,7 +146,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookSource>> GetEnabledByTypeAsync(int type)
         {
-            var sources = await GetEnabledAsync();
+            var sources = await GetAllEnabledAsync();
             return sources.Where(s =>
                 s.BookUrlPattern != "NONE" &&
                 s.BookSourceType == type
@@ -162,9 +158,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<BookSource> GetBookSourceAsync(string key)
         {
-            return await _database.Table<BookSource>()
-                .Where(s => s.BookSourceUrl == key)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(s => s.BookSourceUrl == key);
         }
 
         /// <summary>
@@ -177,11 +171,11 @@ namespace Legado.Core.Data.Dao
         }
 
         /// <summary>
-        /// 获取有书籍 URL 模式的书源
+        /// 获取有书籍URL模式的书源
         /// </summary>
         public async Task<List<BookSource>> GetHasBookUrlPatternAsync()
         {
-            var sources = await GetEnabledAsync();
+            var sources = await GetAllEnabledAsync();
             return sources.Where(s =>
                 !string.IsNullOrWhiteSpace(s.BookUrlPattern) &&
                 s.BookUrlPattern != "NONE"
@@ -233,7 +227,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<int> GetCountAsync()
         {
-            return await _database.Table<BookSource>().CountAsync();
+            var sql = "SELECT COUNT(*) FROM book_sources";
+            return await ExecuteScalarAsync<int>(sql);
         }
 
         /// <summary>
@@ -241,9 +236,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<bool> HasAsync(string key)
         {
-            var count = await _database.Table<BookSource>()
-                .Where(s => s.BookSourceUrl == key)
-                .CountAsync();
+            var sql = "SELECT COUNT(*) FROM book_sources WHERE bookSourceUrl = ?";
+            var count = await ExecuteScalarAsync<int>(sql, key);
             return count > 0;
         }
 
@@ -285,10 +279,7 @@ namespace Legado.Core.Data.Dao
             if (bookSources == null || bookSources.Length == 0)
                 return;
 
-            foreach (var source in bookSources)
-            {
-                await _database.InsertOrReplaceAsync(source);
-            }
+            await InsertOrReplaceAllAsync(bookSources);
         }
 
         /// <summary>
@@ -299,10 +290,7 @@ namespace Legado.Core.Data.Dao
             if (bookSources == null || bookSources.Length == 0)
                 return;
 
-            foreach (var source in bookSources)
-            {
-                await _database.UpdateAsync(source);
-            }
+            await base.UpdateAllAsync(bookSources);
         }
 
         /// <summary>
@@ -313,10 +301,7 @@ namespace Legado.Core.Data.Dao
             if (bookSources == null || bookSources.Length == 0)
                 return;
 
-            foreach (var source in bookSources)
-            {
-                await _database.DeleteAsync(source);
-            }
+            await base.DeleteAllAsync(bookSources);
         }
 
         /// <summary>
@@ -332,7 +317,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task DeleteAsync(string key)
         {
-            await _database.ExecuteAsync(
+            await ExecuteAsync(
                 "DELETE FROM book_sources WHERE bookSourceUrl = ?",
                 key
             );
@@ -343,11 +328,11 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task DeleteBatchAsync(List<BookSourcePart> bookSources)
         {
-            await _database.RunInTransactionAsync((connection) =>
+            await RunInTransactionAsync(transaction =>
             {
                 foreach (var bs in bookSources)
                 {
-                    connection.Execute(
+                    transaction.Execute(
                         "DELETE FROM book_sources WHERE bookSourceUrl = ?",
                         bs.BookSourceUrl
                     );
@@ -360,10 +345,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task EnableAsync(string bookSourceUrl, bool enable)
         {
-            await _database.ExecuteAsync(
+            await ExecuteAsync(
                 "UPDATE book_sources SET enabled = ? WHERE bookSourceUrl = ?",
-                enable ? 1 : 0,
-                bookSourceUrl
+                enable ? 1 : 0, bookSourceUrl
             );
         }
 
@@ -380,14 +364,13 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task EnableBatchAsync(bool enable, List<BookSourcePart> bookSources)
         {
-            await _database.RunInTransactionAsync((connection) =>
+            await RunInTransactionAsync(transaction =>
             {
                 foreach (var bs in bookSources)
                 {
-                    connection.Execute(
+                    transaction.Execute(
                         "UPDATE book_sources SET enabled = ? WHERE bookSourceUrl = ?",
-                        enable ? 1 : 0,
-                        bs.BookSourceUrl
+                        enable ? 1 : 0, bs.BookSourceUrl
                     );
                 }
             });
@@ -398,10 +381,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task EnableExploreAsync(string bookSourceUrl, bool enable)
         {
-            await _database.ExecuteAsync(
+            await ExecuteAsync(
                 "UPDATE book_sources SET enabledExplore = ? WHERE bookSourceUrl = ?",
-                enable ? 1 : 0,
-                bookSourceUrl
+                enable ? 1 : 0, bookSourceUrl
             );
         }
 
@@ -410,14 +392,13 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task EnableExploreAsync(bool enable, List<BookSourcePart> bookSources)
         {
-            await _database.RunInTransactionAsync((connection) =>
+            await RunInTransactionAsync(transaction =>
             {
                 foreach (var bs in bookSources)
                 {
-                    connection.Execute(
+                    transaction.Execute(
                         "UPDATE book_sources SET enabledExplore = ? WHERE bookSourceUrl = ?",
-                        enable ? 1 : 0,
-                        bs.BookSourceUrl
+                        enable ? 1 : 0, bs.BookSourceUrl
                     );
                 }
             });
@@ -428,10 +409,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateOrderAsync(string bookSourceUrl, int customOrder)
         {
-            await _database.ExecuteAsync(
+            await ExecuteAsync(
                 "UPDATE book_sources SET customOrder = ? WHERE bookSourceUrl = ?",
-                customOrder,
-                bookSourceUrl
+                customOrder, bookSourceUrl
             );
         }
 
@@ -448,14 +428,13 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateOrderBatchAsync(List<BookSourcePart> bookSources)
         {
-            await _database.RunInTransactionAsync((connection) =>
+            await RunInTransactionAsync(transaction =>
             {
                 foreach (var bs in bookSources)
                 {
-                    connection.Execute(
+                    transaction.Execute(
                         "UPDATE book_sources SET customOrder = ? WHERE bookSourceUrl = ?",
-                        bs.CustomOrder,
-                        bs.BookSourceUrl
+                        bs.CustomOrder, bs.BookSourceUrl
                     );
                 }
             });
@@ -466,10 +445,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateGroupAsync(string bookSourceUrl, string bookSourceGroup)
         {
-            await _database.ExecuteAsync(
+            await ExecuteAsync(
                 "UPDATE book_sources SET bookSourceGroup = ? WHERE bookSourceUrl = ?",
-                bookSourceGroup,
-                bookSourceUrl
+                bookSourceGroup, bookSourceUrl
             );
         }
 
@@ -486,10 +464,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookSource>> GetAllEnabledAsync()
         {
-            return await _database.Table<BookSource>()
-                .Where(s => s.Enabled)
-                .OrderBy(s => s.CustomOrder)
-                .ToListAsync();
+            var sql = "SELECT * FROM book_sources WHERE enabled = 1 ORDER BY customOrder";
+            var result = await QueryAsync<BookSource>(sql);
+            return result;
         }
 
         /// <summary>
@@ -497,16 +474,15 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateGroupBatchAsync(List<BookSourcePart> bookSources)
         {
-            await _database.RunInTransactionAsync((connection) =>
+            await RunInTransactionAsync(transaction =>
             {
                 foreach (var bs in bookSources)
                 {
                     if (!string.IsNullOrEmpty(bs.BookSourceGroup))
                     {
-                        connection.Execute(
+                        transaction.Execute(
                             "UPDATE book_sources SET bookSourceGroup = ? WHERE bookSourceUrl = ?",
-                            bs.BookSourceGroup,
-                            bs.BookSourceUrl
+                            bs.BookSourceGroup, bs.BookSourceUrl
                         );
                     }
                 }
@@ -531,9 +507,9 @@ namespace Legado.Core.Data.Dao
         /// <summary>
         /// 观察搜索结果
         /// </summary>
-        public IObservable<List<BookSource>> ObserveSearch(string searchKey)
+        public IObservable<List<BookSourcePart>> ObserveSearch(string searchKey)
         {
-            return Observable.Create<List<BookSource>>(async observer =>
+            return Observable.Create<List<BookSourcePart>>(async observer =>
             {
                 var sources = await SearchAsync(searchKey);
                 observer.OnNext(sources);
@@ -544,9 +520,9 @@ namespace Legado.Core.Data.Dao
         /// <summary>
         /// 观察已启用的书源
         /// </summary>
-        public IObservable<List<BookSource>> ObserveEnabled()
+        public IObservable<List<BookSourcePart>> ObserveEnabled()
         {
-            return Observable.Create<List<BookSource>>(async observer =>
+            return Observable.Create<List<BookSourcePart>>(async observer =>
             {
                 var sources = await GetEnabledAsync();
                 observer.OnNext(sources);

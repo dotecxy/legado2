@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,50 +9,40 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 字典规则数据访问实现（对应 Kotlin 的 DictRuleDao.kt）
     /// </summary>
-    public class DictRuleDao : IDictRuleDao
+    public class DictRuleDao : DapperDao<DictRule>, IDictRuleDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public DictRuleDao(SQLiteAsyncConnection database)
+        public DictRuleDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
-        public async Task<List<DictRule>> GetAllAsync()
+        public override async Task<List<DictRule>> GetAllAsync()
         {
-            return await _database.Table<DictRule>().ToListAsync();
+            return await base.GetAllAsync();
         }
 
         public async Task<DictRule> GetAsync(long id)
         {
-            return await _database.Table<DictRule>()
-                .Where(d => d.Id == id)
-                .FirstOrDefaultAsync();
+            return await FindAsync(id);
         }
 
         public async Task<DictRule> GetAsync(string name)
         {
-            return await _database.Table<DictRule>()
-                .Where(d => d.Name == name)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(r => r.Name == name);
         }
 
         public async Task InsertAsync(params DictRule[] rules)
         {
-            foreach (var rule in rules)
-                await _database.InsertOrReplaceAsync(rule);
+            await InsertOrReplaceAllAsync(rules);
         }
 
         public async Task UpdateAsync(params DictRule[] rules)
         {
-            foreach (var rule in rules)
-                await _database.UpdateAsync(rule);
+            await base.UpdateAllAsync(rules);
         }
 
         public async Task DeleteAsync(params DictRule[] rules)
         {
-            foreach (var rule in rules)
-                await _database.DeleteAsync(rule);
+            await base.DeleteAllAsync(rules);
         }
     }
 }

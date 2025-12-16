@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,54 +9,43 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// RSS 文章数据访问实现（对应 Kotlin 的 RssArticleDao.kt）
     /// </summary>
-    public class RssArticleDao : IRssArticleDao
+    public class RssArticleDao : DapperDao<RssArticle>, IRssArticleDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public RssArticleDao(SQLiteAsyncConnection database)
+        public RssArticleDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         public async Task<List<RssArticle>> GetByOriginAsync(string origin)
         {
-            return await _database.Table<RssArticle>()
-                .Where(a => a.Origin == origin)
-                .OrderByDescending(a => a.PubDate)
-                .ToListAsync();
+            var sql = "SELECT * FROM rssArticles WHERE origin = ? ORDER BY pubDate DESC";
+            var result = await QueryAsync<RssArticle>(sql, origin);
+            return result;
         }
 
         public async Task<RssArticle> GetAsync(string origin, string link)
         {
-            return await _database.Table<RssArticle>()
-                .Where(a => a.Origin == origin && a.Link == link)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(a => a.Origin == origin && a.Link == link);
         }
 
         public async Task InsertAsync(params RssArticle[] articles)
         {
-            foreach (var article in articles)
-                await _database.InsertOrReplaceAsync(article);
+            await InsertOrReplaceAllAsync(articles);
         }
 
         public async Task UpdateAsync(params RssArticle[] articles)
         {
-            foreach (var article in articles)
-                await _database.UpdateAsync(article);
+            await base.UpdateAllAsync(articles);
         }
 
         public async Task DeleteAsync(params RssArticle[] articles)
         {
-            foreach (var article in articles)
-                await _database.DeleteAsync(article);
+            await base.DeleteAllAsync(articles);
         }
 
         public async Task DeleteByOriginAsync(string origin)
         {
-            await _database.ExecuteAsync(
-                "DELETE FROM rss_articles WHERE origin = ?",
-                origin
-            );
+            var sql = "DELETE FROM rssArticles WHERE origin = ?";
+            await ExecuteAsync(sql, origin);
         }
     }
 }

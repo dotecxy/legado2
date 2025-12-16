@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,53 +9,49 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 键盘辅助数据访问实现（对应 Kotlin 的 KeyboardAssistsDao.kt）
     /// </summary>
-    public class KeyboardAssistsDao : IKeyboardAssistDao
+    public class KeyboardAssistsDao : DapperDao<KeyboardAssist>, IKeyboardAssistDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public KeyboardAssistsDao(SQLiteAsyncConnection database)
+        public KeyboardAssistsDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
-        public async Task<List<KeyboardAssist>> GetAllAsync()
+        public override async Task<List<KeyboardAssist>> GetAllAsync()
         {
-            return await _database.Table<KeyboardAssist>()
-                .OrderBy(k => k.SerialNo)
-                .ToListAsync();
+            var sql = "SELECT * FROM keyboardAssists ORDER BY serialNo";
+            var result = await QueryAsync<KeyboardAssist>(sql);
+            return result;
         }
 
         public async Task<KeyboardAssist> GetAsync(string key)
         {
-            return await _database.Table<KeyboardAssist>()
-                .Where(k => k.Key == key)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(k => k.Key == key);
         }
 
         public async Task<List<KeyboardAssist>> GetByTypeAsync(string type)
         {
-            return await _database.Table<KeyboardAssist>()
-                .Where(k => k.Type == type)
-                .OrderBy(k => k.SerialNo)
-                .ToListAsync();
+            // 将 string 类型转换为 int
+            if (int.TryParse(type, out int typeValue))
+            {
+                var sql = "SELECT * FROM keyboardAssists WHERE type = ? ORDER BY serialNo";
+                var result = await QueryAsync<KeyboardAssist>(sql, typeValue);
+                return result;
+            }
+            return new List<KeyboardAssist>();
         }
 
         public async Task InsertAsync(params KeyboardAssist[] assists)
         {
-            foreach (var assist in assists)
-                await _database.InsertOrReplaceAsync(assist);
+            await InsertOrReplaceAllAsync(assists);
         }
 
         public async Task UpdateAsync(params KeyboardAssist[] assists)
         {
-            foreach (var assist in assists)
-                await _database.UpdateAsync(assist);
+            await base.UpdateAllAsync(assists);
         }
 
         public async Task DeleteAsync(params KeyboardAssist[] assists)
         {
-            foreach (var assist in assists)
-                await _database.DeleteAsync(assist);
+            await base.DeleteAllAsync(assists);
         }
     }
 }

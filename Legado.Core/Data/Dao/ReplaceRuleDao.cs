@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +10,10 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 替换规则数据访问实现（对应 Kotlin 的 ReplaceRuleDao.kt）
     /// </summary>
-    public class ReplaceRuleDao : IReplaceRuleDao
+    public class ReplaceRuleDao : DapperDao<ReplaceRule>, IReplaceRuleDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public ReplaceRuleDao(SQLiteAsyncConnection database)
+        public ReplaceRuleDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         // ================= 查询方法 =================
@@ -25,11 +21,11 @@ namespace Legado.Core.Data.Dao
         /// <summary>
         /// 获取所有替换规则
         /// </summary>
-        public async Task<List<ReplaceRule>> GetAllAsync()
+        public override async Task<List<ReplaceRule>> GetAllAsync()
         {
-            return await _database.Table<ReplaceRule>()
-                .OrderBy(r => r.SortOrder)
-                .ToListAsync();
+            var sql = "SELECT * FROM replace_rules ORDER BY `order`";
+            var result = await QueryAsync<ReplaceRule>(sql);
+            return result;
         }
 
         /// <summary>
@@ -37,11 +33,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<ReplaceRule>> SearchAsync(string key)
         {
-            var rules = await GetAllAsync();
-            return rules.Where(r =>
-                (r.Group?.Contains(key) ?? false) ||
-                (r.Name?.Contains(key) ?? false)
-            ).ToList();
+            var sql = "SELECT * FROM replace_rules WHERE `group` LIKE ? OR name LIKE ? ORDER BY `order`";
+            var result = await QueryAsync<ReplaceRule>(sql, $"%{key}%", $"%{key}%");
+            return result;
         }
 
         /// <summary>
@@ -49,8 +43,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<ReplaceRule>> GroupSearchAsync(string key)
         {
-            var rules = await GetAllAsync();
-            return rules.Where(r => r.Group?.Contains(key) ?? false).ToList();
+            var sql = "SELECT * FROM replace_rules WHERE `group` LIKE ? ORDER BY `order`";
+            var result = await QueryAsync<ReplaceRule>(sql, $"%{key}%");
+            return result;
         }
 
         /// <summary>
@@ -58,11 +53,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<ReplaceRule>> GetNoGroupAsync()
         {
-            var rules = await GetAllAsync();
-            return rules.Where(r =>
-                string.IsNullOrWhiteSpace(r.Group) ||
-                r.Group.Contains("未分组")
-            ).ToList();
+            var sql = "SELECT * FROM replace_rules WHERE `group` IS NULL OR `group` = '' OR `group` LIKE '%未分组%' ORDER BY `order`";
+            var result = await QueryAsync<ReplaceRule>(sql);
+            return result;
         }
 
         /// <summary>
@@ -70,9 +63,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<ReplaceRule> FindByIdAsync(long id)
         {
-            return await _database.Table<ReplaceRule>()
-                .Where(r => r.Id == id)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(r => r.Id == id);
         }
 
         /// <summary>
@@ -91,8 +82,10 @@ namespace Legado.Core.Data.Dao
             if (ids == null || ids.Length == 0)
                 return new List<ReplaceRule>();
 
-            var rules = await GetAllAsync();
-            return rules.Where(r => ids.Contains(r.Id)).ToList();
+            var placeholders = string.Join(",", ids.Select(_ => "?"));
+            var sql = $"SELECT * FROM replace_rules WHERE id IN ({placeholders}) ORDER BY `order`";
+            var result = await QueryAsync<ReplaceRule>(sql, ids.Cast<object>().ToArray());
+            return result;
         }
 
         /// <summary>
@@ -100,12 +93,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<ReplaceRule>> FindEnabledByContentScopeAsync(string name, string origin)
         {
-            var rules = await GetAllAsync();
-            return rules.Where(r =>
-                r.IsEnabled &&
-                r.ScopeContent &&
-                IsInScope(r, name, origin)
-            ).ToList();
+            var sql = "SELECT * FROM replace_rules WHERE isEnabled = 1 AND scopeContent = 1 ORDER BY `order`";
+            var rules = await QueryAsync<ReplaceRule>(sql);
+            return rules.Where(r => IsInScope(r, name, origin)).ToList();
         }
 
         /// <summary>
@@ -113,12 +103,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<ReplaceRule>> FindEnabledByTitleScopeAsync(string name, string origin)
         {
-            var rules = await GetAllAsync();
-            return rules.Where(r =>
-                r.IsEnabled &&
-                r.ScopeTitle &&
-                IsInScope(r, name, origin)
-            ).ToList();
+            var sql = "SELECT * FROM replace_rules WHERE isEnabled = 1 AND scopeTitle = 1 ORDER BY `order`";
+            var rules = await QueryAsync<ReplaceRule>(sql);
+            return rules.Where(r => IsInScope(r, name, origin)).ToList();
         }
 
         /// <summary>
@@ -126,8 +113,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<ReplaceRule>> GetByGroupAsync(string group)
         {
-            var rules = await GetAllAsync();
-            return rules.Where(r => r.Group?.Contains(group) ?? false).ToList();
+            var sql = "SELECT * FROM replace_rules WHERE `group` LIKE ? ORDER BY `order`";
+            var result = await QueryAsync<ReplaceRule>(sql, $"%{group}%");
+            return result;
         }
 
         /// <summary>
@@ -135,10 +123,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<ReplaceRule>> GetAllEnabledAsync()
         {
-            return await _database.Table<ReplaceRule>()
-                .Where(r => r.IsEnabled)
-                .OrderBy(r => r.SortOrder)
-                .ToListAsync();
+            var sql = "SELECT * FROM replace_rules WHERE isEnabled = 1 ORDER BY `order`";
+            var result = await QueryAsync<ReplaceRule>(sql);
+            return result;
         }
 
         /// <summary>
@@ -156,6 +143,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<string>> GetGroupsUnProcessedAsync()
         {
+            // SQLite-net-pcl 不支持直接查询基本类型，需要从实体中获取
             var rules = await GetAllAsync();
             return rules
                 .Select(r => r.Group)
@@ -180,8 +168,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<int> GetMinOrderAsync()
         {
-            var rules = await GetAllAsync();
-            return rules.Any() ? rules.Min(r => r.SortOrder) : 0;
+            var sql = "SELECT MIN(`order`) FROM replace_rules";
+            var result = await ExecuteScalarAsync<int?>(sql);
+            return result ?? 0;
         }
 
         /// <summary>
@@ -189,8 +178,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<int> GetMaxOrderAsync()
         {
-            var rules = await GetAllAsync();
-            return rules.Any() ? rules.Max(r => r.SortOrder) : 0;
+            var sql = "SELECT MAX(`order`) FROM replace_rules";
+            var result = await ExecuteScalarAsync<int?>(sql);
+            return result ?? 0;
         }
 
         /// <summary>
@@ -198,11 +188,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<int> GetSummaryAsync()
         {
-            var allCount = await _database.Table<ReplaceRule>().CountAsync();
-            var enabledCount = await _database.Table<ReplaceRule>()
-                .Where(r => r.IsEnabled)
-                .CountAsync();
-            return allCount - enabledCount;
+            var sql = "SELECT COUNT(*) - SUM(CASE WHEN isEnabled = 1 THEN 1 ELSE 0 END) FROM replace_rules";
+            var result = await ExecuteScalarAsync<int>(sql);
+            return result;
         }
 
         // ================= 增删改操作 =================
@@ -217,8 +205,9 @@ namespace Legado.Core.Data.Dao
                 return ids;
 
             foreach (var rule in replaceRules)
-            {                var id = await _database.InsertAsync(rule);
-                ids.Add(id);
+            {
+                await base.InsertAsync(rule);
+                ids.Add(rule.Id);
             }
             return ids;
         }
@@ -239,10 +228,7 @@ namespace Legado.Core.Data.Dao
             if (replaceRules == null || replaceRules.Length == 0)
                 return;
 
-            foreach (var rule in replaceRules)
-            {
-                await _database.UpdateAsync(rule);
-            }
+            await base.UpdateAllAsync(replaceRules);
         }
 
         /// <summary>
@@ -253,10 +239,7 @@ namespace Legado.Core.Data.Dao
             if (replaceRules == null || replaceRules.Length == 0)
                 return;
 
-            foreach (var rule in replaceRules)
-            {
-                await _database.DeleteAsync(rule);
-            }
+            await base.DeleteAllAsync(replaceRules);
         }
 
         /// <summary>
@@ -264,7 +247,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task EnableAllAsync(bool enable)
         {
-            await _database.ExecuteAsync(
+            await ExecuteAsync(
                 "UPDATE replace_rules SET isEnabled = ?",
                 enable ? 1 : 0
             );

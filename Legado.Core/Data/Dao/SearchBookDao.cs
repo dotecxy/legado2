@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,13 +9,10 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 搜索书籍数据访问实现（对应 Kotlin 的 SearchBookDao.kt）
     /// </summary>
-    public class SearchBookDao : ISearchBookDao
+    public class SearchBookDao : DapperDao<SearchBook>, ISearchBookDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public SearchBookDao(SQLiteAsyncConnection database)
+        public SearchBookDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         /// <summary>
@@ -24,9 +20,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<SearchBook> GetByUrlAsync(string bookUrl)
         {
-            return await _database.Table<SearchBook>()
-                .Where(s => s.BookUrl == bookUrl)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(b => b.BookUrl == bookUrl);
         }
 
         /// <summary>
@@ -35,12 +29,9 @@ namespace Legado.Core.Data.Dao
         public async Task<SearchBook> GetAsync(string name, string author)
         {
             // TODO: 需要联表查询 book_sources，这里简化实现
-            var books = await _database.Table<SearchBook>()
-                .Where(s => s.Name == name && s.Author == author)
-                .OrderBy(s => s.OriginOrder)
-                .ToListAsync();
-            
-            return books.FirstOrDefault();
+            var sql = "SELECT * FROM searchBooks WHERE name = ? AND author = ? ORDER BY originOrder LIMIT 1";
+            var result = await QueryAsync<SearchBook>(sql, name, author);
+            return result.FirstOrDefault();
         }
 
         /// <summary>
@@ -48,9 +39,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<SearchBook>> GetByNameAsync(string name)
         {
-            return await _database.Table<SearchBook>()
-                .Where(s => s.Name == name)
-                .ToListAsync();
+            var sql = "SELECT * FROM searchBooks WHERE name = ?";
+            var result = await QueryAsync<SearchBook>(sql, name);
+            return result;
         }
 
         /// <summary>
@@ -62,13 +53,9 @@ namespace Legado.Core.Data.Dao
             string sourceGroup)
         {
             // TODO: 需要实现联表查询
-            // 简化实现：先获取所有匹配的书籍
-            var books = await _database.Table<SearchBook>()
-                .Where(s => s.Name == name && s.Author.Contains(author))
-                .OrderBy(s => s.OriginOrder)
-                .ToListAsync();
-            
-            return books;
+            var sql = "SELECT * FROM searchBooks WHERE name = ? AND author LIKE ? ORDER BY originOrder";
+            var result = await QueryAsync<SearchBook>(sql, name, $"%{author}%");
+            return result;
         }
 
         /// <summary>
@@ -81,10 +68,8 @@ namespace Legado.Core.Data.Dao
             string sourceGroup)
         {
             // TODO: 需要实现联表查询和模糊搜索
-            var books = await _database.Table<SearchBook>()
-                .Where(s => s.Name == name && s.Author.Contains(author))
-                .OrderBy(s => s.OriginOrder)
-                .ToListAsync();
+            var sql = "SELECT * FROM searchBooks WHERE name = ? AND author LIKE ? ORDER BY originOrder";
+            var books = await QueryAsync<SearchBook>(sql, name, $"%{author}%");
             
             // 在内存中过滤
             return books.Where(b =>
@@ -99,12 +84,9 @@ namespace Legado.Core.Data.Dao
         public async Task<List<SearchBook>> GetEnableHasCoverAsync(string name, string author)
         {
             // TODO: 需要联表查询
-            var books = await _database.Table<SearchBook>()
-                .Where(s => s.Name == name && s.Author == author)
-                .OrderBy(s => s.OriginOrder)
-                .ToListAsync();
-            
-            return books.Where(b => !string.IsNullOrEmpty(b.CoverUrl)).ToList();
+            var sql = "SELECT * FROM searchBooks WHERE name = ? AND author = ? AND coverUrl IS NOT NULL AND coverUrl != '' ORDER BY originOrder";
+            var result = await QueryAsync<SearchBook>(sql, name, author);
+            return result;
         }
 
         /// <summary>
@@ -115,10 +97,7 @@ namespace Legado.Core.Data.Dao
             if (searchBooks == null || searchBooks.Length == 0)
                 return;
 
-            foreach (var book in searchBooks)
-            {
-                await _database.InsertOrReplaceAsync(book);
-            }
+            await InsertOrReplaceAllAsync(searchBooks);
         }
 
         /// <summary>
@@ -129,10 +108,7 @@ namespace Legado.Core.Data.Dao
             if (searchBooks == null || searchBooks.Length == 0)
                 return;
 
-            foreach (var book in searchBooks)
-            {
-                await _database.UpdateAsync(book);
-            }
+            await base.UpdateAllAsync(searchBooks);
         }
 
         /// <summary>
@@ -143,10 +119,7 @@ namespace Legado.Core.Data.Dao
             if (searchBooks == null || searchBooks.Length == 0)
                 return;
 
-            foreach (var book in searchBooks)
-            {
-                await _database.DeleteAsync(book);
-            }
+            await base.DeleteAllAsync(searchBooks);
         }
 
         /// <summary>
@@ -154,11 +127,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task ClearAsync(string name, string author)
         {
-            await _database.ExecuteAsync(
-                "DELETE FROM searchBooks WHERE name = ? AND author = ?",
-                name,
-                author
-            );
+            var sql = "DELETE FROM searchBooks WHERE name = ? AND author = ?";
+            await ExecuteAsync(sql, name, author);
         }
 
         /// <summary>
@@ -166,7 +136,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task ClearAsync()
         {
-            await _database.ExecuteAsync("DELETE FROM searchBooks");
+            await ExecuteAsync("DELETE FROM searchBooks");
         }
 
         /// <summary>
@@ -174,10 +144,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task ClearExpiredAsync(long time)
         {
-            await _database.ExecuteAsync(
-                "DELETE FROM searchBooks WHERE time < ?",
-                time
-            );
+            var sql = "DELETE FROM searchBooks WHERE time < ?";
+            await ExecuteAsync(sql, time);
         }
     }
 }

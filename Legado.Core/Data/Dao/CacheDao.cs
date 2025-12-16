@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -9,53 +8,47 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 缓存数据访问实现（对应 Kotlin 的 CacheDao.kt）
     /// </summary>
-    public class CacheDao : ICacheDao
+    public class CacheDao : DapperDao<Cache>, ICacheDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public CacheDao(SQLiteAsyncConnection database)
+        public CacheDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         public async Task<Cache> GetAsync(string key)
         {
-            return await _database.Table<Cache>()
-                .Where(c => c.Key == key)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(c => c.Key == key);
         }
 
-        public async Task<List<Cache>> GetAllAsync()
+        public new async Task<List<Cache>> GetAllAsync()
         {
-            return await _database.Table<Cache>().ToListAsync();
+            return await base.GetAllAsync();
         }
 
         public async Task InsertAsync(params Cache[] caches)
         {
-            foreach (var cache in caches)
-                await _database.InsertOrReplaceAsync(cache);
+            await InsertOrReplaceAllAsync(caches);
         }
 
         public async Task UpdateAsync(params Cache[] caches)
         {
-            foreach (var cache in caches)
-                await _database.UpdateAsync(cache);
+            await base.UpdateAllAsync(caches);
         }
 
         public async Task DeleteAsync(params Cache[] caches)
         {
-            foreach (var cache in caches)
-                await _database.DeleteAsync(cache);
+            await base.DeleteAllAsync(caches);
         }
 
         public async Task DeleteAsync(string key)
         {
-            await _database.ExecuteAsync("DELETE FROM cache WHERE key = ?", key);
+            var sql = "DELETE FROM cache WHERE key = ?";
+            await ExecuteAsync(sql, key);
         }
 
         public async Task ClearExpiredAsync(long time)
         {
-            await _database.ExecuteAsync("DELETE FROM cache WHERE deadline < ?", time);
+            var sql = "DELETE FROM cache WHERE deadline < ? AND deadline > 0";
+            await ExecuteAsync(sql, time);
         }
 
         public async Task DeleteExpiredAsync()

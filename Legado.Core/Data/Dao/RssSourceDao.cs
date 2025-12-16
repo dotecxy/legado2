@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,13 +9,10 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// RSS 源数据访问实现（对应 Kotlin 的 RssSourceDao.kt）
     /// </summary>
-    public class RssSourceDao : IRssSourceDao
+    public class RssSourceDao : DapperDao<RssSource>, IRssSourceDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public RssSourceDao(SQLiteAsyncConnection database)
+        public RssSourceDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         // ================= 查询方法 =================
@@ -26,9 +22,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<RssSource> GetAsync(string sourceUrl)
         {
-            return await _database.Table<RssSource>()
-                .Where(r => r.SourceUrl == sourceUrl)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(r => r.SourceUrl == sourceUrl);
         }
 
         /// <summary>
@@ -39,25 +33,20 @@ namespace Legado.Core.Data.Dao
             if (sourceUrls == null || sourceUrls.Length == 0)
                 return new List<RssSource>();
 
-            // SQLite-net 不直接支持 IN 查询，需要手动构建
-            var sources = new List<RssSource>();
-            foreach (var url in sourceUrls)
-            {
-                var source = await GetAsync(url);
-                if (source != null)
-                    sources.Add(source);
-            }
-            return sources;
+            var placeholders = string.Join(",", sourceUrls.Select(_ => "?"));
+            var sql = $"SELECT * FROM rssSources WHERE sourceUrl IN ({placeholders})";
+            var result = await QueryAsync<RssSource>(sql, sourceUrls.Cast<object>().ToArray());
+            return result;
         }
 
         /// <summary>
         /// 获取所有 RSS 源（对应 Kotlin 的 all）
         /// </summary>
-        public async Task<List<RssSource>> GetAllAsync()
+        public override async Task<List<RssSource>> GetAllAsync()
         {
-            return await _database.Table<RssSource>()
-                .OrderBy(r => r.CustomOrder)
-                .ToListAsync();
+            var sql = "SELECT * FROM rssSources ORDER BY customOrder";
+            var result = await QueryAsync<RssSource>(sql);
+            return result;
         }
 
         /// <summary>
@@ -101,10 +90,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<RssSource>> GetEnabledAsync()
         {
-            return await _database.Table<RssSource>()
-                .Where(r => r.Enabled)
-                .OrderBy(r => r.CustomOrder)
-                .ToListAsync();
+            var sql = "SELECT * FROM rssSources WHERE enabled = 1 ORDER BY customOrder";
+            var result = await QueryAsync<RssSource>(sql);
+            return result;
         }
 
         /// <summary>
@@ -112,10 +100,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<RssSource>> GetDisabledAsync()
         {
-            return await _database.Table<RssSource>()
-                .Where(r => !r.Enabled)
-                .OrderBy(r => r.CustomOrder)
-                .ToListAsync();
+            var sql = "SELECT * FROM rssSources WHERE enabled = 0 ORDER BY customOrder";
+            var result = await QueryAsync<RssSource>(sql);
+            return result;
         }
 
         /// <summary>
@@ -211,7 +198,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<int> GetCountAsync()
         {
-            return await _database.Table<RssSource>().CountAsync();
+            var sql = "SELECT COUNT(*) FROM rssSources";
+            return await ExecuteScalarAsync<int>(sql);
         }
 
         /// <summary>
@@ -219,9 +207,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<bool> HasAsync(string key)
         {
-            var count = await _database.Table<RssSource>()
-                .Where(r => r.SourceUrl == key)
-                .CountAsync();
+            var sql = "SELECT COUNT(*) FROM rssSources WHERE sourceUrl = ?";
+            var count = await ExecuteScalarAsync<int>(sql, key);
             return count > 0;
         }
 
@@ -230,8 +217,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<int> GetMinOrderAsync()
         {
-            var sources = await GetAllAsync();
-            return sources.Any() ? sources.Min(r => r.CustomOrder) : 0;
+            var sql = "SELECT MIN(customOrder) FROM rssSources";
+            var result = await ExecuteScalarAsync<int?>(sql);
+            return result ?? 0;
         }
 
         /// <summary>
@@ -239,8 +227,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<int> GetMaxOrderAsync()
         {
-            var sources = await GetAllAsync();
-            return sources.Any() ? sources.Max(r => r.CustomOrder) : 0;
+            var sql = "SELECT MAX(customOrder) FROM rssSources";
+            var result = await ExecuteScalarAsync<int?>(sql);
+            return result ?? 0;
         }
 
         // ================= 增删改方法 =================
@@ -253,10 +242,7 @@ namespace Legado.Core.Data.Dao
             if (sources == null || sources.Length == 0)
                 return;
 
-            foreach (var source in sources)
-            {
-                await _database.InsertOrReplaceAsync(source);
-            }
+            await InsertOrReplaceAllAsync(sources);
         }
 
         /// <summary>
@@ -267,10 +253,7 @@ namespace Legado.Core.Data.Dao
             if (sources == null || sources.Length == 0)
                 return;
 
-            foreach (var source in sources)
-            {
-                await _database.UpdateAsync(source);
-            }
+            await base.UpdateAllAsync(sources);
         }
 
         /// <summary>
@@ -281,10 +264,7 @@ namespace Legado.Core.Data.Dao
             if (sources == null || sources.Length == 0)
                 return;
 
-            foreach (var source in sources)
-            {
-                await _database.DeleteAsync(source);
-            }
+            await base.DeleteAllAsync(sources);
         }
 
         /// <summary>
@@ -292,7 +272,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task DeleteAsync(string sourceUrl)
         {
-            await _database.ExecuteAsync(
+            await ExecuteAsync(
                 "DELETE FROM rssSources WHERE sourceUrl = ?",
                 sourceUrl
             );
@@ -303,7 +283,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task DeleteDefaultAsync()
         {
-            await _database.ExecuteAsync(
+            await ExecuteAsync(
                 "DELETE FROM rssSources WHERE sourceGroup LIKE '%legado%'"
             );
         }
@@ -313,10 +293,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task EnableAsync(string sourceUrl, bool enable)
         {
-            await _database.ExecuteAsync(
+            await ExecuteAsync(
                 "UPDATE rssSources SET enabled = ? WHERE sourceUrl = ?",
-                enable ? 1 : 0,
-                sourceUrl
+                enable ? 1 : 0, sourceUrl
             );
         }
 

@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,50 +9,43 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 搜索关键词数据访问实现（对应 Kotlin 的 SearchKeywordDao.kt）
     /// </summary>
-    public class SearchKeywordDao : ISearchKeywordDao
+    public class SearchKeywordDao : DapperDao<SearchKeyword>, ISearchKeywordDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public SearchKeywordDao(SQLiteAsyncConnection database)
+        public SearchKeywordDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
-        public async Task<List<SearchKeyword>> GetAllAsync()
+        public override async Task<List<SearchKeyword>> GetAllAsync()
         {
-            return await _database.Table<SearchKeyword>()
-                .OrderByDescending(k => k.Usage)
-                .ToListAsync();
+            var sql = "SELECT * FROM search_keywords ORDER BY usage DESC";
+            var result = await QueryAsync<SearchKeyword>(sql);
+            return result;
         }
 
         public async Task<SearchKeyword> GetAsync(string word)
         {
-            return await _database.Table<SearchKeyword>()
-                .Where(k => k.Word == word)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(k => k.Word == word);
         }
 
         public async Task InsertAsync(params SearchKeyword[] keywords)
         {
-            foreach (var keyword in keywords)
-                await _database.InsertOrReplaceAsync(keyword);
+            await InsertOrReplaceAllAsync(keywords);
         }
 
         public async Task UpdateAsync(params SearchKeyword[] keywords)
         {
-            foreach (var keyword in keywords)
-                await _database.UpdateAsync(keyword);
+            await base.UpdateAllAsync(keywords);
         }
 
         public async Task DeleteAsync(params SearchKeyword[] keywords)
         {
-            foreach (var keyword in keywords)
-                await _database.DeleteAsync(keyword);
+            await base.DeleteAllAsync(keywords);
         }
 
         public async Task ClearAsync()
         {
-            await _database.ExecuteAsync("DELETE FROM search_keywords");
+            var sql = "DELETE FROM search_keywords";
+            await ExecuteAsync(sql);
         }
     }
 }

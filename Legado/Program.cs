@@ -1,21 +1,30 @@
 using Legado.Core.Data.Entities;
 using Legado.Core.Data.Entities.Rules;
+using Legado.Core.Helps.Books;
 using Legado.Core.Helps.Http;
+using Legado.Core.Models.AnalyzeRules;
 using Legado.Core.Models.WebBooks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using static SQLite.SQLite3;
+using System.Threading.Tasks; 
 
 namespace Legado
 {
     internal class Program
     {
         static async Task Main(string[] args)
-        { 
+        {
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                NullValueHandling = NullValueHandling.Ignore,
+                Formatting = Formatting.Indented
+            };
+
             Console.WriteLine("引擎测试");
             Console.WriteLine("===================");
 
@@ -88,6 +97,9 @@ namespace Legado
                             var chapterList = await webBook.GetChapterListAwait(bookSource, book);
                             var first2 = chapterList.First();
                             var content =  await  webBook.GetContentAwait(bookSource, book, first2);
+                            var content3 = ContentHelper.ReSegment(content, first2.Title);
+                            AnalyzeUrl ar = new AnalyzeUrl(first2.BookUrl);
+                            content= ar.htmlFormat(content); 
                         }
                         catch (Exception ex)
                         {

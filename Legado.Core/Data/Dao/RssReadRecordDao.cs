@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,45 +9,36 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// RSS 阅读记录数据访问实现（对应 Kotlin 的 RssReadRecordDao.kt）
     /// </summary>
-    public class RssReadRecordDao : IRssReadRecordDao
+    public class RssReadRecordDao : DapperDao<RssReadRecord>, IRssReadRecordDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public RssReadRecordDao(SQLiteAsyncConnection database)
+        public RssReadRecordDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         public async Task<RssReadRecord> GetAsync(string record)
         {
-            return await _database.Table<RssReadRecord>()
-                .Where(r => r.Record == record)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(r => r.Record == record);
         }
 
-        public async Task<List<RssReadRecord>> GetAllAsync()
+        public override async Task<List<RssReadRecord>> GetAllAsync()
         {
-            return await _database.Table<RssReadRecord>().ToListAsync();
+            return await base.GetAllAsync();
         }
 
         public async Task InsertAsync(params RssReadRecord[] records)
         {
-            foreach (var record in records)
-                await _database.InsertOrReplaceAsync(record);
+            await InsertOrReplaceAllAsync(records);
         }
 
         public async Task DeleteAsync(params RssReadRecord[] records)
         {
-            foreach (var record in records)
-                await _database.DeleteAsync(record);
+            await base.DeleteAllAsync(records);
         }
 
         public async Task DeleteAsync(string record)
         {
-            await _database.ExecuteAsync(
-                "DELETE FROM rss_read_records WHERE record = ?",
-                record
-            );
+            var sql = "DELETE FROM rssReadRecord WHERE record = ?";
+            await ExecuteAsync(sql, record);
         }
     }
 }

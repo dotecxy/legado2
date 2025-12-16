@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,45 +9,38 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 规则订阅数据访问实现（对应 Kotlin 的 RuleSubDao.kt）
     /// </summary>
-    public class RuleSubDao : IRuleSubDao
+    public class RuleSubDao : DapperDao<RuleSub>, IRuleSubDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public RuleSubDao(SQLiteAsyncConnection database)
+        public RuleSubDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
-        public async Task<List<RuleSub>> GetAllAsync()
+        public override async Task<List<RuleSub>> GetAllAsync()
         {
-            return await _database.Table<RuleSub>()
-                .OrderBy(r => r.CustomOrder)
-                .ToListAsync();
+            var list = await base.GetAllAsync();
+            list.OrderBy(r => r.CustomOrder);
+            return list;
         }
 
         public async Task<RuleSub> GetAsync(long id)
         {
-            return await _database.Table<RuleSub>()
-                .Where(r => r.Id == id)
-                .FirstOrDefaultAsync();
+            return await FindAsync(id);
         }
 
         public async Task InsertAsync(params RuleSub[] ruleSubs)
         {
-            foreach (var sub in ruleSubs)
-                await _database.InsertOrReplaceAsync(sub);
+            await base.InsertAllAsync(ruleSubs);
         }
 
         public async Task UpdateAsync(params RuleSub[] ruleSubs)
         {
-            foreach (var sub in ruleSubs)
-                await _database.UpdateAsync(sub);
+            await base.UpdateAllAsync(ruleSubs);
         }
 
         public async Task DeleteAsync(params RuleSub[] ruleSubs)
         {
-            foreach (var sub in ruleSubs)
-                await _database.DeleteAsync(sub);
+            await base.DeleteAllAsync(ruleSubs);
         }
+         
     }
 }

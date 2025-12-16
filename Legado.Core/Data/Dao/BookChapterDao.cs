@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,13 +9,10 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 书籍章节数据访问实现（对应 Kotlin 的 BookChapterDao.kt）
     /// </summary>
-    public class BookChapterDao : IBookChapterDao
+    public class BookChapterDao : DapperDao<BookChapter>, IBookChapterDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public BookChapterDao(SQLiteAsyncConnection database)
+        public BookChapterDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         /// <summary>
@@ -24,8 +20,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookChapter>> SearchAsync(string bookUrl, string key)
         {
-            var chapters = await GetChaptersAsync(bookUrl);
-            return chapters.Where(c => c.Title?.Contains(key) ?? false).ToList();
+            var sql = "SELECT * FROM chapters WHERE bookUrl = ? AND title LIKE ?";
+            var result = await QueryAsync<BookChapter>(sql, bookUrl, $"%{key}%");
+            return result;
         }
 
         /// <summary>
@@ -37,10 +34,9 @@ namespace Legado.Core.Data.Dao
             int start,
             int end)
         {
-            var chapters = await GetChaptersAsync(bookUrl);
-            return chapters
-                .Where(c => c.Index >= start && c.Index <= end && (c.Title?.Contains(key) ?? false))
-                .ToList();
+            var sql = "SELECT * FROM chapters WHERE bookUrl = ? AND `index` >= ? AND `index` <= ? AND title LIKE ?";
+            var result = await QueryAsync<BookChapter>(sql, bookUrl, start, end, $"%{key}%");
+            return result;
         }
 
         /// <summary>
@@ -48,10 +44,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookChapter>> GetChaptersAsync(string bookUrl)
         {
-            return await _database.Table<BookChapter>()
-                .Where(c => c.BookUrl == bookUrl)
-                .OrderBy(c => c.Index)
-                .ToListAsync();
+            var sql = "SELECT * FROM chapters WHERE bookUrl = ? ORDER BY `index`";
+            var result = await QueryAsync<BookChapter>(sql, bookUrl);
+            return result;
         }
 
         /// <summary>
@@ -62,10 +57,9 @@ namespace Legado.Core.Data.Dao
             int start,
             int end)
         {
-            return await _database.Table<BookChapter>()
-                .Where(c => c.BookUrl == bookUrl && c.Index >= start && c.Index <= end)
-                .OrderBy(c => c.Index)
-                .ToListAsync();
+            var sql = "SELECT * FROM chapters WHERE bookUrl = ? AND `index` >= ? AND `index` <= ? ORDER BY `index`";
+            var result = await QueryAsync<BookChapter>(sql, bookUrl, start, end);
+            return result;
         }
 
         /// <summary>
@@ -73,9 +67,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<BookChapter> GetChapterAsync(string bookUrl, int index)
         {
-            return await _database.Table<BookChapter>()
-                .Where(c => c.BookUrl == bookUrl && c.Index == index)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(c => c.BookUrl == bookUrl && c.Index == index);
         }
 
         /// <summary>
@@ -83,9 +75,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<BookChapter> GetChapterByTitleAsync(string bookUrl, string title)
         {
-            return await _database.Table<BookChapter>()
-                .Where(c => c.BookUrl == bookUrl && c.Title == title)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(c => c.BookUrl == bookUrl && c.Title == title);
         }
 
         /// <summary>
@@ -93,9 +83,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<int> GetCountAsync(string bookUrl)
         {
-            return await _database.Table<BookChapter>()
-                .Where(c => c.BookUrl == bookUrl)
-                .CountAsync();
+            var sql = "SELECT COUNT(*) FROM chapters WHERE bookUrl = ?";
+            return await ExecuteScalarAsync<int>(sql, bookUrl);
         }
 
         /// <summary>
@@ -106,10 +95,7 @@ namespace Legado.Core.Data.Dao
             if (chapters == null || chapters.Length == 0)
                 return;
 
-            foreach (var chapter in chapters)
-            {
-                await _database.InsertOrReplaceAsync(chapter);
-            }
+            await InsertOrReplaceAllAsync(chapters);
         }
 
         /// <summary>
@@ -120,10 +106,7 @@ namespace Legado.Core.Data.Dao
             if (chapters == null || chapters.Length == 0)
                 return;
 
-            foreach (var chapter in chapters)
-            {
-                await _database.UpdateAsync(chapter);
-            }
+            await base.UpdateAllAsync(chapters);
         }
 
         /// <summary>
@@ -131,10 +114,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task DeleteAsync(string bookUrl)
         {
-            await _database.ExecuteAsync(
-                "DELETE FROM chapters WHERE bookUrl = ?",
-                bookUrl
-            );
+            var sql = "DELETE FROM chapters WHERE bookUrl = ?";
+            await ExecuteAsync(sql, bookUrl);
         }
 
         /// <summary>
@@ -142,12 +123,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateWordCountAsync(string bookUrl, string url, string wordCount)
         {
-            await _database.ExecuteAsync(
-                "UPDATE chapters SET wordCount = ? WHERE bookUrl = ? AND url = ?",
-                wordCount,
-                bookUrl,
-                url
-            );
+            var sql = "UPDATE chapters SET wordCount = ? WHERE bookUrl = ? AND url = ?";
+            await ExecuteAsync(sql, wordCount, bookUrl, url);
         }
     }
 }

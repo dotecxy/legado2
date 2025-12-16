@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,13 +9,10 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// Cookie 数据访问实现（对应 Kotlin 的 CookieDao.kt）
     /// </summary>
-    public class CookieDao : ICookieDao
+    public class CookieDao : DapperDao<CookieEntity>, ICookieDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public CookieDao(SQLiteAsyncConnection database)
+        public CookieDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         /// <summary>
@@ -24,9 +20,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<CookieEntity> GetAsync(string url)
         {
-            return await _database.Table<CookieEntity>()
-                .Where(c => c.Url == url)
-                .FirstOrDefaultAsync();
+            return await GetFirstOrDefaultAsync(c => c.Url == url);
         }
 
         /// <summary>
@@ -34,8 +28,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<CookieEntity>> GetOkHttpCookiesAsync()
         {
-            var allCookies = await _database.Table<CookieEntity>().ToListAsync();
-            return allCookies.Where(c => c.Url?.Contains("|") ?? false).ToList();
+            var sql = "SELECT * FROM cookies WHERE url LIKE '%|%'";
+            var result = await QueryAsync<CookieEntity>(sql);
+            return result;
         }
 
         /// <summary>
@@ -46,10 +41,7 @@ namespace Legado.Core.Data.Dao
             if (cookies == null || cookies.Length == 0)
                 return;
 
-            foreach (var cookie in cookies)
-            {
-                await _database.InsertOrReplaceAsync(cookie);
-            }
+            await InsertOrReplaceAllAsync(cookies);
         }
 
         /// <summary>
@@ -60,10 +52,7 @@ namespace Legado.Core.Data.Dao
             if (cookies == null || cookies.Length == 0)
                 return;
 
-            foreach (var cookie in cookies)
-            {
-                await _database.UpdateAsync(cookie);
-            }
+            await base.UpdateAllAsync(cookies);
         }
 
         /// <summary>
@@ -71,10 +60,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task DeleteAsync(string url)
         {
-            await _database.ExecuteAsync(
-                "DELETE FROM cookies WHERE url = ?",
-                url
-            );
+            var sql = "DELETE FROM cookies WHERE url = ?";
+            await ExecuteAsync(sql, url);
         }
 
         /// <summary>
@@ -82,9 +69,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task DeleteOkHttpAsync()
         {
-            await _database.ExecuteAsync(
-                "DELETE FROM cookies WHERE url LIKE '%|%'"
-            );
+            var sql = "DELETE FROM cookies WHERE url LIKE '%|%'";
+            await ExecuteAsync(sql);
         }
     }
 }

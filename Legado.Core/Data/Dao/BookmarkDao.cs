@@ -1,5 +1,4 @@
 using Legado.Core.Data.Entities;
-using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,53 +9,44 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 书签数据访问实现（对应 Kotlin 的 BookmarkDao.kt）
     /// </summary>
-    public class BookmarkDao : IBookmarkDao
+    public class BookmarkDao : DapperDao<Bookmark>, IBookmarkDao
     {
-        private readonly SQLiteAsyncConnection _database;
-
-        public BookmarkDao(SQLiteAsyncConnection database)
+        public BookmarkDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         public async Task<List<Bookmark>> GetByBookAsync(string bookUrl)
         {
-            return await _database.Table<Bookmark>()
-                .Where(b => b.BookUrl == bookUrl)
-                .OrderBy(b => b.BookmarkChapterIndex)
-                .ToListAsync();
+            var sql = "SELECT * FROM bookmarks WHERE bookUrl = ? ORDER BY chapterIndex";
+            var result = await QueryAsync<Bookmark>(sql, bookUrl);
+            return result;
         }
 
         public async Task<Bookmark> GetAsync(long time)
         {
-            return await _database.Table<Bookmark>()
-                .Where(b => b.BookmarkTime == time)
-                .FirstOrDefaultAsync();
+            return await FindAsync(time);
         }
 
         public async Task<Bookmark> GetByIndexAsync(string bookUrl, int chapterIndex)
         {
-            return await _database.Table<Bookmark>()
-                .Where(b => b.BookUrl == bookUrl && b.BookmarkChapterIndex == chapterIndex)
-                .FirstOrDefaultAsync();
+            var sql = "SELECT * FROM bookmarks WHERE bookUrl = ? AND chapterIndex = ? LIMIT 1";
+            var result = await QueryAsync<Bookmark>(sql, bookUrl, chapterIndex);
+            return result.FirstOrDefault();
         }
 
         public async Task InsertAsync(params Bookmark[] bookmarks)
         {
-            foreach (var bookmark in bookmarks)
-                await _database.InsertOrReplaceAsync(bookmark);
+            await InsertOrReplaceAllAsync(bookmarks);
         }
 
         public async Task UpdateAsync(params Bookmark[] bookmarks)
         {
-            foreach (var bookmark in bookmarks)
-                await _database.UpdateAsync(bookmark);
+            await base.UpdateAllAsync(bookmarks);
         }
 
         public async Task DeleteAsync(params Bookmark[] bookmarks)
         {
-            foreach (var bookmark in bookmarks)
-                await _database.DeleteAsync(bookmark);
+            await base.DeleteAllAsync(bookmarks);
         }
     }
 }
