@@ -156,25 +156,13 @@ namespace Legado.Core.Data.Entities
         /// <summary>
         /// 发现url
         /// </summary>
-        public string ExploreUrl { get; set; }
-
-        /// <summary>
-        /// 发现筛选规则
-        /// </summary>
-        public string ExploreScreen { get; set; }
+        public string ExploreUrl { get; set; } 
 
         /// <summary>
         /// 发现规则
-        /// </summary>
-        [Ignore]
+        /// </summary> 
         public ExploreRule RuleExplore { get; set; }
-
-        // 用于序列化到数据库
-        public string RuleExploreJson
-        {
-            get => RuleExplore != null ? JsonConvert.SerializeObject(RuleExplore) : null;
-            set => RuleExplore = !string.IsNullOrEmpty(value) ? JsonConvert.DeserializeObject<ExploreRule>(value) : null;
-        }
+         
 
         /// <summary>
         /// 搜索url
@@ -183,71 +171,30 @@ namespace Legado.Core.Data.Entities
 
         /// <summary>
         /// 搜索规则
-        /// </summary>
-        [Ignore]
-        public SearchRule RuleSearch { get; set; }
-
-        // 用于序列化到数据库
-        public string RuleSearchJson
-        {
-            get => RuleSearch != null ? JsonConvert.SerializeObject(RuleSearch) : null;
-            set => RuleSearch = !string.IsNullOrEmpty(value) ? JsonConvert.DeserializeObject<SearchRule>(value) : null;
-        }
+        /// </summary> 
+        public SearchRule RuleSearch { get; set; } 
 
         /// <summary>
         /// 书籍信息页规则
-        /// </summary>
-        [Ignore]
-        public BookInfoRule RuleBookInfo { get; set; }
-
-        // 用于序列化到数据库
-        public string RuleBookInfoJson
-        {
-            get => RuleBookInfo != null ? JsonConvert.SerializeObject(RuleBookInfo) : null;
-            set => RuleBookInfo = !string.IsNullOrEmpty(value) ? JsonConvert.DeserializeObject<BookInfoRule>(value) : null;
-        }
-
+        /// </summary> 
+        public BookInfoRule RuleBookInfo { get; set; } 
         /// <summary>
         /// 目录页规则
         /// </summary>
         [Ignore]
-        public TocRule RuleToc { get; set; }
-
-        // 用于序列化到数据库
-        public string RuleTocJson
-        {
-            get => RuleToc != null ? JsonConvert.SerializeObject(RuleToc) : null;
-            set => RuleToc = !string.IsNullOrEmpty(value) ? JsonConvert.DeserializeObject<TocRule>(value) : null;
-        }
+        public TocRule RuleToc { get; set; } 
 
         /// <summary>
         /// 正文页规则
-        /// </summary>
-        [Ignore]
-        public ContentRule RuleContent { get; set; }
-
-        // 用于序列化到数据库
-        public string RuleContentJson
-        {
-            get => RuleContent != null ? JsonConvert.SerializeObject(RuleContent) : null;
-            set => RuleContent = !string.IsNullOrEmpty(value) ? JsonConvert.DeserializeObject<ContentRule>(value) : null;
-        }
+        /// </summary> 
+        public ContentRule RuleContent { get; set; } 
 
         /// <summary>
         /// 段评规则
-        /// </summary>
-        [Ignore]
-        public ReviewRule RuleReview { get; set; }
+        /// </summary> 
+        public ReviewRule RuleReview { get; set; } 
 
-        // 用于序列化到数据库
-        public string RuleReviewJson
-        {
-            get => RuleReview != null ? JsonConvert.SerializeObject(RuleReview) : null;
-            set => RuleReview = !string.IsNullOrEmpty(value) ? JsonConvert.DeserializeObject<ReviewRule>(value) : null;
-        }
-
-        // IRuleData 实现
-        [Ignore]
+        // IRuleData 实现 
         public Dictionary<string, string> VariableMap { get; set; } = new Dictionary<string, string>();
 
         /// <summary>
