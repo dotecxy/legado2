@@ -1,16 +1,17 @@
-﻿using System;
+﻿using Legado.Core.Helps.Source;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks; 
+using System.Threading.Tasks;
 
 namespace Legado.Core.Helps
 {
     /// <summary> 
     /// </summary>
-    public partial class JsExtensions
+    public abstract partial class JsExtensions
     {
         private BrowserService browserService;
 
@@ -27,7 +28,39 @@ namespace Legado.Core.Helps
             return browserService.WebViewAsync(html, url, js);
         }
 
-         
+        public string webViewGetOverrideUrl(string html, string url, string js)
+        {
+            return webViewAsync(html, url, js).Result;
+        }
+
+        public string webView(string html, string url, string js)
+        {
+            return webViewAsync(html, url, js).Result;
+        }
+
+        public string StartBrowser(string url, string title)
+        {
+            if (browserService == null)
+            {
+                browserService = new BrowserService();
+            }
+            return browserService.WebViewAsync(null, url, null, false).Result;
+        }
+
+        public StrResponse StartBrowserAwait(string url, string title, bool refetchAfterSuccess)
+        {
+            if (browserService == null)
+            {
+                browserService = new BrowserService();
+            }
+            var body = SourceVerificationHelper.GetVerificationResult(getSource(), url, title, true, refetchAfterSuccess);
+            return new StrResponse(url, body);
+        }
+
+        public StrResponse StartBrowserAwait(string url, string title)
+        {
+            return StartBrowserAwait(url, title, true);
+        }
     }
 }
 

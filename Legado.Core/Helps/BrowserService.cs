@@ -78,7 +78,7 @@ namespace Legado.Core.Helps
         /// 对应 Legado: webView(html, url, js)
         /// 加载页面并执行 JS，返回结果
         /// </summary>
-        public async Task<string> WebViewAsync(string html = null, string url = null, string js = null)
+        public async Task<string> WebViewAsync(string html = null, string url = null, string js = null, bool headless = true)
         {
             try
             {

@@ -334,7 +334,7 @@ namespace Legado.Core.Models.AnalyzeRules
         }
     }
 
-    public class AnalyzeRule
+    public class AnalyzeRule : JsExtensions
     {
         private IRuleData _ruleData;
         private readonly IBaseSource _source;
@@ -359,7 +359,7 @@ namespace Legado.Core.Models.AnalyzeRules
         private static readonly MemoryCache _memoryCache = new MemoryCache(new MemoryCacheOptions());
         private CancellationToken _cancellationToken = CancellationToken.None;
 
-        public AnalyzeRule(IRuleData ruleData = null, IBaseSource source = null, bool preUpdateJs = false)
+        public AnalyzeRule(IRuleData ruleData = null, IBaseSource source = null, bool preUpdateJs = false) : base(QApplication.QCreationOptions?.Configuration?.BasePath ?? "cache_path")
         {
             _ruleData = ruleData;
             _source = source;
@@ -379,6 +379,7 @@ namespace Legado.Core.Models.AnalyzeRules
             if (!string.IsNullOrEmpty(baseUrl))
             {
                 _baseUrl = baseUrl;
+                Put("url", baseUrl);
             }
             return this;
         }
@@ -836,8 +837,8 @@ namespace Legado.Core.Models.AnalyzeRules
                 bindingds.Add("src", _content);
                 bindingds.Add("nextChapterUrl", _nextChapterUrl);
                 bindingds.Add("rssArticle", _ruleData as RssArticle);
-                jsEvaluator.Bindings = bindingds;
-                return jsEvaluator;
+                jsEvaluator.Bindings = bindingds; 
+               return jsEvaluator;
             });
 
             try
@@ -926,6 +927,11 @@ namespace Legado.Core.Models.AnalyzeRules
         public IRuleData GetRuleData()
         {
             return _ruleData;
+        }
+
+        public override IBaseSource getSource()
+        {
+            return this._source;
         }
     }
 

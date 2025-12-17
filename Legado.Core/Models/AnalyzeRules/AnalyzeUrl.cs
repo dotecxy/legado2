@@ -672,6 +672,10 @@ namespace Legado.Core.Models.AnalyzeRules
             return evaluator.EvalJs(jsStr, result);
         }
 
+        public override IBaseSource getSource()
+        {
+            return this.source;
+        }
     }
 
     /// <summary>

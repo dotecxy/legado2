@@ -1,3 +1,4 @@
+using Legado.Core.App;
 using Legado.Core.Data.Entities;
 using System;
 using System.Threading;
@@ -57,8 +58,7 @@ namespace Legado.Core.Helps.Source
             //     throw new InvalidOperationException("getVerificationResult must be called on a background thread");
 
             var sourceKey = source.GetKey();
-            ClearResult(sourceKey);
-
+            ClearResult(sourceKey); 
             if (!useBrowser)
             {
                 // TODO: 启动验证码Activity
@@ -73,23 +73,8 @@ namespace Legado.Core.Helps.Source
             }
             else
             {
-                StartBrowser(source, url, title, true, refetchAfterSuccess);
-            }
-
-            // 等待用户输入验证结果
-            var waitUserInput = false;
-            while (GetResult(sourceKey) == null)
-            {
-                if (!waitUserInput)
-                {
-                    // TODO: 记录日志
-                    // AppLog.PutDebug("等待返回验证结果...");
-                    waitUserInput = true;
-                }
-
-                // 暂停当前线程，等待被唤醒
-                Thread.Sleep(WaitTime);
-            }
+                 StartBrowser(source, url, title, true, refetchAfterSuccess);
+            } 
 
             var result = GetResult(sourceKey);
             if (string.IsNullOrWhiteSpace(result))
@@ -108,7 +93,7 @@ namespace Legado.Core.Helps.Source
         /// <param name="title">标题</param>
         /// <param name="saveResult">保存网页源代码到数据库</param>
         /// <param name="refetchAfterSuccess">成功后是否重新获取</param>
-        public static void StartBrowser(
+        public static (bool?, IntentData) StartBrowser(
             IBaseSource source,
             string url,
             string title,
@@ -121,18 +106,19 @@ namespace Legado.Core.Helps.Source
             if (url.Length >= 64 * 1024)
                 throw new ArgumentException("startBrowser parameter url too long");
 
-            // TODO: 启动WebView Activity
-            // appCtx.StartActivity<WebViewActivity>(intent =>
-            // {
-            //     intent.PutExtra("title", title);
-            //     intent.PutExtra("url", url);
-            //     intent.PutExtra("sourceOrigin", source.GetKey());
-            //     intent.PutExtra("sourceName", source.GetTag());
-            //     intent.PutExtra("sourceType", source.GetSourceType());
-            //     intent.PutExtra("sourceVerificationEnable", saveResult);
-            //     intent.PutExtra("refetchAfterSuccess", refetchAfterSuccess);
-            //     IntentData.Put(GetVerificationResultKey(source), Thread.CurrentThread);
-            // });
+            var result = QApplication.Context.StartBrowserDialog(intent =>
+            {
+                intent.Put("title", title);
+                intent.Put("url", url);
+                intent.Put("sourceOrigin", source.GetKey());
+                intent.Put("sourceName", source.GetTag());
+                intent.Put("sourceType", source.GetSourceType());
+                intent.Put("sourceVerificationEnable", saveResult);
+                intent.Put("refetchAfterSuccess", refetchAfterSuccess);
+                intent.Put(GetVerificationResultKey(source), Thread.CurrentThread);
+                intent.Put("resultKey", GetVerificationResultKey(source));
+            });
+            return result;
         }
 
         /// <summary>
@@ -159,8 +145,7 @@ namespace Legado.Core.Helps.Source
         /// </summary>
         public static void SetResult(string sourceKey, string result)
         {
-            // TODO: 保存到缓存
-            // CacheManager.PutMemory(GetVerificationResultKey(sourceKey), result ?? "");
+            CacheManager.Instance.Put(GetVerificationResultKey(sourceKey), result ?? "");
         }
 
         /// <summary>
@@ -168,9 +153,7 @@ namespace Legado.Core.Helps.Source
         /// </summary>
         public static string GetResult(string sourceKey)
         {
-            // TODO: 从缓存获取
-            // return CacheManager.Get(GetVerificationResultKey(sourceKey));
-            return null;
+            return CacheManager.Instance.Get(GetVerificationResultKey(sourceKey));
         }
 
         /// <summary>
@@ -178,8 +161,7 @@ namespace Legado.Core.Helps.Source
         /// </summary>
         public static void ClearResult(string sourceKey)
         {
-            // TODO: 从缓存删除
-            // CacheManager.Delete(GetVerificationResultKey(sourceKey));
+            CacheManager.Instance.Delete(GetVerificationResultKey(sourceKey));
         }
     }
 }

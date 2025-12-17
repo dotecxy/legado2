@@ -2,6 +2,7 @@
 using AngleSharp.Html.Parser;
 using AngleSharp.XPath;
 using Jint;
+using Legado.Core.Data.Entities;
 using Legado.Core.Helps;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -25,7 +26,7 @@ namespace Legado.Core.Helps
     /// 对应 Kotlin: JsExtensions.kt
     /// 提供了网络请求、文件操作、编码转换等功能供 JS 调用
     /// </summary>
-    public partial class JsExtensions : JsEncodeUtils
+    public abstract partial class JsExtensions : JsEncodeUtils
     {
         private readonly string _cachePath;
         private readonly HttpClient _httpClient;
@@ -57,17 +58,20 @@ namespace Legado.Core.Helps
             _angleSharpConfig = Configuration.Default.WithDefaultLoader();
         }
 
+        public abstract IBaseSource getSource();
+
         #region 网络请求 (Ajax/Connect)
 
         /// <summary>
         /// 访问网络, 返回 String
         /// </summary>
-        public string ajax(object url)
+        public async Task<string> ajax(object url)
         {
             string targetUrl = url is object[] list ? list.FirstOrDefault()?.ToString() : url.ToString();
             if (string.IsNullOrEmpty(targetUrl)) return null;
 
-            return AnalyzeUrl(targetUrl, null).Result.Body;
+            var resp = await AnalyzeUrl(targetUrl, null);
+            return resp.Body;
         }
 
         /// <summary>
@@ -161,7 +165,7 @@ namespace Legado.Core.Helps
                 return new StrResponse(url, ex.Message); // Legado 出错通常返回 stacktrace
             }
         }
-         
+
 
         // 模拟 Jsoup.connect 的 GET/POST/HEAD
         public object get(string url, object headers) => JsoupConnect(url, headers, "GET");
@@ -429,7 +433,7 @@ namespace Legado.Core.Helps
         {
             if (string.IsNullOrEmpty(str)) return "";
             if (start >= str.Length) return "";
-            
+
             if (end.HasValue)
             {
                 int length = end.Value - start;
@@ -754,7 +758,7 @@ namespace Legado.Core.Helps
             {
                 string cachePath = Path.Combine(_cachePath, "cache");
                 if (!Directory.Exists(cachePath)) Directory.CreateDirectory(cachePath);
-                
+
                 string filePath = Path.Combine(cachePath, Md5Encode16(key) + ".txt");
                 File.WriteAllText(filePath, value);
             }
@@ -893,7 +897,7 @@ namespace Legado.Core.Helps
             if (string.IsNullOrEmpty(relativeUrl)) return "";
             if (relativeUrl.StartsWith("http://") || relativeUrl.StartsWith("https://"))
                 return relativeUrl;
-            
+
             try
             {
                 var baseUri = new Uri(baseUrl);

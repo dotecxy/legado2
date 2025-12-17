@@ -12,8 +12,13 @@ namespace Legado.Core
 {
     public class QApplication
     {
+        public static QApplication Context { get; private set; }
+
+        public static IServiceProvider QServiceProvider { get; private set; }
+        public static QApplicationCreationOptions QCreationOptions { get; private set; }
+        public static Type BrowserControlType { get; set; }
+
         public IServiceProvider ServiceProvider => _serviceProviderAccessor.Value;
-        public static IServiceProvider ServiceProviderImpl { get; private set; }
         public IContainer ServiceContainer => _serviceContainerAccessor.Value;
         public ContainerBuilder ServiceBuilder { get; private set; }
         public Type StartupModuleType { get; private set; }
@@ -48,6 +53,7 @@ namespace Legado.Core
                 var options = new QApplicationCreationOptions(ServiceBuilder);
                 optionsAction?.Invoke(options);
                 CreationOptions = options;
+                QCreationOptions = options;
                 AddCoreServices();
                 Modules = LoadModules();
                 //_serviceContainerAccessor.Value = ServiceBuilder.Build();
@@ -59,9 +65,9 @@ namespace Legado.Core
             {
                 _serviceContainerAccessor.Value = e;
                 _serviceProviderAccessor.Value = new ServiceProviderImp(ServiceContainer);
-                ServiceProviderImpl = _serviceProviderAccessor.Value;
+                QServiceProvider = _serviceProviderAccessor.Value;
             };
-
+            Context = this;
         }
 
         #region Privte functions

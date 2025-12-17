@@ -20,7 +20,7 @@ namespace Legado.Test
             await Task.Factory.StartNew(() =>
             {
                 _ = new TestApplication();
-                sp = QApplication.ServiceProviderImpl;
+                sp = QApplication.QServiceProvider;
             });
         }
 
