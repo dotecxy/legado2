@@ -6,6 +6,10 @@ using Legado.Core.Data.Entities;
 using Legado.Core.Helps.Books;
 using Legado.Core.Models.AnalyzeRules;
 using Legado.Core.Models.WebBooks;
+using Legado.Shared;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
+using Microsoft.AspNetCore.Components.WebView.WindowsForms;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -14,6 +18,7 @@ using static Legado.Windows.Program;
 
 namespace Legado.Windows
 {
+    [SingletonDependency]
     public partial class Form1 : Form
     {
 
@@ -53,38 +58,56 @@ namespace Legado.Windows
         }
 
 
-        public Form1()
+        BlazorWebView blazorWebView;
+        public Form1(IServiceProvider services)
         {
             InitializeComponent();
+
+            // 创建 BlazorWebView 控件
+            blazorWebView = new BlazorWebView
+            {
+                Dock = DockStyle.Fill,
+                HostPage = "wwwroot/index.html",
+                Services = services
+            };
+
+            // 注册根组件
+            blazorWebView.RootComponents.Add<App>("#app");
+
+            // 添加到窗体
+            Controls.Add(blazorWebView);
+
+            // 设置窗体属性
+            this.Text = "Blazor Windows Forms Hybrid App";
         }
 
         protected async override void OnShown(EventArgs e)
         {
             base.OnShown(e);
-            var host = Host.CreateDefaultBuilder()
-               .UseQApplication(typeof(TestModule), (builder) =>
-               {
-                   builder.Configuration.BasePath = Directory.GetCurrentDirectory() + @"data2";
-               })
-               .Build();
-            var qApplication = host.Services.GetService<QApplication>();
-            qApplication.Initialize();
-            _ = host.RunAsync();
 
-            QApplication.BrowserControlType = typeof(BrowserControl);
+            // WebBook webBook = new WebBook();
+            //var searchResults= await webBook.SearchBookAwait(bookList.First(), "诡秘之主");
+
+            // var first = searchResults.Where(s => s.Author == "爱潜水的乌贼" && s.Name == "诡秘之主").First();
+            // var book = first.ToBook();
+            // var infoList = await webBook.GetBookInfoAwait(bookList.First(), book);
+            // var chapterList = await webBook.GetChapterListAwait(bookList.First(), book);
+            // var first2 = chapterList.First();
+            // var content = await webBook.GetContentAwait(bookList.First(), book, first2);
+            // var content3 = ContentHelper.ReSegment(content, first2.Title);
+            // AnalyzeUrl ar = new AnalyzeUrl(first2.BookUrl);
+            // content = ar.htmlFormat(content);
+
+
+
              
-            WebBook webBook = new WebBook();
-           var searchResults= await webBook.SearchBookAwait(bookList.First(), "诡秘之主");
+        }
 
-            var first = searchResults.Where(s => s.Author == "爱潜水的乌贼" && s.Name == "诡秘之主").First();
-            var book = first.ToBook();
-            var infoList = await webBook.GetBookInfoAwait(bookList.First(), book);
-            var chapterList = await webBook.GetChapterListAwait(bookList.First(), book);
-            var first2 = chapterList.First();
-            var content = await webBook.GetContentAwait(bookList.First(), book, first2);
-            var content3 = ContentHelper.ReSegment(content, first2.Title);
-            AnalyzeUrl ar = new AnalyzeUrl(first2.BookUrl);
-            content = ar.htmlFormat(content);
+        protected async override void OnClosed(EventArgs e)
+        {
+            var host = QServiceProvider.GetService<IHost>();
+            await host.StopAsync();
+            base.OnClosed(e);
         }
     }
 }

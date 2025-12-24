@@ -385,7 +385,7 @@ namespace Legado.Core.Data
                             }
                         }
 
-                        _instance = new AppDatabase(databasePath);
+                        _instance = new AppDatabase(databasePath, QServiceProvider.ServiceProvider);
                     }
                 }
             }

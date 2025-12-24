@@ -1,0 +1,86 @@
+@page "/"
+@using Legado.Core.Helps.Login
+@using Legado.Core.Models.AnalyzeRules
+@inherits AppComponentBase
+@inject WebBook wb;
+
+<MudCard Class="h-full" Elevation="3">
+    <MudCardContent>
+        <MudText Typo="Typo.h4" Class="mb-6 font-weight-bold">欢迎使用Legado应用</MudText>
+
+        @* @if (!string.IsNullOrEmpty(FileContent))
+        {
+            <MudText Class="mb-4">l.txt文件内容:</MudText>
+            <MudPaper Elevation="2" Class="p-4 bg-gray-50">
+                <MudText Typo="Typo.body1">@FileContent</MudText>
+            </MudPaper>
+        } *@
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" @onclick="ShowSearchAsync">
+            Search
+        </MudButton>
+
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Class="mt-2" @onclick="Test">
+            芯象
+        </MudButton>
+
+        @foreach (var loginUI in loginUIs)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Class="mt-2" @onclick="() => Login(loginUI)">
+                芯象登录
+            </MudButton>
+        }
+
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private List<LoginUI> loginUIs = new List<LoginUI>();
+    private BookSource current;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(1);
+        try
+        {
+
+            LegadoContext.Load();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"读取文件失败: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ShowSearchAsync()
+    {
+        await Task.Delay(1);
+        Nav.NavigateTo("/Search");
+    }
+
+    private void Test()
+    {
+        var bs = current = LegadoContext.BookSources[6];
+        var list = JsonConvert.DeserializeObject<List<LoginUI>>(bs.LoginUi);
+        if (list?.Count > 0)
+        {
+            loginUIs.AddRange(list);
+        }
+        Nav.NavigateTo("https://sinsam.com");
+    }
+
+    private void Login(LoginUI ui)
+    {
+        var js = current.LoginUrl;
+        AnalyzeUrl url = new AnalyzeUrl(js, source: current);
+        Console.WriteLine(url.Url);
+        try
+        {
+            Uri uri = new Uri(url.Url);
+        }
+        catch
+        {
+            url.EvalJS(url.Url + "\n" + ui.Action);
+        }
+    }
+}

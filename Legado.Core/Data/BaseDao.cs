@@ -19,7 +19,7 @@ namespace Legado.Core.Data
         public BaseDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
             using var conn = CreateConn();
-            conn.CreateTable<Book>();
+            conn.CreateTable<T>();
         }
          
 

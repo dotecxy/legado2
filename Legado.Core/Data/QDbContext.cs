@@ -21,7 +21,9 @@ namespace Legado.Core
                     var dbConfig = _serviceProvider.GetService<DatabaseConfiguration>();
                     if (!dbConfig.ContainsKey(connStringName))
                     {
-                        throw new QException($"The database connection name {connStringName} dose not exist in configuration.");
+                        //throw new QException($"The database connection name {connStringName} dose not exist in configuration.");
+                        _connectionString = "Default";
+                        return _connectionString;
                     }
                     _connectionString = dbConfig[connStringName];
                 }

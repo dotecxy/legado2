@@ -1,12 +1,15 @@
 ﻿using Legado.Core;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace System
 {
     public static class QServiceProvider
     {
+        public static IServiceProvider ServiceProvider { get; set; }
+
         public static object GetService(Type serviceType)
         {
-            return QApplication.QServiceProvider.GetService(serviceType);
+            return ServiceProvider.GetService(serviceType);
         }
 
         public static TService GetService<TService>()
@@ -16,22 +19,22 @@ namespace System
 
         public static object LazyGetRequiredService(Type serviceType, ref object reference)
         {
-            return QApplication.QServiceProvider.LazyGetRequiredService(serviceType, ref reference);
+            return ServiceProvider.LazyGetRequiredService(serviceType, ref reference);
         }
 
         public static TService LazyGetRequiredService<TService>(ref TService reference)
         {
-            return QApplication.QServiceProvider.LazyGetRequiredService<TService>(ref reference);
+            return ServiceProvider.LazyGetRequiredService<TService>(ref reference);
         }
 
         public static bool TryGetService(Type serviceType, out object service)
         {
-            return QApplication.QServiceProvider.TryGetService(serviceType, out service);
+            return ServiceProvider.TryGetService(serviceType, out service);
         }
 
         public static bool TryGetService<TService>(out TService service)
         {
-            return QApplication.QServiceProvider.TryGetService<TService>(out service);
+            return ServiceProvider.TryGetService<TService>(out service);
         }
     }
 }

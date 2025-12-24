@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Legado.Core.Helps.Http.Api
 {
@@ -13,22 +14,22 @@ namespace Legado.Core.Helps.Http.Api
         /// <summary>
         /// 保存cookie
         /// </summary>
-        void SetCookie(string url, string? cookie);
+        Task SetCookieAsync(string url, string? cookie);
 
         /// <summary>
         /// 替换cookie
         /// </summary>
-        void ReplaceCookie(string url, string cookie);
+        Task ReplaceCookieAsync(string url, string cookie);
 
         /// <summary>
         /// 获取cookie
         /// </summary>
-        string GetCookie(string url);
+        Task<string> GetCookieAsync(string url);
 
         /// <summary>
         /// 移除cookie
         /// </summary>
-        void RemoveCookie(string url);
+        Task RemoveCookieAsync(string url);
 
         /// <summary>
         /// 将cookie字符串转换为字典

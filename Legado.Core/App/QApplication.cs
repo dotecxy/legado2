@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Legado.Core.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -36,37 +37,16 @@ namespace Legado.Core
             }
         }
 
-        public QApplication(Type startupModuleType, Action<QApplicationCreationOptions> optionsAction)
+        public QApplication()
         {
-            //ServiceBuilder = new ContainerBuilder();
-            autofacFactory = new QAutofacFactory((b) => { });
-
-            _serviceProviderAccessor = new ObjectAccessor<IServiceProvider>();
-            _serviceContainerAccessor = new ObjectAccessor<IContainer>();
-
-            autofacFactory.OnCreateBuild += (sender, e) =>
-            {
-                ServiceBuilder = e;
-                ServiceBuilder.Register(p => _serviceContainerAccessor.Value).As<IContainer>().SingleInstance();
-                ServiceBuilder.Register(p => _serviceProviderAccessor.Value).As<IServiceProvider>().SingleInstance();
-                StartupModuleType = startupModuleType;
-                var options = new QApplicationCreationOptions(ServiceBuilder);
-                optionsAction?.Invoke(options);
-                CreationOptions = options;
-                QCreationOptions = options;
-                AddCoreServices();
-                Modules = LoadModules();
-                //_serviceContainerAccessor.Value = ServiceBuilder.Build();
-                //_serviceProviderAccessor.Value = new ServiceProviderImp(ServiceContainer);
-                //ServiceProviderImpl = _serviceProviderAccessor.Value;
-            };
-
-            autofacFactory.OnBuild += (sender, e) =>
-            {
+            autofacFactory = new QAutofacFactory();
+            autofacFactory.OnContainerCreated += (sender, e) => {
                 _serviceContainerAccessor.Value = e;
-                _serviceProviderAccessor.Value = new ServiceProviderImp(ServiceContainer);
+                _serviceProviderAccessor.Value = new ServiceProviderImp(e);
                 QServiceProvider = _serviceProviderAccessor.Value;
             };
+            _serviceContainerAccessor = new ObjectAccessor<IContainer>();
+            _serviceProviderAccessor = new ObjectAccessor<IServiceProvider>();
             Context = this;
         }
 
@@ -167,8 +147,32 @@ namespace Legado.Core
         #endregion
 
         #region Public functions
-        public void Initialize()
+        public void Build(IHostBuilder builder, Type startupModuleType, Action<QApplicationCreationOptions> optionsAction)
         {
+            builder.ConfigureContainer<ContainerBuilder>((hostContext, containerBuilder) =>
+            {
+                ServiceBuilder = containerBuilder;
+                containerBuilder.RegisterInstance<QApplication>(this);
+                ServiceBuilder.Register(p => _serviceContainerAccessor.Value).As<IContainer>().SingleInstance();
+                ServiceBuilder.Register(p => _serviceProviderAccessor.Value).As<IServiceProvider>().SingleInstance();
+                containerBuilder.RegisterBuildCallback((cb) =>
+                { 
+                    Initialize();
+                });
+
+
+                StartupModuleType = startupModuleType;
+                var options = new QApplicationCreationOptions(ServiceBuilder);
+                optionsAction?.Invoke(options);
+                CreationOptions = options;
+                QCreationOptions = options;
+                AddCoreServices();
+                Modules = LoadModules();
+            });
+        }
+
+        public void Initialize()
+        { 
             InitializeModules();
         }
 

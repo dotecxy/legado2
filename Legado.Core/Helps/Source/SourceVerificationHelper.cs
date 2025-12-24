@@ -3,6 +3,7 @@ using Legado.Core.Data.Entities;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using static SQLite.SQLite3;
 
 namespace Legado.Core.Helps.Source
 {
@@ -40,7 +41,7 @@ namespace Legado.Core.Helps.Source
         /// <param name="useBrowser">是否使用浏览器</param>
         /// <param name="refetchAfterSuccess">成功后是否重新获取</param>
         /// <returns>验证结果</returns>
-        public static string GetVerificationResult(
+        public static async Task<string> GetVerificationResult(
             IBaseSource source,
             string url,
             string title,
@@ -58,7 +59,7 @@ namespace Legado.Core.Helps.Source
             //     throw new InvalidOperationException("getVerificationResult must be called on a background thread");
 
             var sourceKey = source.GetKey();
-            ClearResult(sourceKey); 
+            ClearResult(sourceKey);
             if (!useBrowser)
             {
                 // TODO: 启动验证码Activity
@@ -73,9 +74,8 @@ namespace Legado.Core.Helps.Source
             }
             else
             {
-                 StartBrowser(source, url, title, true, refetchAfterSuccess);
-            } 
-
+                _ = await StartBrowserAsync(source, url, title, true, refetchAfterSuccess);
+            }
             var result = GetResult(sourceKey);
             if (string.IsNullOrWhiteSpace(result))
             {
@@ -93,7 +93,7 @@ namespace Legado.Core.Helps.Source
         /// <param name="title">标题</param>
         /// <param name="saveResult">保存网页源代码到数据库</param>
         /// <param name="refetchAfterSuccess">成功后是否重新获取</param>
-        public static (bool?, IntentData) StartBrowser(
+        public static async Task<(bool?, IntentData)> StartBrowserAsync(
             IBaseSource source,
             string url,
             string title,
@@ -106,19 +106,21 @@ namespace Legado.Core.Helps.Source
             if (url.Length >= 64 * 1024)
                 throw new ArgumentException("startBrowser parameter url too long");
 
-            var result = QApplication.Context.StartBrowserDialog(intent =>
-            {
-                intent.Put("title", title);
-                intent.Put("url", url);
-                intent.Put("sourceOrigin", source.GetKey());
-                intent.Put("sourceName", source.GetTag());
-                intent.Put("sourceType", source.GetSourceType());
-                intent.Put("sourceVerificationEnable", saveResult);
-                intent.Put("refetchAfterSuccess", refetchAfterSuccess);
-                intent.Put(GetVerificationResultKey(source), Thread.CurrentThread);
-                intent.Put("resultKey", GetVerificationResultKey(source));
-            });
-            return result;
+            var winDialog = QServiceProvider.GetService<IWinDialog>();
+
+            IntentData intent = new IntentData();
+            intent.Put("title", title);
+            intent.Put("url", url);
+            intent.Put("sourceOrigin", source.GetKey());
+            intent.Put("sourceName", source.GetTag());
+            intent.Put("sourceType", source.GetSourceType());
+            intent.Put("sourceVerificationEnable", saveResult);
+            intent.Put("refetchAfterSuccess", refetchAfterSuccess);
+            intent.Put(GetVerificationResultKey(source), Thread.CurrentThread);
+            intent.Put("resultKey", GetVerificationResultKey(source));
+            var ok = await winDialog.ShowBrowserDialogAsync(intent);
+
+            return (ok, intent);
         }
 
         /// <summary>

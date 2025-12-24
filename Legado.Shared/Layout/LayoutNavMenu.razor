@@ -1,0 +1,31 @@
+@inherits LayoutComponentBase
+
+@inject NavigationManager NavigationManager
+
+<MudDrawer Open="true" Elevation="1" Class="bg-surface">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h6">菜单导航</MudText>
+    </MudDrawerHeader>
+    <MudNavMenu>
+        <MudNavLink Href="/">
+            <MudIcon Icon="@Icons.Material.Filled.Home" />
+            <span class="ml-2">首页</span>
+        </MudNavLink>
+        <MudNavLink Href="/Discover">
+            <MudIcon Icon="@Icons.Material.Filled.Explore" />
+            <span class="ml-2">发现</span>
+        </MudNavLink>
+        <MudNavLink Href="/Explorer">
+            <MudIcon Icon="@Icons.Material.Filled.Folder" />
+            <span class="ml-2">文件浏览</span>
+        </MudNavLink>
+        <MudNavLink Href="/Search">
+            <MudIcon Icon="@Icons.Material.Filled.Search" />
+            <span class="ml-2">搜索</span>
+        </MudNavLink>
+        <MudNavLink Href="/Volume">
+            <MudIcon Icon="@Icons.Material.Filled.VolumeUp" />
+            <span class="ml-2">音量控制</span>
+        </MudNavLink>
+    </MudNavMenu>
+</MudDrawer>

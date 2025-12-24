@@ -1,0 +1,60 @@
+[{
+        "bookSourceComment": "250101\u65b0\u589e\u756a\u8304\u6765\u6e90\n250203\u65b0\u589e\u4e03\u732b\u6765\u6e90\n250204\u65b0\u589e\u5f97\u95f4\u6765\u6e90\n250204\u65b0\u589eQQ\u6765\u6e90(\u4ec5\u652f\u6301\u514d\u8d39\u5c0f\u8bf4)\n250204\u65b0\u589e\u718a\u732b\u770b\u4e66\n250210\u66f4\u65b0\u65e5\u5fd7\uff1a\n1.\u91c7\u7528\u5168\u65b0\u9a8c\u8bc1\u65b9\u5f0f\uff0c\u4e4b\u540e\u672a\u586b\u5199\u5bc6\u94a5\uff0c\u53ef\u4ee5\u5728\u9605\u8bfb\u9875\u767b\u9646\u540e\u5237\u65b0\u9605\u8bfb\u9875\u9762\u5373\u53ef\uff01\n2.\u641c\u7d22\u9ed8\u8ba4\u6539\u4e3a\u5168\u5c40\u641c\u7d22\uff0c\u76ee\u524d\u4ec5\u652f\u6301\u756a\u8304\uff0c\u4e03\u732b\uff0cQQ\uff0c\u5f97\u95f4\uff0c\u718a\u732b\uff0c\u540e\u9762\u7684\u6309\u94ae\u662f\u9884\u8bbe\uff0c\u540e\u671f\u4f1a\u6dfb\u52a0\u76f8\u5173\u6765\u6e90\n3.\u65b0\u589e\u6674\u5929\u4e66\u67b6\u529f\u80fd\uff0c\u5728\u767b\u9646\u91cc\u9762\u70b9\u51fb\u4e66\u67b6\u67e5\u770b\n\n\u4e0b\u4e2a\u7248\u672c\u9884\u8ba1\u66f4\u65b0\u5185\u5bb9\uff1a\n1.\u9884\u8ba1\u53d1\u73b0\u9875\u65b0\u589e\u9605\u8bfb\u8bb0\u5f55\u548c\u6674\u5929\u4e66\u67b6\u680f\u76ee\n2.\u9884\u8ba1\u65b0\u589e\u9605\u8bfb\u8bb0\u5f55\uff0c\u9605\u8bfb\u8fc7\u7684\u4e66\u7c4d\u53ef\u5728\u6674\u5929\u4e66\u67b6-\u9605\u8bfb\u5386\u53f2\u4e2d\u67e5\u770b\n3.\u9884\u8ba1\u65b0\u589e\u5854\u8bfb\u5c0f\u8bf4\uff0c\u7c73\u8bfb\u5c0f\u8bf4\uff0c\u5c0f\u7c73\u9605\u8bfb\uff0c\u732b\u773c\u770b\u4e66\uff0c\u90e8\u5206\u8d77\u70b9\n\n",
+        "bookSourceGroup": "\u756a\u8304\u6f2b\u753b,\u6f2b\u753b",
+        "bookSourceName": "\ud83c\udf1e\u6674\u5929\u6f2b\u753b4.0",
+        "bookSourceType": 2,
+        "bookSourceUrl": "http://v1.gyks.cf/#\u6f2b\u753b/",
+        "customButton": false,
+        "customOrder": 57,
+        "enabled": true,
+        "enabledCookieJar": true,
+        "enabledExplore": false,
+        "eventListener": false,
+        "lastUpdateTime": 1755432238505,
+        "loginUrl": "http://v1.gyks.cf/login",
+        "respondTime": 180000,
+        "ruleBookInfo": {
+            "author": "$.author",
+            "coverUrl": "$.book_detail.thumb_url",
+            "init": "$.data",
+            "intro": "&nbsp;&nbsp;\ud83c\udfb4\u5f53\u524d\u6765\u6e90\uff1a{{$.source}}\n\ud83c\udfaf\u6700\u65b0\u7ae0\u8282\uff1a{{$.last_chapter_title}}\n\u23f3\u66f4\u65b0\u65f6\u95f4\uff1a{{$.last_chapter_update_time}}\n\ud83d\udcda\u4e66\u7c4d\u7b80\u4ecb\uff1a\n{{$.abstract}}",
+            "lastChapter": "$.last_chapter_title",
+            "name": "$.book_name",
+            "tocUrl": "/catalog?book_id={{$.book_id}}&source={{$.source}}&tab={{$.tab}}",
+            "wordCount": "$.word_number"
+        },
+        "ruleContent": {
+            "content": "$.content"
+        },
+        "ruleExplore": {
+            "author": "$.author",
+            "bookList": "$.data.data",
+            "bookUrl": "/detail?book_id={{$.book_id}}&source={{$.source}}",
+            "coverUrl": "$.thumb_url",
+            "intro": "$.abstract",
+            "kind": "$.category",
+            "lastChapter": "$.last_chapter_title",
+            "name": "$.book_name",
+            "wordCount": "$.word_number"
+        },
+        "ruleSearch": {
+            "author": "$.author",
+            "bookList": "$.data",
+            "bookUrl": "/detail?book_id={{$.book_id}}&source={{$.source}}&tab={{$.tab}}",
+            "checkKeyWord": "\u6211\u7684",
+            "coverUrl": "$.thumb_url",
+            "intro": "$.abstract",
+            "kind": "{{$.status}},{{$.score}},{{$.tags}},{{$.last_chapter_update_time}}",
+            "lastChapter": "<js>\nfunction fq_last() {\n\tlet url = `https://api5-normal-sinfonlineb.fqnovel.com/reading/bookapi/multi-detail/v/?aid=1967&iid=1&version_code=999&book_id={{$.book_id}}`;\n        let last =JSON.parse(java.ajax(url)).data[0]; \n        return last[\"last_chapter_title\"]+\" \u00b7 \"+java.timeFormat(last[\"last_chapter_update_time\"]*1000);\n\t\n\t}\n\n\t\nfunction qm_last() {\n\tlet headers={'app-version':'51110','platform':'android','reg':'0','AUTHORIZATION':'','application-id':'com.****.reader','net-env':'1','channel':'unknown','qm-params':''}\n\tsign_key='d3dGiJc651gSQ8w1'\n\nparams={'id':{{$.book_id}}, 'imei_ip':'2937357107','teeny_mode':0}\n\nvar urlEncode = function (param, key, encode) {  \n  if(param==null) return '';  \n  var paramStr = '';  \n  var t = typeof (param);  \n  if (t == 'string' || t == 'number' || t == 'boolean') {  \n    paramStr += '&' + key + '=' + ((encode==null||encode) ? encodeURIComponent(param) : param);  \n  } else {  \n    for (var i in param) {  \n      var k = key == null ? i : key + (param instanceof Array ? '[' + i + ']' : '.' + i);  \n      paramStr += urlEncode(param[i], k, encode);  \n    }  \n  }  \n  return paramStr;  \n};\nparamSign=String(java.md5Encode(Object.keys(params).sort().reduce((pre,n)=>pre+n+'='+params[n],'')+sign_key));\nheaderSign=String(java.md5Encode(Object.keys(headers).sort().reduce((pre,n)=>pre+n+'='+headers[n],'')+sign_key))\nparams['sign']=paramSign;\nheaders['sign']=headerSign;\nlet url = \"https://api-bc.wtzw.com/api/v4/book/detail?\"+urlEncode(params);\noption = {'headers':headers};\nlet last =JSON.parse(java.ajax(url+','+JSON.stringify(option)))[\"data\"][\"book\"];\nlet last2 =  `${last[\"latest_chapter_title\"]} \u00b7 ${java.timeFormat(last['update_time']*1000)} `\n\treturn last2\n\t}\n\t//\u5982\u679c\u8981\u663e\u793a\u6700\u65b0\u7ae0\u8282\uff0c\u8bf7\u53bb\u9664\u6ce8\u91ca\uff0c\u53bb\u9664\u4f1a\u5f71\u54cd\u641c\u7d22\u901f\u5ea6\n//if ('{{$.source}}'=='\u756a\u8304'){\n//\t'\u756a\u8304:'+fq_last();\n//\t} else if ('{{$.source}}'=='\u4e03\u732b'){\n//\t'\u4e03\u732b:'+qm_last();\n//\t} else {\n\t'{{$.source}} {{$.last_chapter_title}}'\n//\t\t}\n\n</js>",
+            "name": "$.book_name",
+            "wordCount": "$.word_number"
+        },
+        "ruleToc": {
+            "chapterList": "$.data",
+            "chapterName": "$.title",
+            "chapterUrl": "<js>\nlet device;\ntry {\n    device = java.androidId();\n} catch (e) {\n    try{\ndevice = java.deviceID();\n}catch (e) {device = '';\n}\n}\n`/content?item_id={{$.item_id}}&source={{$.source}}&device=${device}&tab={{$.tab}}&version=4.6.29`;\n</js>\n",
+            "updateTime": "$.volume_name"
+        },
+        "searchUrl": "/search?title={{key}}&tab=\u6f2b\u753b&source=\u5168\u90e8",
+        "weight": 0
+    }]

@@ -847,7 +847,7 @@ namespace Legado.Core.Models.AnalyzeRules
             }
             catch (Exception ex)
             {
-                throw ex;
+                return "";
             }
         }
 

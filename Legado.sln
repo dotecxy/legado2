@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legado.Test", "Legado.Test\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legado.Windows", "Legado.Windows\Legado.Windows.csproj", "{C6947262-92EB-472E-B07F-7FFE6A5EDE7E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legado.Shared", "Legado.Shared\Legado.Shared.csproj", "{38879EAC-183B-446E-B0BE-74B800098F7A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{C6947262-92EB-472E-B07F-7FFE6A5EDE7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6947262-92EB-472E-B07F-7FFE6A5EDE7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6947262-92EB-472E-B07F-7FFE6A5EDE7E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38879EAC-183B-446E-B0BE-74B800098F7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38879EAC-183B-446E-B0BE-74B800098F7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38879EAC-183B-446E-B0BE-74B800098F7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38879EAC-183B-446E-B0BE-74B800098F7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

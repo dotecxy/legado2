@@ -1,0 +1,20 @@
+@inherits LayoutComponentBase
+@using Legado.Shared.Layout
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+        <MudSpacer />
+        <MudText Typo="Typo.h6">Legado应用</MudText>
+    </MudAppBar>
+    
+    <MudDrawer Open="true" Elevation="1">
+        <NavMenu />
+    </MudDrawer>
+    
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>

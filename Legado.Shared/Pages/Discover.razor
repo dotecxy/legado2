@@ -1,0 +1,41 @@
+@page "/Discover"
+@inherits AppComponentBase
+
+<MudCard Elevation="3" Class="mb-4">
+    <MudCardContent>
+        <MudText Typo="Typo.h5" Class="mb-2 font-weight-bold">发现页面</MudText>
+        <MudText Typo="Typo.body1" Class="text-secondary mb-4">探索推荐内容和热门资源</MudText>
+        
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2" Class="h-100">
+                    <MudCardContent>
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Class="mb-2" />
+                        <MudText Typo="Typo.h6" Class="mb-1">热门推荐</MudText>
+                        <MudText Typo="Typo.body2" Class="text-secondary">查看当前最受欢迎的内容</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2" Class="h-100">
+                    <MudCardContent>
+                        <MudIcon Icon="@Icons.Material.Filled.Explore" Class="mb-2" />
+                        <MudText Typo="Typo.h6" Class="mb-1">最新更新</MudText>
+                        <MudText Typo="Typo.body2" Class="text-secondary">浏览最近添加的资源</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2" Class="h-100">
+                    <MudCardContent>
+                        <MudIcon Icon="@Icons.Material.Filled.Category" Class="mb-2" />
+                        <MudText Typo="Typo.h6" Class="mb-1">分类浏览</MudText>
+                        <MudText Typo="Typo.body2" Class="text-secondary">按类别探索内容</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>

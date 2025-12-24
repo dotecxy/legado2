@@ -1,6 +1,7 @@
 ﻿using Autofac.Core;
 using Legado.Core.Helps;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,13 +16,12 @@ namespace Legado.Core.App
             {
                 action?.Invoke(opt);
             });
-            QApplication qApplication = new QApplication(moduleType, action2);
-            builder.UseServiceProviderFactory(qApplication.AutofacFactory).ConfigureServices((context, serivces) =>
-            {
-                serivces.AddSingleton<QApplication>(qApplication);
-            });
+            QApplication qApplication = new QApplication();
+            builder.UseServiceProviderFactory(qApplication.AutofacFactory);
+            qApplication.Build(builder, moduleType, action);
             return builder;
         }
+         
 
         public static (bool?, IntentData) StartDialog<T>(this QApplication application, Action<IntentData> dataBuilder) where T : IDialog, new()
         {

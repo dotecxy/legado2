@@ -432,7 +432,7 @@ namespace Legado.Core.Models.AnalyzeRules
             // Rate Limit
             // await ConcurrentRateLimiter.AcquireAsync(source);
 
-            SetCookie();
+            await SetCookieAsync();
 
             if (this.useWebView && useWebView)
             {
@@ -500,7 +500,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 }
             }
 
-            SetCookie();
+            await SetCookieAsync();
 
             using (var client = CreateHttpClient())
             {
@@ -522,7 +522,7 @@ namespace Legado.Core.Models.AnalyzeRules
         /// </summary>
         public async Task<HttpResponseMessage> GetResponseAwait()
         {
-            SetCookie();
+            await SetCookieAsync();
 
             using (var client = CreateHttpClient())
             {
@@ -631,9 +631,9 @@ namespace Legado.Core.Models.AnalyzeRules
             return client;
         }
 
-        private void SetCookie()
+        private async Task SetCookieAsync()
         {
-            string cookie = CookieStore.GetCookie(domain);
+            string cookie = await CookieStore.GetCookieAsync(domain);
             if (!string.IsNullOrEmpty(cookie))
             {
                 // Merge Logic needed

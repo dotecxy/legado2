@@ -1,0 +1,67 @@
+/* MudBlazor样式调整 */
+.main {
+    font-family: Microsoft YaHei, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: var(--mud-palette-background) !important;
+    color: var(--mud-palette-text-primary);
+    width: 100%;
+    height: 100%;
+    padding-bottom: 60px; /* 为底部导航留出空间 */
+}
+
+.my-body {
+    background: var(--mud-palette-background) !important;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+.my-full {
+    flex-grow: 1;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+.hidden-scrollbar {
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+
+.allow-drag {
+    -webkit-app-region: drag;
+}
+
+.flex-box {
+    display: flex;
+    justify-content: center; /* 水平居中 */
+    align-items: center; /* 垂直居中 */
+}
+
+    .flex-box > :not(:last-child) {
+        /* 除了最后一个子元素之外的所有子元素 */
+        align-items: center;
+        margin-right: 16px;
+    }
+
+    .flex-box > :last-child {
+        /* 最后一个子元素 */
+        margin-left: auto; /* 将其推向右侧 */
+    }
+
+/* 自定义MudBlazor组件样式 */
+.mud-drawer {
+    background-color: var(--mud-palette-surface);
+}
+
+.mud-card {
+    margin-bottom: 16px;
+}
+
+/* 底部导航样式 */
+.fixed-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+}

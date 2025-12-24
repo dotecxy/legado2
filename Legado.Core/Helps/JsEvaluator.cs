@@ -74,7 +74,12 @@ namespace Legado.Core.Helps
                     }
 
                     // 执行JavaScript代码
-                    var jsResult = _engine.Evaluate(jsStr);
+                    JsValue jsResult = null;
+                    try
+                    {
+                        jsResult = _engine.Evaluate(jsStr);
+                    }
+                    catch { }
                     if (jsResult?.IsUndefined() == true && _engine.GetValue("c")?.IsUndefined() == false)
                     {
                         jsResult = _engine.GetValue("c");
@@ -98,6 +103,8 @@ namespace Legado.Core.Helps
 
         private object ConvertJsValue(JsValue jsValue)
         {
+            if (jsValue == null) return null;
+
             if (jsValue.IsNull() || jsValue.IsUndefined())
                 return null;
 
@@ -140,7 +147,7 @@ namespace Legado.Core.Helps
             {
                 // 对于对象，我们可以返回一个字典
                 var obj = jsValue.ToObject();
-                if(obj is List<object> listObj)
+                if (obj is List<object> listObj)
                 {
                     return listObj;
                 }

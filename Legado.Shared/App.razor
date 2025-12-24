@@ -1,0 +1,20 @@
+﻿<MudThemeProvider></MudThemeProvider>
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <MudLayout>
+            <MudMainContent>
+                <MudContainer>
+                    <MudAlert Severity="Severity.Warning" Elevation="0">未找到页面.[X.Shared]</MudAlert>
+                </MudContainer>
+            </MudMainContent>
+        </MudLayout>
+    </NotFound>
+</Router> 

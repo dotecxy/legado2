@@ -339,7 +339,13 @@ namespace Legado.Core.Utils
 
             try
             {
-                return new Uri(baseUrl).Host;
+                var host= new Uri(baseUrl).Host;
+                var parts = host.Split('.');
+                if (parts.Length >= 2)
+                {
+                    return parts[parts.Length - 2] + "." + parts[parts.Length - 1];
+                }
+                return host;
             }
             catch
             {

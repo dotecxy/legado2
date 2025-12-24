@@ -1,4 +1,6 @@
-﻿using Legado.Core.Data.Entities;
+﻿using Legado.Core.Data;
+using Legado.Core.Data.Dao;
+using Legado.Core.Data.Entities;
 using Legado.Core.Helps.Http.Api;
 using Legado.Core.Utils;
 using System;
@@ -6,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Legado.Core.Helps.Http
 {
@@ -25,22 +28,26 @@ namespace Legado.Core.Helps.Http
         private static readonly Regex SemicolonRegex = new Regex(@";");
         private static readonly Regex EqualsRegex = new Regex(@"=");
 
-        // TODO: 数据库访问接口
-        // private static ICookieDao _cookieDao;
+        private static ICookieDao _cookieDao
+        {
+            get
+            {
+                return AppDatabase.GetInstance("test.db").CookieDao;
+            }
+        }
 
         /// <summary>
         /// 保存cookie到数据库，会自动识别url的二级域名（对应 Kotlin 的 setCookie）
         /// </summary>
-        public void SetCookie(string url, string cookie)
+        public async Task SetCookieAsync(string url, string cookie)
         {
             try
             {
                 var domain = NetworkUtils.GetSubDomain(url);
                 CacheManager.Instance.PutMemory($"{domain}_cookie", cookie ?? "");
 
-                // TODO: 保存到数据库
-                // var cookieBean = new CookieEntity { Url = domain, Cookie = cookie ?? "" };
-                // _cookieDao.Insert(cookieBean);
+                var cookieBean = new CookieEntity { Url = domain, Cookie = cookie ?? "" };
+                await _cookieDao.InsertAsync(cookieBean);
             }
             catch (Exception e)
             {
@@ -53,17 +60,17 @@ namespace Legado.Core.Helps.Http
         /// <summary>
         /// 替换cookie（对应 Kotlin 的 replaceCookie）
         /// </summary>
-        public void ReplaceCookie(string url, string cookie)
+        public async Task ReplaceCookieAsync(string url, string cookie)
         {
             if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(cookie))
             {
                 return;
             }
 
-            var oldCookie = GetCookieNoSession(url);
+            var oldCookie = await GetCookieNoSessionAsync(url);
             if (string.IsNullOrEmpty(oldCookie))
             {
-                SetCookie(url, cookie);
+                await SetCookieAsync(url, cookie);
             }
             else
             {
@@ -74,43 +81,43 @@ namespace Legado.Core.Helps.Http
                     cookieMap[kvp.Key] = kvp.Value;
                 }
                 var newCookie = MapToCookie(cookieMap);
-                SetCookie(url, newCookie);
+                await SetCookieAsync(url, newCookie);
             }
         }
 
         /// <summary>
         /// 获取url所属的二级域名的cookie（对应 Kotlin 的 getCookie）
         /// </summary>
-        public string GetCookie(string url)
+        public async Task<string> GetCookieAsync(string url)
         {
             var domain = NetworkUtils.GetSubDomain(url);
 
-            var cookie = GetCookieNoSession(url);
+            var cookie = await GetCookieNoSessionAsync(url);
             var sessionCookie = GetSessionCookie(domain);
 
             var cookieMap = MergeCookiesToMap(cookie, sessionCookie);
 
             var ck = MapToCookie(cookieMap) ?? "";
-            
+
             // 限制 Cookie 长度不超过 4096 字节
             while (ck.Length > 4096)
             {
                 // 随机移除一个 cookie
                 var removeKey = cookieMap.Keys.ElementAt(new Random().Next(cookieMap.Count));
-                RemoveCookieKey(url, removeKey);
+                await RemoveCookieKeyAsync(url, removeKey);
                 cookieMap.Remove(removeKey);
                 ck = MapToCookie(cookieMap) ?? "";
             }
-            
+
             return ck;
         }
 
         /// <summary>
         /// 获取特定key的cookie值（对应 Kotlin 的 getKey）
         /// </summary>
-        public string GetKey(string url, string key)
+        public async Task<string> GetKeyAsync(string url, string key)
         {
-            var cookie = GetCookie(url);
+            var cookie = await GetCookieAsync(url);
             var sessionCookie = GetSessionCookie(url);
             var cookieMap = MergeCookiesToMap(cookie, sessionCookie);
             return cookieMap.TryGetValue(key, out var value) ? value : "";
@@ -119,18 +126,14 @@ namespace Legado.Core.Helps.Http
         /// <summary>
         /// 移除cookie（对应 Kotlin 的 removeCookie）
         /// </summary>
-        public void RemoveCookie(string url)
+        public async Task RemoveCookieAsync(string url)
         {
             var domain = NetworkUtils.GetSubDomain(url);
-            
-            // TODO: 从数据库删除
-            // _cookieDao.Delete(domain);
-            
+
+            await _cookieDao.DeleteAsync(domain);
+
             CacheManager.Instance.DeleteMemory($"{domain}_cookie");
             CacheManager.Instance.DeleteMemory($"{domain}_session_cookie");
-            
-            // TODO: WebView Cookie 清理
-            // android.webkit.CookieManager.getInstance().removeCookie(url);
         }
 
         /// <summary>
@@ -139,7 +142,7 @@ namespace Legado.Core.Helps.Http
         public IDictionary<string, string> CookieToMap(string cookie)
         {
             var cookieMap = new Dictionary<string, string>();
-            
+
             if (string.IsNullOrWhiteSpace(cookie))
             {
                 return cookieMap;
@@ -162,7 +165,7 @@ namespace Legado.Core.Helps.Http
 
                 var key = pairs[0].Trim();
                 var value = pairs[1];
-                
+
                 if (!string.IsNullOrWhiteSpace(value) || value.Trim() == "null")
                 {
                     cookieMap[key] = value.Trim();
@@ -184,7 +187,7 @@ namespace Legado.Core.Helps.Http
 
             var builder = new StringBuilder();
             var index = 0;
-            
+
             foreach (var kvp in cookieMap)
             {
                 if (index > 0)
@@ -203,8 +206,7 @@ namespace Legado.Core.Helps.Http
         /// </summary>
         public void Clear()
         {
-            // TODO: 删除数据库中的所有 OkHttp Cookie
-            // _cookieDao.DeleteOkHttp();
+            _cookieDao.DeleteOkHttpAsync();
         }
 
         // ================= 辅助方法（对应 CookieManager 中的方法） =================
@@ -212,24 +214,23 @@ namespace Legado.Core.Helps.Http
         /// <summary>
         /// 获取不包含session的cookie（对应 CookieManager.getCookieNoSession）
         /// </summary>
-        private string GetCookieNoSession(string url)
+        private async Task<string> GetCookieNoSessionAsync(string url)
         {
             var domain = NetworkUtils.GetSubDomain(url);
-            
+
             // 先从内存缓存获取
             var cookie = CacheManager.Instance.GetFromMemory($"{domain}_cookie") as string;
             if (!string.IsNullOrEmpty(cookie))
             {
                 return cookie;
             }
-
-            // TODO: 从数据库获取
-            // var cookieEntity = _cookieDao.Get(domain);
-            // if (cookieEntity != null)
-            // {
-            //     CacheManager.PutMemory($"{domain}_cookie", cookieEntity.Cookie);
-            //     return cookieEntity.Cookie;
-            // }
+             
+            var cookieEntity = await _cookieDao.GetAsync(domain);
+            if (cookieEntity != null)
+            {
+                CacheManager.Instance.PutMemory($"{domain}_cookie", cookieEntity.Cookie);
+                return cookieEntity.Cookie;
+            }
 
             return "";
         }
@@ -249,7 +250,7 @@ namespace Legado.Core.Helps.Http
         private Dictionary<string, string> MergeCookiesToMap(params string[] cookies)
         {
             var cookieMap = new Dictionary<string, string>();
-            
+
             foreach (var cookie in cookies)
             {
                 if (string.IsNullOrWhiteSpace(cookie))
@@ -270,9 +271,9 @@ namespace Legado.Core.Helps.Http
         /// <summary>
         /// 移除指定key的cookie（对应 CookieManager.removeCookie）
         /// </summary>
-        private void RemoveCookieKey(string url, string key)
+        private async Task RemoveCookieKeyAsync(string url, string key)
         {
-            var cookie = GetCookie(url);
+            var cookie = await GetCookieAsync(url);
             if (string.IsNullOrEmpty(cookie))
             {
                 return;
@@ -281,7 +282,7 @@ namespace Legado.Core.Helps.Http
             var cookieMap = CookieToMap(cookie);
             cookieMap.Remove(key);
             var newCookie = MapToCookie(cookieMap);
-            SetCookie(url, newCookie);
+            await SetCookieAsync(url, newCookie);
         }
     }
 }

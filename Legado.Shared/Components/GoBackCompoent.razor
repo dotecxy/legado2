@@ -1,0 +1,18 @@
+@inherits AppComponentBase
+
+@if (IsCanGoBack)
+{
+    <MudButton Variant="Variant.Text" Color="Color.Inherit" Edge="Edge.Start" OnClick="GoBackAsync">
+        <MudIcon Icon="@Icons.Material.Filled.ArrowBack" />
+        返回
+    </MudButton>
+}
+
+@code {
+    private bool IsCanGoBack = true;
+    
+    private async Task GoBackAsync()
+    {
+        await Task.Delay(1);
+    }
+}

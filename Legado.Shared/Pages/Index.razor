@@ -1,0 +1,39 @@
+@page "/Index"
+
+<MudLayout>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+            <MudText Typo="Typo.h4" Class="mb-6">应用首页</MudText>
+            <MudText>这是Legado应用的首页内容区域。</MudText>
+        </MudContainer>
+    </MudMainContent>
+    
+    <div class="fixed-bottom-nav">
+        <MudPaper Elevation="6">
+            <MudStack Direction="Direction.Row" Justify="Justify.SpaceAround">
+                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => {}">
+                    <MudIcon Icon="@Icons.Material.Filled.Home" />
+                    <MudText Class="ml-2">首页</MudText>
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => {}">
+                    <MudIcon Icon="@Icons.Material.Filled.Explore" />
+                    <MudText Class="ml-2">发现</MudText>
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => {}">
+                    <MudIcon Icon="@Icons.Material.Filled.Settings" />
+                    <MudText Class="ml-2">设置</MudText>
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </div>
+</MudLayout>
+
+@code {
+    private void NavigateToVolume()
+    {
+        // 导航逻辑
+
+    }
+}

@@ -517,5 +517,10 @@ namespace Legado.Core.Data.Entities
             // TODO: 实现大数据读取
             return null;
         }
+
+        public override string ToString()
+        {
+            return BookSourceComment ?? BookSourceName;
+        }
     }
 }

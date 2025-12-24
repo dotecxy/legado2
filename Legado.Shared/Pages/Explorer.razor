@@ -1,0 +1,37 @@
+@page "/Explorer"
+@inherits AppComponentBase
+
+<MudCard Elevation="3" Class="h-full">
+    <MudCardContent>
+        <MudText Typo="Typo.h5" Class="mb-6 font-weight-bold">文件浏览</MudText>
+        
+        <MudTable Items="@files">
+            <HeaderContent>
+                <MudTh>文件名称</MudTh>
+                <MudTh>大小</MudTh>
+            </HeaderContent>
+            <RowTemplate Context="file">
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Size="Size.Small" />
+                    <MudText>@file.Name</MudText>
+                </MudTd>
+                <MudTd>@file.Size</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    public class FileInfo
+    {
+        public string Name { get; set; } = "";
+        public string Size { get; set; } = "";
+    }
+    
+    private List<FileInfo> files = new()
+    {
+        new FileInfo { Name = "示例文件1.txt", Size = "1.2 MB" },
+        new FileInfo { Name = "示例文件2.pdf", Size = "3.5 MB" },
+        new FileInfo { Name = "示例文件3.zip", Size = "10.8 MB" }
+    };
+}
