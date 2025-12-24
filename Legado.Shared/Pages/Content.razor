@@ -1,0 +1,286 @@
+@page "/Content"
+@inherits AppComponentBase
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+    <!-- 顶部导航栏 -->
+    <MudStack direction="Direction.Row" alignItems="AlignItems.Center" Class="mb-4">
+        <MudButton 
+            Variant="Variant.Text" 
+            Color="Color.Primary" 
+            OnClick="GoBackToVolume"
+            StartIcon="@Icons.Material.Filled.ArrowBack"
+        >
+            返回目录
+        </MudButton>
+        <MudSpacer />
+        <MudIconButton 
+            Icon="@Icons.Material.Filled.Settings" 
+            Color="Color.Primary"
+            OnClick="ToggleReadingSettings"
+        />
+    </MudStack>
+
+    <!-- 章节标题 -->
+    <MudCard Elevation="2" Class="mb-4">
+        <MudCardContent>
+            <MudText Typo="Typo.h4" Class="text-center">
+                @CurrentChapter?.Title
+            </MudText>
+        </MudCardContent>
+    </MudCard>
+
+    <!-- 章节内容 -->
+    <MudCard Elevation="3" Class="mb-4" Style="min-height: 500px;">
+        <MudCardContent>
+            <MudText 
+                Typo="Typo.body1" 
+                Class="chapter-content"
+                Style=@($"font-size: {FontSize}px; line-height: {LineHeight}em;")
+            >
+                @if (CurrentChapter != null && !string.IsNullOrEmpty(CurrentChapter.Content))
+                {
+                    @((MarkupString)FormatChapterContent(CurrentChapter.Content))
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-center mt-10">
+                        章节内容加载中...
+                    </MudText>
+                }
+            </MudText>
+        </MudCardContent>
+    </MudCard>
+
+    <!-- 章节导航 -->
+    <MudStack direction="Direction.Row" justifyContent="JustifyContent.SpaceBetween" Class="mb-4">
+        <MudButton 
+            Variant="Variant.Outlined" 
+            Color="Color.Primary"
+            StartIcon="@Icons.Material.Filled.ChevronLeft"
+            OnClick="GoToPreviousChapter"
+            Disabled="!HasPreviousChapter"
+        >
+            上一章
+        </MudButton>
+        <MudButton 
+            Variant="Variant.Outlined" 
+            Color="Color.Primary"
+            EndIcon="@Icons.Material.Filled.ChevronRight"
+            OnClick="GoToNextChapter"
+            Disabled="!HasNextChapter"
+        >
+            下一章
+        </MudButton>
+    </MudStack>
+
+    <!-- 阅读设置面板 -->
+    <MudDrawer 
+        open="_readingSettingsOpen" 
+        onClose="() => _readingSettingsOpen = false"
+        anchor="Anchor.Right"
+        width="300px"
+    >
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">阅读设置</MudText>
+        </MudDrawerHeader>
+        <div class="mud-drawer-content">
+            <MudStack spacing="3" padding="3">
+                <!-- 字体大小设置 -->
+                <div>
+                    <MudText Typo="Typo.body2" Class="mb-2">字体大小</MudText>
+                    <MudSlider
+                        @bind-Value="FontSize"
+                        Min="14"
+                        Max="24"
+                        Step="1"
+                        Class="w-full"
+                    />
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-center">
+                        @FontSize px
+                    </MudText>
+                </div>
+
+                <!-- 行高设置 -->
+                <div>
+                    <MudText Typo="Typo.body2" Class="mb-2">行高</MudText>
+                    <MudSlider
+                        @bind-Value="LineHeight"
+                        Min="1.2"
+                        Max="2.0"
+                        Step="0.1"
+                        Class="w-full"
+                    />
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-center">
+                        @LineHeight
+                    </MudText>
+                </div>
+
+                <!-- 背景颜色设置 -->
+                <div>
+                    <MudText Typo="Typo.body2" Class="mb-2">背景颜色</MudText>
+                    <MudStack spacing="0" direction="Direction.Row" justifycontent="justifycontent.spacearound">
+                        <MudIconButton 
+                            Icon="@Icons.Material.Filled.Check" 
+                            color="Color.Default"
+                            backgroundcolor="Color.Light"
+                            onclick=@(() => BackgroundColor = "white")
+                            style=@(BackgroundColor == "white" ? "border: 2px solid var(--mud-palette-primary)" : "")
+                        />
+                        <MudIconButton 
+                            Icon="@Icons.Material.Filled.Check" 
+                            color="Color.Default"
+                            backgroundcolor="Color.Warning"
+                            onclick=@(() => BackgroundColor = "lightyellow")
+                            style=@(BackgroundColor == "lightyellow" ? "border: 2px solid var(--mud-palette-primary)" : "")
+                        />
+                        <MudIconButton 
+                            Icon="@Icons.Material.Filled.Check" 
+                            color="Color.Default"
+                            backgroundcolor="Color.Info"
+                            onclick=@(() => BackgroundColor = "lightblue")
+                            style=@(BackgroundColor == "lightblue" ? "border: 2px solid var(--mud-palette-primary)" : "")
+                        />
+                        <MudIconButton 
+                            Icon="@Icons.Material.Filled.Check" 
+                            color="Color.Default"
+                            backgroundcolor="Color.Dark"
+                            onclick=@(() => BackgroundColor = "gray")
+                            style=@(BackgroundColor == "gray" ? "border: 2px solid var(--mud-palette-primary)" : "")
+                        />
+                    </MudStack>
+                </div>
+            </MudStack>
+        </div>
+    </MudDrawer>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public string BookId { get; set; }
+
+    [Parameter]
+    public int ChapterIndex { get; set; }
+
+    private bool _readingSettingsOpen = false;
+    private ChapterModel? CurrentChapter { get; set; }
+    private List<ChapterModel>? _chapters;
+    private int _fontSize = 18;
+    private double _lineHeight = 1.5;
+    private string _backgroundColor = "white";
+
+    public int FontSize
+    {
+        get => _fontSize;
+        set
+        {
+            _fontSize = value;
+            UpdateReadingSettings();
+        }
+    }
+
+    public double LineHeight
+    {
+        get => _lineHeight;
+        set
+        {
+            _lineHeight = value;
+            UpdateReadingSettings();
+        }
+    }
+
+    public string BackgroundColor
+    {
+        get => _backgroundColor;
+        set
+        {
+            _backgroundColor = value;
+            UpdateReadingSettings();
+        }
+    }
+
+    private bool HasPreviousChapter => ChapterIndex > 0;
+    private bool HasNextChapter => _chapters != null && ChapterIndex < _chapters.Count - 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadChapterContent();
+        LoadReadingSettings();
+        await UpdateReadingSettings();
+    }
+
+    private async Task LoadChapterContent()
+    {
+        // 这里应该从服务或数据库加载章节内容
+        // 暂时使用模拟数据
+        _chapters = GenerateMockChapters();
+        CurrentChapter = _chapters.ElementAtOrDefault(ChapterIndex);
+    }
+
+    private void GoBackToVolume()
+    {
+        Nav.NavigateTo($"/Volume/{BookId}");
+    }
+
+    private void GoToPreviousChapter()
+    {
+        if (HasPreviousChapter)
+        {
+            Nav.NavigateTo($"/Chapter/{BookId}/{ChapterIndex - 1}");
+        }
+    }
+
+    private void GoToNextChapter()
+    {
+        if (HasNextChapter)
+        {
+            Nav.NavigateTo($"/Chapter/{BookId}/{ChapterIndex + 1}");
+        }
+    }
+
+    private void ToggleReadingSettings()
+    {
+        _readingSettingsOpen = !_readingSettingsOpen;
+    }
+
+    private void LoadReadingSettings()
+    {
+        // 从本地存储加载阅读设置
+        // 暂时使用默认值
+    }
+
+    private async Task UpdateReadingSettings()
+    {
+        // 保存阅读设置到本地存储
+        // 更新页面样式
+        await JSRuntime.InvokeVoidAsync("updateChapterStyle", ".chapter-content", _backgroundColor);
+    }
+
+    private string FormatChapterContent(string content)
+    {
+        // 格式化章节内容，将换行符转换为<p>标签
+        return content.Replace("\n\n", "</p><p>").Replace("\n", "<br />");
+    }
+
+    private List<ChapterModel> GenerateMockChapters()
+    {
+        // 生成模拟章节数据
+        var chapters = new List<ChapterModel>();
+        for (int i = 0; i < 10; i++)
+        {
+            chapters.Add(new ChapterModel
+            {
+                Title = $"第{i + 1}章 测试章节",
+                Content = $"这是第{i + 1}章的内容。\n\n这是第二段落。\n\n这是第三段落，包含一些测试文本。\n\n这是第四段落，用于测试章节内容的显示效果。"
+            });
+        }
+        return chapters;
+    }
+
+    // 模拟章节模型
+    private class ChapterModel
+    {
+        public string Title { get; set; }
+        public string Content { get; set; }
+    }
+}

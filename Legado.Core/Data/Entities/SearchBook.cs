@@ -239,7 +239,7 @@ namespace Legado.Core.Data.Entities
                 Intro = Intro,
                 TocUrl = TocUrl,
                 OriginOrder = OriginOrder,
-                Variable = Variable
+                Variable = Variable, 
             };
             book.InfoHtml = this.InfoHtml;
             book.TocHtml = this.TocHtml;

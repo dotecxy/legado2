@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Acornima;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 
 namespace Legado.Core.Models.AnalyzeRules
 {
@@ -155,7 +156,7 @@ namespace Legado.Core.Models.AnalyzeRules
         /// <returns>字符串列表</returns>
         public List<string> GetStringList(string rule)
         {
-            var result = new List<string>();
+             var result = new List<string>();
 
             if (string.IsNullOrEmpty(rule))
                 return result;
@@ -179,15 +180,37 @@ namespace Legado.Core.Models.AnalyzeRules
                     // 如果没有成功替换的内嵌规则，直接执行 JsonPath
                     try
                     {
-                        var resultTokens = _jToken.SelectTokens(rule);
-                        if (resultTokens != null)
+                        if (_jToken is JArray arr)
                         {
-                            foreach (var token in resultTokens)
+                            foreach (var item in arr)
                             {
-                                if (token != null)
-                                    result.Add(token.ToString());
+                                if (item == null) continue;
+                                result.Add(item.ToString());
                             }
                         }
+                        else
+                        {
+                            var resultTokens = _jToken.SelectTokens(rule)?.ToArray();
+                            if (resultTokens?.Count() > 0)
+                            {
+                                foreach (var token in resultTokens)
+                                {
+                                    if (token == null) continue;
+                                    if(token is JArray arr2)
+                                    {
+                                        foreach (var item in arr2)
+                                        {
+                                            if (item == null) continue;
+                                            result.Add(item.ToString());
+                                        }
+                                        continue;
+                                    }
+                                    result.Add(token.ToString());
+                                }
+                            }
+                        }
+
+
                     }
                     catch (Exception ex)
                     {

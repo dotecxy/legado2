@@ -32,28 +32,28 @@
                                 <MudCardContent>
                                     <!-- 显示书籍名称 -->
                                     <MudText Typo="Typo.h6" Class="font-weight-bold mb-1">@result.Name</MudText>
-                                    
+
                                     <!-- 显示作者信息 -->
                                     <MudText Typo="Typo.body2" Class="text-secondary mb-2">作者：@result.Author</MudText>
-                                    
+
                                     <!-- 显示封面图片（如果有）-->
                                     @if (!string.IsNullOrEmpty(result.CoverUrl))
                                     {
                                         <MudImage Src="@result.CoverUrl" Height="200" Class="mb-3 object-cover" />
                                     }
-                                    
+
                                     <!-- 显示简介（如果有）-->
                                     @if (!string.IsNullOrEmpty(result.Intro))
                                     {
                                         <MudText Typo="Typo.body2" Class="mb-3 line-clamp-3">简介：@result.Intro</MudText>
                                     }
-                                    
+
                                     <!-- 显示其他信息 -->
                                     @if (!string.IsNullOrEmpty(result.Kind))
                                     {
                                         <MudText Typo="Typo.caption" Class="text-secondary">@result.Kind</MudText>
                                     }
-                                    
+
                                     <!-- 操作按钮 -->
                                     <div class="mt-3 d-flex justify-end">
                                         <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined"
@@ -92,7 +92,7 @@
 
         try
         {
-            var result = await LegadoContext.WB.SearchBookAwait(LegadoContext.BookSources[6], SearchQuery);
+            var result = await LegadoContext.WebBook.SearchBookAwait(LegadoContext.BookSources[6], SearchQuery);
             if (result?.Count > 0)
             {
                 searchResults.AddRange(result);
@@ -103,11 +103,13 @@
             Snackbar.Add($"搜索失败: {ex.Message}", Severity.Error);
         }
     }
-    
-    private void ViewBookDetail(dynamic book)
+
+    private void ViewBookDetail(SearchBook book)
     {
         // 这里可以实现查看书籍详情的逻辑
-        Snackbar.Add($"查看: {book.name}", Severity.Info);
+        Snackbar.Add($"查看: {book.Name}", Severity.Info);
         // 可以导航到详情页面或打开对话框等
+        LegadoContext.CurrentBook = book.ToBook();
+        Nav.NavigateTo("/Detail");
     }
 }

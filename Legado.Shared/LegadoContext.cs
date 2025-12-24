@@ -1,4 +1,4 @@
-﻿using Legado.Core;
+using Legado.Core;
 using Legado.Core.Data.Entities;
 using Legado.Core.Models.WebBooks;
 using MudBlazor;
@@ -16,7 +16,17 @@ namespace Legado.Shared
     {
         private readonly IEventProvider _ep;
         public List<BookSource> BookSources { get; private set; } = new List<BookSource>();
-        public WebBook WB { get; private set; } = new WebBook();
+        public WebBook WebBook { get; private set; } = new WebBook();
+        public int BookIndex { get; set; } = 6;
+        public Book CurrentBook { get; set; }
+        public BookChapter CurrentChapter { get; set; }
+        public BookSource CurrentBookSource
+        {
+            get
+            {
+                return BookSources[BookIndex];
+            }
+        }
 
         public LegadoContext(IEventProvider eventProvider)
         {

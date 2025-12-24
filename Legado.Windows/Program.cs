@@ -149,6 +149,11 @@ namespace Legado.Windows
                 base.OnApplicationInitialization(context);
                 //var application = context.ServiceProvider.GetService<QApplication>();
             }
+
+            public override void OnPostApplicationInitialization(ApplicationInitializationContext context)
+            {
+                base.OnPostApplicationInitialization(context);
+            }
         }
     }
 }

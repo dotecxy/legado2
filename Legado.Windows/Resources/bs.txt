@@ -261,7 +261,7 @@
         "respondTime": 180000,
         "ruleBookInfo": {
             "author": "$.author",
-            "coverUrl": "$.book_detail.thumb_url",
+            "coverUrl": "$.thumb_url",
             "init": "$.data",
             "intro": "&nbsp;&nbsp;\ud83c\udfb4\u5f53\u524d\u6765\u6e90\uff1a{{$.source}}\n\ud83c\udfaf\u6700\u65b0\u7ae0\u8282\uff1a{{$.last_chapter_title}}\n\u23f3\u66f4\u65b0\u65f6\u95f4\uff1a{{$.last_chapter_update_time}}\n\ud83d\udcda\u4e66\u7c4d\u7b80\u4ecb\uff1a\n{{$.abstract}}",
             "lastChapter": "$.last_chapter_title",

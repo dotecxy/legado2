@@ -1,4 +1,5 @@
 ﻿using Legado.Core;
+using Legado.Core.Data.Entities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -21,8 +22,7 @@ namespace Legado.Shared
                 _MainState = value;
                 RaisePropertyChanged(nameof(IndexState));
             }
-        }
-
+        } 
 
         public event PropertyChangedEventHandler? PropertyChanged;
 

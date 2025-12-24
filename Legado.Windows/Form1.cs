@@ -14,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.DirectoryServices;
+using System.IO;
 using static Legado.Windows.Program;
 
 namespace Legado.Windows

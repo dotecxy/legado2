@@ -1,0 +1,184 @@
+﻿@page "/Detail"
+@inherits AppComponentBase
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    @if (isLoading)
+    {
+        <MudCard Class="elevation-4">
+            <MudCardContent>
+                <div class="d-flex justify-center align-items-center py-6">
+                    <MudProgressCircular Color="Color.Primary" Size="Size.Large" />
+                    <MudText Class="ml-3">加载中...</MudText>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    }
+    else if (BookInfo == null)
+    {
+        <MudCard Class="elevation-4">
+            <MudCardContent>
+                <div class="d-flex justify-center align-items-center py-6">
+                    <MudIcon Icon="mdi-book-off" Size="Size.Large" Color="Color.Dark" />
+                    <MudText Class="ml-3" Color="Color.Dark">未找到书籍信息</MudText>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    }
+    else
+    {
+        <MudCard Class="elevation-4 mb-4">
+            <MudCardContent>
+                <MudGrid>
+                    <!-- 书籍封面 -->
+                    <MudItem xs="12" sm="4" md="3" Class="d-flex justify-center">
+                        <MudImage 
+                            Src="@BookInfo.CoverUrl" 
+                            Alt="@BookInfo.Name" 
+                            Class="book-cover" 
+                            Height="250" 
+                            Width="180" 
+                            ObjectFit="ObjectFit.Cover"
+                            Style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"
+                        />
+                    </MudItem>
+                    
+                    <!-- 书籍基本信息 -->
+                    <MudItem xs="12" sm="8" md="9">
+                        <MudText Typo="Typo.h5" Class="font-weight-bold mb-1">@(BookInfo?.Name ?? "")</MudText>
+                        <MudText Typo="Typo.subtitle1" Color="Color.Secondary" Class="mb-3">作者：@BookInfo.Author</MudText>
+                        
+                        <MudGrid Class="mb-3">
+                            <MudItem xs="6">
+                                <MudText Color="Color.Secondary" Class="text-sm">分类：</MudText>
+                                <MudText>@BookInfo.Kind</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Color="Color.Secondary" Class="text-sm">字数：</MudText>
+                                <MudText>@BookInfo.WordCount</MudText>
+                            </MudItem>
+                        </MudGrid>
+                        
+                        <MudGrid Class="mb-3">
+                            <MudItem xs="6">
+                                <MudText Color="Color.Secondary" Class="text-sm">最新章节：</MudText>
+                                <MudText Class="text-truncate">@BookInfo.LatestChapterTitle</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Color="Color.Secondary" Class="text-sm">来源：</MudText>
+                                <MudText>@BookInfo.OriginName</MudText>
+                            </MudItem>
+                        </MudGrid>
+                        
+                        <!-- 操作按钮 -->
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" sm="6">
+                                <MudButton FullWidth Color="Color.Primary" Variant="Variant.Filled" StartIcon="mdi-book-open-page-variant" OnClick="() => StartReading()">
+                                    开始阅读
+                                </MudButton>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudButton FullWidth Color="Color.Secondary" Variant="Variant.Filled" StartIcon="mdi-bookmark-plus" OnClick="() => AddToBookshelf()">
+                                    加入书架
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+        
+        <!-- 书籍简介 -->
+        <MudCard Class="elevation-4 mb-4">
+            <MudCardHeader>
+                <MudCardTitle>书籍简介</MudCardTitle>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudCollapse @bind-IsExpanded="isIntroExpanded">
+                    <MudText>
+                        @if (string.IsNullOrWhiteSpace(BookInfo.Intro))
+                        {
+                            <span>暂无简介</span>
+                        }
+                        else
+                        {
+                            <span>@BookInfo.Intro</span>
+                        }
+                    </MudText>
+                </MudCollapse>
+                <MudButton 
+                    Color="Color.Primary" 
+                    Variant="Variant.Text" 
+                    Size="Size.Small" 
+                    OnClick="() => isIntroExpanded = !isIntroExpanded"
+                    Class="mt-2"
+                >
+                    @(isIntroExpanded ? "收起" : "展开")
+                    <MudIcon Icon="@(isIntroExpanded ? "mdi-chevron-up" : "mdi-chevron-down")" Size="Size.Small" />
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+        
+        <!-- 目录入口 -->
+        <MudCard Class="elevation-4">
+            <MudCardHeader>
+                <MudCardTitle>章节目录</MudCardTitle>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudButton 
+                    FullWidth 
+                    Color="Color.Primary" 
+                    Variant="Variant.Outlined" 
+                    StartIcon="mdi-book-open-variant" 
+                    OnClick="() => NavigateToChapter()"
+                >
+                    查看全部章节
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+    }
+</MudContainer>
+
+    @code {
+    private Book? BookInfo;
+    private bool isLoading = true;
+    private bool isIntroExpanded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            var bookInfo = await LegadoContext.WebBook.GetBookInfoAwait(LegadoContext.CurrentBookSource, LegadoContext.CurrentBook);
+            BookInfo = bookInfo;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("加载书籍信息失败: " + ex.Message, Severity.Error);
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private void StartReading()
+    {
+        // 实现开始阅读功能
+        Snackbar.Add("开始阅读功能待实现", Severity.Info);
+    }
+
+    private void AddToBookshelf()
+    {
+        // 实现加入书架功能
+        Snackbar.Add($"{BookInfo.Name} 已加入书架", Severity.Success);
+    }
+
+    private void NavigateToChapter()
+    {
+        // 导航到目录页面
+        Nav.NavigateTo("/Chapter");
+    }
+}
