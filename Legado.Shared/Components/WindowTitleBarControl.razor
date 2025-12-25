@@ -1,0 +1,127 @@
+@using Legado.Shared
+@inject IWindowTitleBar WindowTitleBar
+
+<MudCard Class="elevation-4">
+    <MudCardHeader>
+        <MudCardTitle>窗口控制</MudCardTitle>
+        <MudCardSubtitle>窗口标题栏控制功能演示</MudCardSubtitle>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudText>当前窗口状态:</MudText>
+                <MudText>@windowStateText</MudText>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudText>窗口标题:</MudText>
+                <MudTextField @bind-Value="windowTitle" Label="窗口标题" Variant="Variant.Outlined" Class="ml-2" />
+            </MudItem>
+        </MudGrid>
+        
+        <MudDivider Class="my-4" />
+        
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudButton OnClick="CloseWindow" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Close">
+                    关闭窗口
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudButton OnClick="MaximizeWindow" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Fullscreen">
+                    最大化
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+        
+        <MudGrid Class="mt-2">
+            <MudItem xs="12" md="4">
+                <MudButton OnClick="MinimizeWindow" Color="Color.Secondary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Minimize">
+                    最小化
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudButton OnClick="RestoreWindow" Color="Color.Info" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.FullscreenExit">
+                    还原
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudButton OnClick="SetTitle" Color="Color.Success" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Title">
+                    设置标题
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+        
+        <MudGrid Class="mt-2">
+            <MudItem xs="12">
+                <MudButton OnClick="DragWindow" Color="Color.Tertiary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.DragIndicator">
+                    拖拽窗口 (模拟)
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private string windowStateText = "未知";
+    private string windowTitle = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await UpdateWindowState();
+        windowTitle = await WindowTitleBar.GetTitleAsync();
+    }
+
+    private async Task UpdateWindowState()
+    {
+        var isMaximized = await WindowTitleBar.IsMaximizedAsync();
+        var isMinimized = await WindowTitleBar.IsMinimizedAsync();
+        
+        if (isMaximized)
+        {
+            windowStateText = "最大化";
+        }
+        else if (isMinimized)
+        {
+            windowStateText = "最小化";
+        }
+        else
+        {
+            windowStateText = "正常";
+        }
+    }
+
+    private async Task CloseWindow()
+    {
+        await WindowTitleBar.CloseAsync();
+    }
+
+    private async Task MaximizeWindow()
+    {
+        await WindowTitleBar.MaximizeAsync();
+        await UpdateWindowState();
+    }
+
+    private async Task MinimizeWindow()
+    {
+        await WindowTitleBar.MinimizeAsync();
+        await UpdateWindowState();
+    }
+
+    private async Task RestoreWindow()
+    {
+        await WindowTitleBar.RestoreAsync();
+        await UpdateWindowState();
+    }
+
+    private async Task SetTitle()
+    {
+        await WindowTitleBar.SetTitleAsync(windowTitle);
+    }
+
+    private async Task DragWindow()
+    {
+        // 模拟拖拽窗口功能，实际调用API
+        await WindowTitleBar.DragMoveAsync(0, 0);
+    }
+}

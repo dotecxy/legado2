@@ -39,7 +39,7 @@
                                     <!-- 显示封面图片（如果有）-->
                                     @if (!string.IsNullOrEmpty(result.CoverUrl))
                                     {
-                                        <MudImage Src="@result.CoverUrl" Height="200" Class="mb-3 object-cover" />
+                                        @* <MudImage Src="@result.CoverUrl" Height="200" Class="mb-3 object-cover" FallbackSrc="" /> *@
                                     }
 
                                     <!-- 显示简介（如果有）-->

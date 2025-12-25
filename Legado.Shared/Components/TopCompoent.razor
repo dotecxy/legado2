@@ -1,0 +1,146 @@
+@inherits AppComponentBase
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject IWindowTitleBar? WindowTitleBar
+@inject NavigationManager NavigationManager
+
+<div class="top-component d-flex align-center px-3 py-2" style="min-height: 64px;">
+    <!-- 返回按钮 -->
+    <MudButton Variant="Variant.Text" Color="Color.Inherit" edge="Edge.Start" OnClick="GoBackAsync" Class="me-2">
+        <MudIcon Icon="@Icons.Material.Filled.ArrowBack" />
+    </MudButton>
+
+    <!-- 页面标题 -->
+    <div class="page-title flex-grow-1 text-truncate">
+        <MudText Typo="Typo.h6" Class="text-truncate">@PageTitle</MudText>
+    </div>
+
+    <!-- 更多按钮下拉菜单 -->
+    <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
+                   Size="Size.Medium"
+                   OnClick="ToggleMenu"
+                   Class="me-2" />
+
+    <!-- 桌面端窗口控制按钮 -->
+    @if (WindowTitleBar != null)
+    {
+        <DesktopTitleBar Class="desktop-title-bar" />
+    }
+
+    <!-- 更多菜单 -->
+    <MudMenu AnchorOrigin="Origin.TopRight"
+             TransformOrigin="Origin.TopRight"
+             RTLDirection="false"
+             @ref="menuRef">
+        <MudMenuItem OnClick="() => SharePage()">分享</MudMenuItem>
+        <MudMenuItem OnClick="() => CopyLink()">复制链接</MudMenuItem>
+        <MudMenuItem OnClick="() => OpenInBrowser()">在浏览器中打开</MudMenuItem>
+        <MudDivider />
+        <MudMenuItem OnClick="() => Settings()">设置</MudMenuItem>
+        <MudMenuItem OnClick="() => About()">关于</MudMenuItem>
+    </MudMenu>
+</div>
+
+@code {
+    [Parameter]
+    public string PageTitle { get; set; } = "Legado";
+
+    [Parameter]
+    public string? PageUrl { get; set; }
+
+    private MudMenu? menuRef;
+
+    /// <summary>
+    /// 返回上一页
+    /// </summary>
+    private async Task GoBackAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("history.back",null);
+    }
+
+    /// <summary>
+    /// 切换更多菜单
+    /// </summary>
+    private async void ToggleMenu()
+    {
+        await menuRef?.ToggleMenuAsync(EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// 分享当前页面
+    /// </summary>
+    private async Task SharePage()
+    {
+        if (PageUrl != null)
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", PageUrl);
+            // 这里可以添加分享功能的实现
+        }
+    }
+
+    /// <summary>
+    /// 复制当前页面链接
+    /// </summary>
+    private async Task CopyLink()
+    {
+        var currentUrl = NavigationManager.Uri;
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", currentUrl);
+        // 这里可以添加通知用户链接已复制的功能
+    }
+
+    /// <summary>
+    /// 在外部浏览器中打开
+    /// </summary>
+    private async Task OpenInBrowser()
+    {
+        var currentUrl = NavigationManager.Uri;
+        await JSRuntime.InvokeVoidAsync("open", currentUrl, "_blank");
+    }
+
+    /// <summary>
+    /// 打开设置页面
+    /// </summary>
+    private void Settings()
+    {
+        NavigationManager.NavigateTo("/settings");
+    }
+
+    /// <summary>
+    /// 显示关于信息
+    /// </summary>
+    private void About()
+    {
+        NavigationManager.NavigateTo("/about");
+    }
+}
+
+<style>
+    .top-component {
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #e0e0e0;
+        width: 100%;
+    }
+
+    .page-title {
+        max-width: calc(100% - 200px);
+    }
+
+    .desktop-title-bar {
+        display: flex;
+        align-items: center;
+    }
+
+    @@media (max-width: 768px) {
+        .top-component {
+            padding: 8px 12px !important;
+        }
+
+        .page-title {
+            max-width: calc(100% - 140px);
+        }
+
+        .desktop-title-bar {
+            display: none;
+        }
+    }
+</style>

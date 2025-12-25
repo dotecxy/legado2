@@ -146,10 +146,10 @@
 
                     <!-- 其他设置选项 -->
                     <div class="mb-4">
-                        <MudSwitch T="bool" @bind-Checked="autoPlayNext" Label="自动播放下一章" />
+                        <MudSwitch T="bool" @bind-checked="autoPlayNext" Label="自动播放下一章" />
                     </div>
                     <div class="mb-4">
-                        <MudSwitch T="bool" @bind-Checked="rememberPosition" Label="记住播放位置" />
+                        <MudSwitch T="bool" @bind-checked="rememberPosition" Label="记住播放位置" />
                     </div>
                 </MudCardContent>
             </MudTabPanel>
@@ -204,20 +204,20 @@
     private int drawerTab = 0; // 0: 章节列表, 1: 播放设置
 
     // 音频播放器引用已被INativeAudioService替代
-     
-     protected override async Task OnInitializedAsync()
-     {
-         await base.OnInitializedAsync();
-         // 加载章节列表
-         await LoadChapterList();
-          
-         // 订阅音频服务事件
-         AudioService.IsPlayingChanged += OnIsPlayingChanged;
-         AudioService.PlayFinished += OnPlayFinished;
-         AudioService.PlayFailed += OnPlayFailed;
-         
-         await NavigateToChapter(LegadoContext.CurrentChapter);
-     }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        // 加载章节列表
+        await LoadChapterList();
+
+        // 订阅音频服务事件
+        AudioService.IsPlayingChanged += OnIsPlayingChanged;
+        AudioService.PlayFinished += OnPlayFinished;
+        AudioService.PlayFailed += OnPlayFailed;
+
+        await NavigateToChapter(LegadoContext.CurrentChapter);
+    }
 
     // 播放设置
     private double _playbackSpeed = 1.0;
@@ -254,15 +254,8 @@
     private async Task LoadChapterList()
     {
         if (LegadoContext.CurrentBook != null && LegadoContext.CurrentBookSource != null)
-        {
-            // 这里应该调用实际的API来获取章节列表
-            // 暂时使用模拟数据
-            chapterList = new List<BookChapter> {
-                new BookChapter { Index = 0, Title = "第1章 开始" },
-                new BookChapter { Index = 1, Title = "第2章 发展" },
-                new BookChapter { Index = 2, Title = "第3章 高潮", IsVip = true },
-                new BookChapter { Index = 3, Title = "第4章 结局" }
-            };
+        {   
+            chapterList = await LegadoContext.WebBook.GetChapterListAwait(LegadoContext.CurrentBookSource, LegadoContext.CurrentBook);
         }
     }
 
@@ -275,7 +268,7 @@
         }
         else
         {
-            await AudioService.PlayAsync();
+            await AudioService.PlayAsync(AudioService.CurrentPositionMillisecond);
         }
     }
 
@@ -303,32 +296,37 @@
                 await NavigateToChapter(nextChapter);
             }
         }
+        else
+        {
+            await LoadChapterList();
+        }
     }
 
     // 释放资源
-     public async ValueTask DisposeAsync()
-     {
-         // 取消订阅音频服务事件
-         AudioService.IsPlayingChanged -= OnIsPlayingChanged;
-         AudioService.PlayFinished -= OnPlayFinished;
-         AudioService.PlayFailed -= OnPlayFailed;
-         
-         // 释放音频服务
-         await AudioService.DisposeAsync();
-     }
+    public async ValueTask DisposeAsync()
+    {
+        // 取消订阅音频服务事件
+        AudioService.IsPlayingChanged -= OnIsPlayingChanged;
+        AudioService.PlayFinished -= OnPlayFinished;
+        AudioService.PlayFailed -= OnPlayFailed;
+
+        // 释放音频服务
+        await AudioService.DisposeAsync();
+    }
 
     // 跳转到指定章节
     private async Task NavigateToChapter(BookChapter chapter)
     {
         if (chapter != null)
         {
-            LegadoContext.CurrentChapter = chapter;
-            currentTime = 0.0;
-            totalTime = 3600.0; // 假设每章1小时
-            
+            LegadoContext.CurrentChapter = chapter; 
+
             // 设置音频源并播放
             await AudioService.InitializeAsync(await GetAudioUrlAsync(chapter));
             await AudioService.PlayAsync();
+
+            totalTime = AudioService.CurrentDurationMillisecond / 1000;
+            currentTime = 0.0;
         }
     }
 
@@ -363,7 +361,7 @@
     }
     
     // 音频服务事件处理方法
-    private void IsPlayingChangedOnIsPlayingChanged(object sender, bool isPlaying)
+    private void OnIsPlayingChanged(object sender, bool isPlaying)
     {
         this.isPlaying = isPlaying;
         StateHasChanged();

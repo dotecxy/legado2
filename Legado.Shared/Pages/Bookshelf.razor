@@ -1,0 +1,218 @@
+@page "/Bookshelf"
+@inherits AppComponentBase
+@using Legado.Core.Data.Entities
+
+<MudCard Class="h-full" Elevation="3">
+    <MudCardContent>
+        <div class="d-flex justify-space-between align-center mb-6">
+            <MudText Typo="Typo.h4" Class="font-weight-bold">我的书架</MudText>
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       StartIcon="@Icons.Material.Filled.Add" 
+                       OnClick="NavigateToSearch">
+                添加书籍
+            </MudButton>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="d-flex justify-center py-8">
+                <MudProgressCircular Color="Color.Primary" Size="Size.Large" />
+            </div>
+        }
+        else if (bookshelf.Any())
+        {
+            <MudGrid Spacing="3">
+                @foreach (var book in bookshelf)
+                {
+                    <MudItem xs="12" sm="6" md="3" lg="2">
+                        <MudCard Class="h-100 d-flex flex-column" Elevation="2" 
+                                 @onclick="() => ViewBookDetail(book)">
+                            @if (!string.IsNullOrEmpty(book.CoverUrl))
+                            {
+                                <MudImage Src="@book.CoverUrl" 
+                                          Alt="@book.Name" 
+                                          Height="200" 
+                                          Class="object-cover"
+                                          FallbackSrc="https://via.placeholder.com/150x200?text=暂无封面" />
+                            }
+                            else
+                            {
+                                <MudImage Src="https://via.placeholder.com/150x200?text=暂无封面" 
+                                          Alt="@book.Name" 
+                                          Height="200" 
+                                          Class="object-cover" />
+                            }
+                            
+                            <MudCardContent Class="flex-grow-1">
+                                <MudText Typo="Typo.h6" Class="font-weight-bold mb-1 text-truncate">@book.Name</MudText>
+                                <MudText Typo="Typo.body2" Class="text-secondary mb-1 text-truncate">@book.Author</MudText>
+                                
+                                @if (!string.IsNullOrEmpty(book.LatestChapterTitle))
+                                {
+                                    <MudText Typo="Typo.caption" Class="text-secondary text-truncate">
+                                        最新: @book.LatestChapterTitle
+                                    </MudText>
+                                }
+                                
+                                @if (book.DurChapterIndex >= 0)
+                                {
+                                    <MudText Typo="Typo.caption" Class="text-info text-truncate">
+                                        已读: @(book.DurChapterTitle ?? "第" + (book.DurChapterIndex + 1) + "章")
+                                    </MudText>
+                                }
+                            </MudCardContent>
+                            
+                            <MudCardActions Class="d-flex justify-space-between">
+                                <MudButton Size="Size.Small" 
+                                           Variant="Variant.Text" 
+                                           Color="Color.Secondary"
+                                           OnClick="() => StartReading(book)">
+                                    阅读
+                                </MudButton>
+                                <MudIconButton Size="Size.Small" 
+                                               Icon="@Icons.Material.Filled.MoreVert" 
+                                               OnClick="() => OpenBookMenu(book)" />
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+        else
+        {
+            <div class="d-flex flex-column align-center justify-center py-12">
+                <MudIcon Icon="@Icons.Material.Filled.Book" Size="Size.Large" Class="mb-4" />
+                <MudText Typo="Typo.h6" Class="mb-2">书架空空如也</MudText>
+                <MudText Typo="Typo.body1" Class="text-secondary mb-6">快去添加一些书籍开始阅读吧</MudText>
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           StartIcon="@Icons.Material.Filled.Add" 
+                           OnClick="NavigateToSearch">
+                    搜索书籍
+                </MudButton>
+            </div>
+        }
+    </MudCardContent>
+</MudCard>
+
+<!-- 右键菜单弹窗 -->
+<MudMenu AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+    <MudMenuItem OnClick="() => RemoveFromBookshelf(currentBook)">移出书架</MudMenuItem>
+    <MudMenuItem OnClick="() => RefreshBookInfo(currentBook)">刷新信息</MudMenuItem>
+</MudMenu>
+
+@code {
+    // 书架中的书籍列表
+    private List<Book> bookshelf = new();
+    private Book currentBook = null;
+    private bool isLoading = true;
+
+    /// <summary>
+    /// 页面初始化时加载书架数据
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBookshelfData();
+    }
+
+    /// <summary>
+    /// 加载书架数据
+    /// </summary>
+    private async Task LoadBookshelfData()
+    {
+        try
+        {
+            isLoading = true;
+            // 从LegadoContext获取书架数据
+            bookshelf = await LegadoContext.GetBookshelfAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"加载书架失败: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 导航到搜索页面
+    /// </summary>
+    private void NavigateToSearch()
+    {
+        Nav.NavigateTo("/Search");
+    }
+
+    /// <summary>
+    /// 查看书籍详情
+    /// </summary>
+    /// <param name="book">要查看的书籍</param>
+    private void ViewBookDetail(Book book)
+    {
+        LegadoContext.CurrentBook = book;
+        Nav.NavigateTo("/Detail");
+    }
+
+    /// <summary>
+    /// 开始阅读书籍
+    /// </summary>
+    /// <param name="book">要阅读的书籍</param>
+    private void StartReading(Book book)
+    {
+        LegadoContext.CurrentBook = book;
+        Nav.NavigateTo("/Chapter");
+    }
+
+    /// <summary>
+    /// 打开书籍菜单
+    /// </summary>
+    /// <param name="book">目标书籍</param>
+    private void OpenBookMenu(Book book)
+    {
+        currentBook = book;
+        // 在实际实现中，这里会打开一个菜单
+        // 目前我们只显示一个提示
+        Snackbar.Add($"操作菜单: {book.Name}", Severity.Info);
+    }
+
+    /// <summary>
+    /// 从书架移除书籍
+    /// </summary>
+    /// <param name="book">要移除的书籍</param>
+    private async Task RemoveFromBookshelf(Book book)
+    {
+        try
+        {
+            // 从书架中移除书籍
+            await LegadoContext.RemoveFromBookshelfAsync(book);
+            bookshelf.Remove(book);
+            StateHasChanged();
+            Snackbar.Add($"已从书架移除: {book.Name}", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"移除失败: {ex.Message}", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// 刷新书籍信息
+    /// </summary>
+    /// <param name="book">要刷新的书籍</param>
+    private async Task RefreshBookInfo(Book book)
+    {
+        try
+        {
+            // 刷新书籍信息的逻辑
+            // 这里只是一个示例实现
+            Snackbar.Add($"正在刷新: {book.Name}", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"刷新失败: {ex.Message}", Severity.Error);
+        }
+    }
+}

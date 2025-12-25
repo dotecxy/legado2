@@ -27,4 +27,8 @@
     <ProjectReference Include="..\Legado.Core\Legado.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\image\" />
+  </ItemGroup>
+
 </Project>

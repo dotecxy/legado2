@@ -1,4 +1,4 @@
-﻿using Autofac;
+using Autofac;
 using Legado.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +23,9 @@ namespace Legado.Shared
                 s.AddMudServices();
                 s.AddSingleton(s => new AppStates());
                 s.AddSingleton(s => new WebBook()); 
+                // Register a default implementation that does nothing for non-Windows platforms
+                // The actual Windows implementation will override this in the Windows project
+                s.AddSingleton<IWindowTitleBar, DefaultWindowTitleBarService>();
             });
         } 
     }
@@ -44,6 +47,14 @@ namespace Legado.Shared
             base.PreConfigureServices(context);
         }
 
+        public override void ConfigureServices(ServiceConfigurationContext context)
+        {
+            base.ConfigureServices(context);
+            context.ServiceBuilder.RegisterAssemblyTypes(typeof(SharedModule).Assembly)
+                .Where(t => t.Name.EndsWith("Service") && t.Name != nameof(SharedModule))
+                .AsImplementedInterfaces()
+                .SingleInstance();
+        }
     }
 
 }

@@ -31,29 +31,37 @@ public class NativeAudioService : INativeAudioService
 
     public NativeAudioService()
     {
-        if (wasapiOut == null)
-        {
-            wasapiOut = new WasapiOut();
-            wasapiOut.PlaybackStopped += (_, _) =>
-            {
-                PlayFinished?.Invoke(this, EventArgs.Empty);
-                IsPlayingChanged?.Invoke(this, IsPlaying);
-            };
-            //mediaPlayer.MediaEnded += (_, _) => PlayFinished?.Invoke(this, EventArgs.Empty);
-            //mediaPlayer.MediaFailed += (_, _) => PlayFailed?.Invoke(this, EventArgs.Empty);
-        }
+
     }
 
-    public Task InitializeAsync(string audioURI)
+    private async Task CreateOutAsync()
     {
+        await DisposeAsync();
+        wasapiOut = new WasapiOut();
+        wasapiOut.PlaybackStopped += (_, _) =>
+        {
+            if (reader.Length - reader.Position < 10000)
+            {
+                PlayFinished?.Invoke(this, EventArgs.Empty);
+            }
+            IsPlayingChanged?.Invoke(this, IsPlaying);
+        };
+        //mediaPlayer.MediaEnded += (_, _) => PlayFinished?.Invoke(this, EventArgs.Empty);
+        //mediaPlayer.MediaFailed += (_, _) => PlayFailed?.Invoke(this, EventArgs.Empty);
+    }
+
+    public async Task InitializeAsync(string audioURI)
+    {
+        await CreateOutAsync();
         reader = new MediaFoundationReader(audioURI);
         wasapiOut.Init(reader);
-        return Task.CompletedTask;
+        IsPlayingChanged?.Invoke(this, IsPlaying);
     }
 
     public Task PauseAsync()
     {
         wasapiOut?.Pause();
+        IsPlayingChanged?.Invoke(this, this.IsPlaying);
         return Task.CompletedTask;
     }
 

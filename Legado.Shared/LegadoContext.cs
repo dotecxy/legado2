@@ -1,4 +1,5 @@
 using Legado.Core;
+using Legado.Core.Data.Dao;
 using Legado.Core.Data.Entities;
 using Legado.Core.Models.WebBooks;
 using MudBlazor;
@@ -15,6 +16,7 @@ namespace Legado.Shared
     public class LegadoContext
     {
         private readonly IEventProvider _ep;
+        private readonly IBookDao _bookDao;
         public List<BookSource> BookSources { get; private set; } = new List<BookSource>();
         public WebBook WebBook { get; private set; } = new WebBook();
         public int BookIndex { get; set; } = 6;
@@ -28,9 +30,10 @@ namespace Legado.Shared
             }
         }
 
-        public LegadoContext(IEventProvider eventProvider)
+        public LegadoContext(IEventProvider eventProvider, IBookDao bookDao)
         {
             _ep = eventProvider;
+            _bookDao = bookDao;
         }
 
         public void Load()
@@ -46,10 +49,42 @@ namespace Legado.Shared
                 }
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw ex;
+                throw;
             }
+        }
+
+        /// <summary>
+        /// 获取书架中的所有书籍
+        /// </summary>
+        public async Task<List<Book>> GetBookshelfAsync()
+        {
+            return await _bookDao.GetAllAsync();
+        }
+
+        /// <summary>
+        /// 将书籍添加到书架
+        /// </summary>
+        public async Task AddToBookshelfAsync(Book book)
+        {
+            await _bookDao.InsertAsync(book);
+        }
+
+        /// <summary>
+        /// 从书架移除书籍
+        /// </summary>
+        public async Task RemoveFromBookshelfAsync(Book book)
+        {
+            await _bookDao.DeleteAsync(book);
+        }
+
+        /// <summary>
+        /// 检查书籍是否已在书架中
+        /// </summary>
+        public async Task<bool> IsBookInBookshelfAsync(string bookUrl)
+        {
+            return await _bookDao.HasAsync(bookUrl);
         }
     }
 }

@@ -1,0 +1,90 @@
+@inject IWindowTitleBar WindowTitleBar 
+
+<div class="title-bar d-flex align-center @Class" style="height: 100%;">
+    <MudIconButton Icon="@Icons.Material.Filled.Minimize"
+                   Size="Size.Small"
+                   Variant="Variant.Text"
+                   OnClick="MinimizeAsync"
+                   Class="window-control-btn" />
+    <MudIconButton Icon=@(_maximizerIcon)
+                   Size="Size.Small"
+                   Variant="Variant.Text"
+                   OnClick="MaximizeAsync"
+                   Class="window-control-btn" />
+    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                   Size="Size.Small"
+                   Variant="Variant.Text"
+                   OnClick="CloseAsync"
+                   Class="window-control-btn close-btn" />
+</div>
+@code {
+
+    [Parameter]
+    public string Class { get; set; } = "";
+    private string _maximizerIcon;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await SetMaximizerIconAsync();
+        await SetTitleAsync("Legado 应用");
+    }
+
+    private async Task MinimizeAsync()
+    {
+        await WindowTitleBar.MinimizeAsync();
+    }
+
+    public async Task MaximizeAsync()
+    {
+        await WindowTitleBar.MaximizeAsync();
+        await SetMaximizerIconAsync();
+    }
+    
+    private async Task CloseAsync()
+    {
+        await WindowTitleBar.CloseAsync();
+    }
+
+    private async Task SetMaximizerIconAsync()
+    {
+        var isMaximized = await WindowTitleBar.IsMaximizedAsync();
+        if (isMaximized)
+        {
+            _maximizerIcon = Icons.Material.Filled.CloseFullscreen;
+        }
+        else
+        {
+            _maximizerIcon = Icons.Material.Filled.Fullscreen;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetTitleAsync(string title)
+    {
+        await WindowTitleBar.SetTitleAsync(title);
+    }
+}
+
+<style>
+    .title-bar {
+        height: 100%;
+        padding: 0 4px;
+    }
+    
+    .window-control-btn {
+        margin: 0 2px;
+        border-radius: 0 !important;
+        min-width: 30px !important;
+        height: 30px !important;
+    }
+    
+    .close-btn {
+        margin-right: 0 !important;
+    }
+    
+    .close-btn:hover {
+        background-color: #e81123 !important;
+        color: white !important;
+    }
+</style>

@@ -1,4 +1,4 @@
-﻿@page "/Detail"
+@page "/Detail"
 @inherits AppComponentBase
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
@@ -93,7 +93,7 @@
                 <MudCardTitle>书籍简介</MudCardTitle>
             </MudCardHeader>
             <MudCardContent>
-                <MudCollapse @bind-IsExpanded="isIntroExpanded">
+                <MudCollapse @bind-isExpanded="isIntroExpanded">
                     <MudText>
                         @if (string.IsNullOrWhiteSpace(BookInfo.Intro))
                         {
@@ -170,10 +170,25 @@
         Snackbar.Add("开始阅读功能待实现", Severity.Info);
     }
 
-    private void AddToBookshelf()
+    private async Task AddToBookshelf()
     {
-        // 实现加入书架功能
-        Snackbar.Add($"{BookInfo.Name} 已加入书架", Severity.Success);
+        try
+        {
+            // 检查书籍是否已在书架中
+            if (await LegadoContext.IsBookInBookshelfAsync(BookInfo.BookUrl))
+            {
+                Snackbar.Add($"{BookInfo.Name} 已在书架中", Severity.Warning);
+                return;
+            }
+            
+            // 将书籍添加到书架
+            await LegadoContext.AddToBookshelfAsync(BookInfo);
+            Snackbar.Add($"{BookInfo.Name} 已加入书架", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"加入书架失败: {ex.Message}", Severity.Error);
+        }
     }
 
     private void NavigateToChapter()
