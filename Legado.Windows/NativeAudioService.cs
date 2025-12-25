@@ -18,8 +18,8 @@ public class NativeAudioService : INativeAudioService
     public bool IsPlaying => wasapiOut != null
         && wasapiOut.PlaybackState == PlaybackState.Playing;
 
-    public double CurrentPositionMillisecond => wasapiOut?.GetPositionTimeSpan().TotalMicroseconds ?? 0;
-    public double CurrentDurationMillisecond => reader?.TotalTime.TotalMicroseconds ?? 0;
+    public double CurrentPositionMillisecond => reader?.CurrentTime.TotalMilliseconds ?? 0;
+    public double CurrentDurationMillisecond => reader?.TotalTime.TotalMilliseconds ?? 0;
     public event EventHandler<bool> IsPlayingChanged;
     public event EventHandler PlayFinished;
     public event EventHandler PlayFailed;
@@ -38,14 +38,7 @@ public class NativeAudioService : INativeAudioService
     {
         await DisposeAsync();
         wasapiOut = new WasapiOut();
-        wasapiOut.PlaybackStopped += (_, _) =>
-        {
-            if (reader.Length - reader.Position < 10000)
-            {
-                PlayFinished?.Invoke(this, EventArgs.Empty);
-            }
-            IsPlayingChanged?.Invoke(this, IsPlaying);
-        };
+        wasapiOut.PlaybackStopped += WasapiOut_PlaybackStopped;
         //mediaPlayer.MediaEnded += (_, _) => PlayFinished?.Invoke(this, EventArgs.Empty);
         //mediaPlayer.MediaFailed += (_, _) => PlayFailed?.Invoke(this, EventArgs.Empty);
     }
@@ -85,8 +78,7 @@ public class NativeAudioService : INativeAudioService
     {
         if (wasapiOut != null && reader != null)
         {
-            reader.CurrentTime = TimeSpan.FromSeconds(value);
-            wasapiOut.Play();
+            reader.CurrentTime = TimeSpan.FromMilliseconds(value);
         }
 
         return Task.CompletedTask;
@@ -116,9 +108,19 @@ public class NativeAudioService : INativeAudioService
 
     public ValueTask DisposeAsync()
     {
+        if (wasapiOut != null)
+        {
+            wasapiOut.PlaybackStopped -= WasapiOut_PlaybackStopped;
+        }
         wasapiOut?.Dispose();
         reader?.DisposeAsync();
         return ValueTask.CompletedTask;
+    }
+
+    private void WasapiOut_PlaybackStopped(object? sender, StoppedEventArgs e)
+    {
+        PlayFinished?.Invoke(this, EventArgs.Empty);
+        IsPlayingChanged?.Invoke(this, IsPlaying);
     }
 }
 

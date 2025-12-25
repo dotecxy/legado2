@@ -44,6 +44,7 @@ namespace Legado.Windows
                     .ConfigureContainer<ContainerBuilder>(cb =>
                     {
                         cb.RegisterType<Form1>().AsSelf().SingleInstance();
+                        cb.RegisterType<PlayerForm2>().AsSelf().SingleInstance();
                         cb.RegisterType<WindowTitleBarService>().As<IWindowTitleBar>().SingleInstance();
                     });
                 builder.ConfigureServices(s =>

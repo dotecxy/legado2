@@ -29,6 +29,7 @@
                     <div class="mb-2">
                         <div class="d-flex justify-between mb-1">
                             <MudText Typo="Typo.caption">@FormatTime(currentTime)</MudText>
+                            <MudText Typo="Typo.caption">/</MudText>
                             <MudText Typo="Typo.caption">@FormatTime(totalTime)</MudText>
                         </div>
                         <MudSlider @bind-Value="currentTime"
@@ -204,6 +205,7 @@
     private int drawerTab = 0; // 0: 章节列表, 1: 播放设置
 
     // 音频播放器引用已被INativeAudioService替代
+    private Timer _timer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -214,7 +216,13 @@
         // 订阅音频服务事件
         AudioService.IsPlayingChanged += OnIsPlayingChanged;
         AudioService.PlayFinished += OnPlayFinished;
-        AudioService.PlayFailed += OnPlayFailed;
+        AudioService.PlayFailed += OnPlayFailed; 
+
+        _timer = new Timer(_ =>
+      {
+          UpdateProgress(null, EventArgs.Empty);
+
+      }, null, 333, 333); 
 
         await NavigateToChapter(LegadoContext.CurrentChapter);
     }
@@ -264,11 +272,11 @@
     {
         if (isPlaying)
         {
-            await AudioService.PauseAsync();
+            await AudioService.PauseAsync(); 
         }
         else
         {
-            await AudioService.PlayAsync(AudioService.CurrentPositionMillisecond);
+            await AudioService.PlayAsync(AudioService.CurrentPositionMillisecond); 
         }
     }
 
@@ -309,6 +317,8 @@
         AudioService.IsPlayingChanged -= OnIsPlayingChanged;
         AudioService.PlayFinished -= OnPlayFinished;
         AudioService.PlayFailed -= OnPlayFailed;
+
+        await _timer.DisposeAsync();
 
         // 释放音频服务
         await AudioService.DisposeAsync();
@@ -357,7 +367,7 @@
     {
         var minutes = Math.Floor(seconds / 60);
         var secs = Math.Floor(seconds % 60);
-        return $"{minutes:f2}:{secs:f2}";
+        return $"{minutes:f0}:{secs:f0}";
     }
     
     // 音频服务事件处理方法
