@@ -20,61 +20,85 @@ namespace Legado.Core.Data.Entities
         /// 地址，包括 http/https
         /// </summary>
         [PrimaryKey]
+        [Column("book_source_url")]
+        [JsonProperty("bookSourceUrl")]
         public string BookSourceUrl { get; set; } = "";
 
         /// <summary>
         /// 名称
         /// </summary>
+        [Column("book_source_name")]
+        [JsonProperty("bookSourceName")]
         public string BookSourceName { get; set; } = "";
 
         /// <summary>
         /// 分组
         /// </summary>
+        [Column("book_source_group")]
+        [JsonProperty("bookSourceGroup")]
         public string BookSourceGroup { get; set; }
 
         /// <summary>
         /// 类型，0 文本，1 音频, 2 图片, 3 文件（指的是类似知轩藏书只提供下载的网站）
         /// </summary>
+        [Column("book_source_type")]
+        [JsonProperty("bookSourceType")]
         public int BookSourceType { get; set; } = 0;
 
         /// <summary>
         /// 详情页url正则
         /// </summary>
+        [Column("book_url_pattern")]
+        [JsonProperty("bookUrlPattern")]
         public string BookUrlPattern { get; set; }
 
         /// <summary>
         /// 手动排序编号
         /// </summary>
+        [Column("custom_order")]
+        [JsonProperty("customOrder")]
         public int CustomOrder { get; set; } = 0;
 
         /// <summary>
         /// 是否启用
         /// </summary>
+        [Column("enabled")]
+        [JsonProperty("enabled")]
         public bool Enabled { get; set; } = true;
 
         /// <summary>
         /// 启用发现
         /// </summary>
+        [Column("enabled_explore")]
+        [JsonProperty("enabledExplore")]
         public bool EnabledExplore { get; set; } = true;
 
         /// <summary>
         /// JS库
         /// </summary>
+        [Column("js_lib")]
+        [JsonProperty("jsLib")]
         public string JsLib { get; set; }
 
         /// <summary>
         /// 启用okhttp CookieJar 自动保存每次请求的cookie
         /// </summary>
+        [Column("enabled_cookie_jar")]
+        [JsonProperty("enabledCookieJar")]
         public bool? EnabledCookieJar { get; set; } = true;
 
         /// <summary>
         /// 并发率
         /// </summary>
+        [Column("concurrent_rate")]
+        [JsonProperty("concurrentRate")]
         public string ConcurrentRate { get; set; }
 
         /// <summary>
         /// 请求头
         /// </summary>
+        [Column("header")]
+        [JsonProperty("header")]
         public string Header { get; set; }
 
         /// <summary>
@@ -111,90 +135,127 @@ namespace Legado.Core.Data.Entities
         /// <summary>
         /// 登录地址
         /// </summary>
+        [Column("login_url")]
+        [JsonProperty("loginUrl")]
         public string LoginUrl { get; set; }
 
         /// <summary>
         /// 登录UI
         /// </summary>
+        [Column("login_ui")]
+        [JsonProperty("loginUi")]
         public string LoginUi { get; set; }
 
         /// <summary>
         /// 登录检测js
         /// </summary>
+        [Column("login_check_js")]
+        [JsonProperty("loginCheckJs")]
         public string LoginCheckJs { get; set; }
 
         /// <summary>
         /// 封面解密js
         /// </summary>
+        [Column("cover_decode_js")]
+        [JsonProperty("coverDecodeJs")]
         public string CoverDecodeJs { get; set; }
 
         /// <summary>
         /// 注释
         /// </summary>
+        [Column("book_source_comment")]
+        [JsonProperty("bookSourceComment")]
         public string BookSourceComment { get; set; }
 
         /// <summary>
         /// 自定义变量说明
         /// </summary>
+        [Column("variable_comment")]
+        [JsonProperty("variableComment")]
         public string VariableComment { get; set; }
 
         /// <summary>
         /// 最后更新时间，用于排序
         /// </summary>
+        [Column("last_update_time")]
+        [JsonProperty("lastUpdateTime")]
         public long LastUpdateTime { get; set; } = 0;
 
         /// <summary>
         /// 响应时间，用于排序
         /// </summary>
+        [Column("respond_time")]
+        [JsonProperty("respondTime")]
         public long RespondTime { get; set; } = 180000L;
 
         /// <summary>
         /// 智能排序的权重
         /// </summary>
+        [Column("weight")]
+        [JsonProperty("weight")]
         public int Weight { get; set; } = 0;
 
         /// <summary>
         /// 发现url
         /// </summary>
+        [Column("explore_url")]
+        [JsonProperty("exploreUrl")]
         public string ExploreUrl { get; set; } 
 
         /// <summary>
         /// 发现规则
-        /// </summary> 
+        /// </summary>
+        [Ignore]
+        [JsonProperty("ruleExplore")]
         public ExploreRule RuleExplore { get; set; }
          
 
         /// <summary>
         /// 搜索url
         /// </summary>
+        [Column("search_url")]
+        [JsonProperty("searchUrl")]
         public string SearchUrl { get; set; }
 
         /// <summary>
         /// 搜索规则
-        /// </summary> 
+        /// </summary>
+        [Ignore]
+        [JsonProperty("ruleSearch")]
         public SearchRule RuleSearch { get; set; } 
 
         /// <summary>
         /// 书籍信息页规则
-        /// </summary> 
+        /// </summary>
+        [Ignore]
+        [JsonProperty("ruleBookInfo")]
         public BookInfoRule RuleBookInfo { get; set; } 
         /// <summary>
         /// 目录页规则
         /// </summary>
         [Ignore]
+        [JsonProperty("ruleToc")]
         public TocRule RuleToc { get; set; } 
 
         /// <summary>
         /// 正文页规则
-        /// </summary> 
+        /// </summary>
+        [Ignore]
+        [JsonProperty("ruleContent")]
         public ContentRule RuleContent { get; set; } 
 
         /// <summary>
         /// 段评规则
-        /// </summary> 
+        /// </summary>
+        [Ignore]
+        [JsonProperty("ruleReview")]
         public ReviewRule RuleReview { get; set; } 
 
-        // IRuleData 实现 
+        /// <summary>
+        /// 变量映射表
+        /// </summary>
+        [Ignore]
+        [JsonIgnore]
         public Dictionary<string, string> VariableMap { get; set; } = new Dictionary<string, string>();
 
         /// <summary>

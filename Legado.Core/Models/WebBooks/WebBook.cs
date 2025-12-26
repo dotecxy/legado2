@@ -22,7 +22,7 @@ namespace Legado.Core.Models.WebBooks
         /// <param name="filter">过滤函数</param>
         /// <param name="shouldBreak">中断条件</param>
         /// <returns>搜索结果列表</returns>
-        public async Task<List<SearchBook>> SearchBookAwait(
+        public async Task<List<SearchBook>> SearchBookAsync(
             BookSource bookSource,
             string key,
             int? page = 1,
@@ -44,7 +44,7 @@ namespace Legado.Core.Models.WebBooks
             );
 
             // 执行请求
-            var resBody = await analyzeUrl.GetStrResponseAwait();
+            var resBody = await analyzeUrl.GetStrResponseAsync();
             
             // 检测书源是否已登录
             if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
@@ -74,7 +74,7 @@ namespace Legado.Core.Models.WebBooks
         /// <param name="url">发现地址</param>
         /// <param name="page">页码</param>
         /// <returns>发现结果列表</returns>
-        public async Task<List<SearchBook>> ExploreBookAwait(
+        public async Task<List<SearchBook>> ExploreBookAsync(
             BookSource bookSource,
             string url,
             int? page = 1)
@@ -87,7 +87,7 @@ namespace Legado.Core.Models.WebBooks
                 source: bookSource
             );
 
-            var resBody = await analyzeUrl.GetStrResponseAwait();
+            var resBody = await analyzeUrl.GetStrResponseAsync();
 
             //检测书源是否已登录
             if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
@@ -117,7 +117,7 @@ namespace Legado.Core.Models.WebBooks
         /// <param name="book">书籍</param>
         /// <param name="canReName">是否可以重命名</param>
         /// <returns>更新后的书籍信息</returns>
-        public async Task<Book> GetBookInfoAwait(
+        public async Task<Book> GetBookInfoAsync(
             BookSource bookSource,
             Book book,
             bool canReName = true)
@@ -129,7 +129,7 @@ namespace Legado.Core.Models.WebBooks
                 ruleData: book
             );
 
-            var resBody = await analyzeUrl.GetStrResponseAwait();
+            var resBody = await analyzeUrl.GetStrResponseAsync();
 
             //检测书源是否已登录
             if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
@@ -158,7 +158,7 @@ namespace Legado.Core.Models.WebBooks
         /// <param name="runPreUpdateJs">是否运行预更新JS</param>
         /// <param name="cancellationToken">取消令牌</param>
         /// <returns>章节列表</returns>
-        public async Task<List<BookChapter>> GetChapterListAwait(
+        public async Task<List<BookChapter>> GetChapterListAsync(
             BookSource bookSource,
             Book book,
             bool runPreUpdateJs = false,
@@ -187,7 +187,7 @@ namespace Legado.Core.Models.WebBooks
                 ruleData: book
             );
 
-            var resBody = await analyzeUrl.GetStrResponseAwait();
+            var resBody = await analyzeUrl.GetStrResponseAsync();
 
             //检测书源是否已登录
             if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
@@ -229,7 +229,7 @@ namespace Legado.Core.Models.WebBooks
         /// <param name="bookChapter">章节</param>
         /// <param name="nextChapterUrl">下一章节URL</param>
         /// <returns>章节内容</returns>
-        public async Task<string> GetContentAwait(
+        public async Task<string> GetContentAsync(
             BookSource bookSource,
             Book book,
             BookChapter bookChapter,
@@ -255,7 +255,7 @@ namespace Legado.Core.Models.WebBooks
                 ruleData: bookChapter
             );
 
-            var resBody = await analyzeUrl.GetStrResponseAwait();
+            var resBody = await analyzeUrl.GetStrResponseAsync();
 
             //检测书源是否已登录
             if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
@@ -282,12 +282,12 @@ namespace Legado.Core.Models.WebBooks
         /// <param name="name">书名</param>
         /// <param name="author">作者</param>
         /// <returns>书籍信息</returns>
-        public async Task<Book> PreciseSearchAwait(
+        public async Task<Book> PreciseSearchAsync(
             BookSource bookSource,
             string name,
             string author)
         {
-            var searchResults = await SearchBookAwait(
+            var searchResults = await SearchBookAsync(
                 bookSource,
                 name,
                 filter: (fName, fAuthor) => fName == name && fAuthor == author,
@@ -306,71 +306,71 @@ namespace Legado.Core.Models.WebBooks
         /// <summary>
         /// 搜索书籍（便捷方法，对应 Kotlin 的 searchBookAwait）
         /// </summary>
-        public async Task<List<SearchBook>> searchBookAwait(
+        public async Task<List<SearchBook>> searchBookAsync(
             BookSource bookSource,
             string key,
             int? page = 1,
             Func<string, string, bool> filter = null,
             Func<int, bool> shouldBreak = null)
         {
-            return await SearchBookAwait(bookSource, key, page, filter, shouldBreak);
+            return await SearchBookAsync(bookSource, key, page, filter, shouldBreak);
         }
 
         /// <summary>
         /// 发现书籍（便捷方法，对应 Kotlin 的 exploreBookAwait）
         /// </summary>
-        public async Task<List<SearchBook>> exploreBookAwait(
+        public async Task<List<SearchBook>> exploreBookAsync(
             BookSource bookSource,
             string url,
             int? page = 1)
         {
-            return await ExploreBookAwait(bookSource, url, page);
+            return await ExploreBookAsync(bookSource, url, page);
         }
 
         /// <summary>
         /// 获取书籍信息（便捷方法，对应 Kotlin 的 getBookInfoAwait）
         /// </summary>
-        public async Task<Book> getBookInfoAwait(
+        public async Task<Book> getBookInfoAsync(
             BookSource bookSource,
             Book book,
             bool canReName = true)
         {
-            return await GetBookInfoAwait(bookSource, book, canReName);
+            return await GetBookInfoAsync(bookSource, book, canReName);
         }
 
         /// <summary>
         /// 获取章节列表（便捷方法，对应 Kotlin 的 getChapterListAwait）
         /// </summary>
-        public async Task<List<BookChapter>> getChapterListAwait(
+        public async Task<List<BookChapter>> getChapterListAsync(
             BookSource bookSource,
             Book book,
             bool runPreUpdateJs = false,
             CancellationToken cancellationToken = default)
         {
-            return await GetChapterListAwait(bookSource, book, runPreUpdateJs, cancellationToken);
+            return await GetChapterListAsync(bookSource, book, runPreUpdateJs, cancellationToken);
         }
 
         /// <summary>
         /// 获取章节内容（便捷方法，对应 Kotlin 的 getContentAwait）
         /// </summary>
-        public async Task<string> getContentAwait(
+        public async Task<string> getContentAsync(
             BookSource bookSource,
             Book book,
             BookChapter bookChapter,
             string nextChapterUrl = null)
         {
-            return await GetContentAwait(bookSource, book, bookChapter, nextChapterUrl);
+            return await GetContentAsync(bookSource, book, bookChapter, nextChapterUrl);
         }
 
         /// <summary>
         /// 精准搜索（便捷方法，对应 Kotlin 的 preciseSearchAwait）
         /// </summary>
-        public async Task<Book> preciseSearchAwait(
+        public async Task<Book> preciseSearchAsync(
             BookSource bookSource,
             string name,
             string author)
         {
-            return await PreciseSearchAwait(bookSource, name, author);
+            return await PreciseSearchAsync(bookSource, name, author);
         }
     }
 }

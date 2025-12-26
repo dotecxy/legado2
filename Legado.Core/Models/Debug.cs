@@ -263,7 +263,7 @@ namespace Legado.Core.Models
             try
             {
                 var webBook = new WebBook();
-                var exploreBooks = await webBook.ExploreBookAwait(bookSource, url, 1);
+                var exploreBooks = await webBook.ExploreBookAsync(bookSource, url, 1);
 
                 if (exploreBooks != null && exploreBooks.Count > 0)
                 {
@@ -293,7 +293,7 @@ namespace Legado.Core.Models
             try
             {
                 var webBook = new WebBook();
-                var searchBooks = await webBook.SearchBookAwait(bookSource, key, 1);
+                var searchBooks = await webBook.SearchBookAsync(bookSource, key, 1);
 
                 if (searchBooks != null && searchBooks.Count > 0)
                 {
@@ -331,7 +331,7 @@ namespace Legado.Core.Models
             try
             {
                 var webBook = new WebBook();
-                await webBook.GetBookInfoAwait(bookSource, book);
+                await webBook.GetBookInfoAsync(bookSource, book);
 
                 Log(_debugSource, "︽详情页解析完成");
                 Log(_debugSource, "", showTime: false);
@@ -356,7 +356,7 @@ namespace Legado.Core.Models
             try
             {
                 var webBook = new WebBook();
-                var chapters = await webBook.GetChapterListAwait(bookSource, book, false, cancellationToken);
+                var chapters = await webBook.GetChapterListAsync(bookSource, book, false, cancellationToken);
 
                 Log(_debugSource, "︽目录页解析完成");
                 Log(_debugSource, "", showTime: false);
@@ -394,7 +394,7 @@ namespace Legado.Core.Models
             try
             {
                 var webBook = new WebBook();
-                var content = await webBook.GetContentAwait(bookSource, book, bookChapter, nextChapterUrl);
+                var content = await webBook.GetContentAsync(bookSource, book, bookChapter, nextChapterUrl);
 
                 Log(_debugSource, "︽正文页解析完成", state: 1000);
             }

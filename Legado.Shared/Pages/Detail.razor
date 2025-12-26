@@ -1,7 +1,11 @@
 @page "/Detail"
 @inherits AppComponentBase
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+<div class="page-container">
+    <TopCompoent PageTitle="@(BookInfo?.Name ?? "书籍详情")" />
+    
+    <div class="page-content">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     @if (isLoading)
     {
         <MudCard Class="elevation-4">
@@ -130,7 +134,34 @@
             </MudCardContent>
         </MudCard>
     }
-</MudContainer>
+        </MudContainer>
+    </div>
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .page-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    @@media (max-width: 600px) {
+        .page-content {
+            padding: 0 !important;
+        }
+
+        .py-4 {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+        }
+    }
+</style>
 
 @code {
     private Book? BookInfo;
@@ -142,8 +173,8 @@
         try
         {
             isLoading = true;
-            var bookInfo = LegadoContext.CurrentBook;
-            BookInfo = bookInfo; 
+           var bookInfo = await LegadoContext.UpdateBookInfoAsync(); 
+            BookInfo = bookInfo;
         }
         catch (Exception ex)
         {

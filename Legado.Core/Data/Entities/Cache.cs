@@ -14,18 +14,21 @@ namespace Legado.Core.Data.Entities
         /// 缓存键（主键）
         /// </summary>
         [PrimaryKey]
+        [Column("key")]
         [JsonProperty("key")]
         public string Key { get; set; } = "";
 
         /// <summary>
         /// 缓存值
         /// </summary>
+        [Column("value")]
         [JsonProperty("value")]
         public string Value { get; set; }
 
         /// <summary>
         /// 过期时间（Unix毫秒时间戳，0表示永不过期）
         /// </summary>
+        [Column("deadline")]
         [JsonProperty("deadline")]
         public long Deadline { get; set; } = 0L;
 

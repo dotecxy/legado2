@@ -88,7 +88,7 @@ namespace Legado.Core.Models.WebBooks
 
                     try
                     {
-                        var res = await analyzeUrl.GetStrResponseAwait(); // 控制并发访问
+                        var res = await analyzeUrl.GetStrResponseAsync(); // 控制并发访问
                         if (!string.IsNullOrEmpty(res.Body))
                         {
                             chapterData = AnalyzeChapterListInternal(
@@ -129,7 +129,7 @@ namespace Legado.Core.Models.WebBooks
                                 source: bookSource,
                                 ruleData: book
                             );
-                            var res = await analyzeUrl.GetStrResponseAwait();
+                            var res = await analyzeUrl.GetStrResponseAsync();
 
                             return AnalyzeChapterListInternal(
                                 book, urlStr, res.Url,
@@ -349,7 +349,7 @@ namespace Legado.Core.Models.WebBooks
         /// <summary>
         /// 获取章节列表（便捷方法，对应 Kotlin 的 getChapterList）
         /// </summary>
-        public static async Task<List<BookChapter>> getChapterList(
+        public static async Task<List<BookChapter>> GetChapterListAsync(
             BookSource bookSource,
             Book book,
             string baseUrl,

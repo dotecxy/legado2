@@ -11,134 +11,191 @@ namespace Legado.Core.Data.Entities
     [Table("books")]
     public class Book : IBaseBook
     {
-        // 书籍 URL，作为主键
-        [PrimaryKey, Column("bookUrl")]
+        /// <summary>
+        /// 书籍URL，作为主键
+        /// </summary>
+        [PrimaryKey, Column("book_url")]
         [JsonProperty("bookUrl")]
         public string BookUrl { get; set; }
 
-        // 目录 URL (有时与 BookUrl 不同)
-        [Column("tocUrl")]
+        /// <summary>
+        /// 目录URL（有时与BookUrl不同）
+        /// </summary>
+        [Column("toc_url")]
         [JsonProperty("tocUrl")]
         public string TocUrl { get; set; }
 
-        // 书源 URL (外键关联 BookSource)
+        /// <summary>
+        /// 书源URL（外键关联BookSource）
+        /// </summary>
         [Column("origin")]
         [JsonProperty("origin")]
         public string Origin { get; set; }
 
-        // 原书源名称 (备份用)
-        [Column("originName")]
+        /// <summary>
+        /// 原书源名称（备份用）
+        /// </summary>
+        [Column("origin_name")]
         [JsonProperty("originName")]
         public string OriginName { get; set; }
 
+        /// <summary>
+        /// 书名
+        /// </summary>
         [Column("name")]
         [JsonProperty("name")]
         public string Name { get; set; }
 
+        /// <summary>
+        /// 作者
+        /// </summary>
         [Column("author")]
         [JsonProperty("author")]
         public string Author { get; set; }
 
-        // 分类 (玄幻, 都市...)
+        /// <summary>
+        /// 分类（玄幻、都市...）
+        /// </summary>
         [Column("kind")]
         [JsonProperty("kind")]
         public string Kind { get; set; }
 
-        // 自定义标签
-        [Column("customTag")]
+        /// <summary>
+        /// 自定义标签
+        /// </summary>
+        [Column("custom_tag")]
         [JsonProperty("customTag")]
         public string CustomTag { get; set; }
 
-        [Column("coverUrl")]
+        /// <summary>
+        /// 封面URL
+        /// </summary>
+        [Column("cover_url")]
         [JsonProperty("coverUrl")]
         public string CoverUrl { get; set; }
 
+        /// <summary>
+        /// 简介
+        /// </summary>
         [Column("intro")]
         [JsonProperty("intro")]
         public string Intro { get; set; }
 
-        // 字数
-        [Column("wordCount")]
+        /// <summary>
+        /// 字数
+        /// </summary>
+        [Column("word_count")]
         [JsonProperty("wordCount")]
         public string WordCount { get; set; }
 
-        // 最新章节标题
-        [Column("latestChapterTitle")]
+        /// <summary>
+        /// 最新章节标题
+        /// </summary>
+        [Column("latest_chapter_title")]
         [JsonProperty("latestChapterTitle")]
         public string LatestChapterTitle { get; set; }
 
-        // 最新章节时间
-        [Column("latestChapterTime")]
+        /// <summary>
+        /// 最新章节时间
+        /// </summary>
+        [Column("latest_chapter_time")]
         [JsonProperty("latestChapterTime")]
         public long LatestChapterTime { get; set; }
 
-        // 当前阅读进度 (章节索引)
-        [Column("durChapterIndex")]
+        /// <summary>
+        /// 当前阅读进度（章节索引）
+        /// </summary>
+        [Column("dur_chapter_index")]
         [JsonProperty("durChapterIndex")]
         public int DurChapterIndex { get; set; } = 0;
 
-        // 当前阅读章节标题
-        [Column("durChapterTitle")]
+        /// <summary>
+        /// 当前阅读章节标题
+        /// </summary>
+        [Column("dur_chapter_title")]
         [JsonProperty("durChapterTitle")]
         public string DurChapterTitle { get; set; }
 
-        // 当前阅读位置 (滚动位置/页码)
-        [Column("durChapterPos")]
+        /// <summary>
+        /// 当前阅读位置（滚动位置/页码）
+        /// </summary>
+        [Column("dur_chapter_pos")]
         [JsonProperty("durChapterPos")]
         public int DurChapterPos { get; set; } = 0;
 
-        // 上次阅读时间
-        [Column("durChapterTime")]
+        /// <summary>
+        /// 上次阅读时间
+        /// </summary>
+        [Column("dur_chapter_time")]
         [JsonProperty("durChapterTime")]
         public long DurChapterTime { get; set; } = 0;
 
-        // 总章节数
-        [Column("totalChapterNum")]
+        /// <summary>
+        /// 总章节数
+        /// </summary>
+        [Column("total_chapter_num")]
         [JsonProperty("totalChapterNum")]
         public int TotalChapterNum { get; set; } = 0;
 
-        // 排序值
+        /// <summary>
+        /// 排序值
+        /// </summary>
         [Column("order")]
         [JsonProperty("order")]
         public int Order { get; set; } = 0;
 
-        // 变量集合 (用于存储 JS 执行过程中的临时变量，JSON格式)
+        /// <summary>
+        /// 变量集合（用于存储JS执行过程中的临时变量，JSON格式）
+        /// </summary>
         [Column("variable")]
         [JsonProperty("variable")]
         public string Variable { get; set; }
 
-        // **************** 状态位 ****************
-
-        // 是否可以更新
-        [Column("canUpdate")]
+        /// <summary>
+        /// 是否可以更新
+        /// </summary>
+        [Column("can_update")]
         [JsonProperty("canUpdate")]
         public bool CanUpdate { get; set; } = true;
 
-        // 0: text, 1: audio
+        /// <summary>
+        /// 类型（0: text, 1: audio）
+        /// </summary>
         [Column("type")]
         [JsonProperty("type")]
         public int Type { get; set; } = 0;
 
-        // 分组 (0: 未分组)
+        /// <summary>
+        /// 分组（0: 未分组）
+        /// </summary>
         [Column("group")]
         [JsonProperty("group")]
         public long Group { get; set; } = 0;
 
-        // 书源排序
-        [Column("originOrder")]
+        /// <summary>
+        /// 书源排序
+        /// </summary>
+        [Column("origin_order")]
         [JsonProperty("originOrder")]
         public int OriginOrder { get; set; } = 0;
 
-        // IBaseBook 接口实现
+        /// <summary>
+        /// 书籍信息HTML
+        /// </summary>
         [Ignore]
         [JsonIgnore]
         public string InfoHtml { get; set; }
 
+        /// <summary>
+        /// 目录HTML
+        /// </summary>
         [Ignore]
         [JsonIgnore]
         public string TocHtml { get; set; }
 
-        // IRuleData 接口实现
+        /// <summary>
+        /// 存储变量
+        /// </summary>
         public virtual bool PutVariable(string key, string value)
         {
             // TODO: 实现变量存储

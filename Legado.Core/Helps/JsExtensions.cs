@@ -59,7 +59,7 @@ namespace Legado.Core.Helps
             _angleSharpConfig = Configuration.Default.WithDefaultLoader();
         }
 
-        public abstract IBaseSource getSource();
+        public abstract IBaseSource GetSource();
 
         #region 网络请求 (Ajax/Connect)
 

@@ -14,30 +14,35 @@ namespace Legado.Core.Data.Entities
         /// ID
         /// </summary>
         [PrimaryKey]
+        [Column("id")]
         [JsonProperty("id")]
         public long Id { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
         /// <summary>
         /// 名称
         /// </summary>
+        [Column("name")]
         [JsonProperty("name")]
         public string Name { get; set; } = "";
 
         /// <summary>
         /// 地址
         /// </summary>
+        [Column("url")]
         [JsonProperty("url")]
         public string Url { get; set; } = "";
 
         /// <summary>
         /// 账号
         /// </summary>
+        [Column("account")]
         [JsonProperty("account")]
         public string Account { get; set; }
 
         /// <summary>
         /// 密码
         /// </summary>
+        [Column("password")]
         [JsonProperty("password")]
         public string Password { get; set; }
 

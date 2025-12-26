@@ -1,8 +1,12 @@
 @page "/Search"
 @inherits AppComponentBase
 
-<MudCard Elevation="3" Class="h-full">
-    <MudCardContent>
+<div class="page-container">
+    <TopCompoent PageTitle="搜索" />
+    
+    <MudContainer MaxWidth="MaxWidth.Large" Class="page-content py-4">
+        <MudCard Elevation="3" Class="h-full">
+            <MudCardContent>
         <MudText Typo="Typo.h5" Class="mb-6 font-weight-bold">搜索功能</MudText>
 
         <div class="d-flex gap-4 mb-8">
@@ -23,62 +27,226 @@
         @if (searchResults.Any())
         {
             <MudText Typo="Typo.body1" Class="mb-4">搜索结果：</MudText>
-            <MudGrid Spacing="3">
+            <div class="search-results-list">
                 @foreach (var result in searchResults)
                 {
-                    <MudItem xs="12" sm="6" md="4">
-                        <MudPaper Elevation="1" Class="p-3 h-full">
-                            <MudCard>
-                                <MudCardContent>
-                                    <!-- 显示书籍名称 -->
-                                    <MudText Typo="Typo.h6" Class="font-weight-bold mb-1">@result.Name</MudText>
-
-                                    <!-- 显示作者信息 -->
-                                    <MudText Typo="Typo.body2" Class="text-secondary mb-2">作者：@result.Author</MudText>
-
-                                    <!-- 显示封面图片（如果有）-->
-                                    @if (!string.IsNullOrEmpty(result.CoverUrl))
-                                    {
-                                        @* <MudImage Src="@result.CoverUrl" Height="200" Class="mb-3 object-cover" FallbackSrc="" /> *@
-                                    }
-
-                                    <!-- 显示简介（如果有）-->
-                                    @if (!string.IsNullOrEmpty(result.Intro))
-                                    {
-                                        <MudText Typo="Typo.body2" Class="mb-3 line-clamp-3">简介：@result.Intro</MudText>
-                                    }
-
-                                    <!-- 显示其他信息 -->
-                                    @if (!string.IsNullOrEmpty(result.Kind))
-                                    {
-                                        <MudText Typo="Typo.caption" Class="text-secondary">@result.Kind</MudText>
-                                    }
-
-                                    <!-- 操作按钮 -->
-                                    <div class="mt-3 d-flex justify-end">
-                                        <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined"
-                                                   OnClick="() => ViewBookDetail(result)">
-                                            查看详情
-                                        </MudButton>
-                                    </div>
-                                </MudCardContent>
-                            </MudCard>
-                        </MudPaper>
-                    </MudItem>
+                    <MudPaper Elevation="1" Class="search-item" @onclick="() => ViewBookDetail(result)">
+                        <!-- 左侧封面图片 -->
+                        <div class="search-item-cover">
+                            @if (!string.IsNullOrEmpty(result.CoverUrl))
+                            {
+                                <MudImage Src="@result.CoverUrl" 
+                                          Class="cover-image" 
+                                          ObjectFit="ObjectFit.Cover"
+                                          FallbackSrc=""
+                                          @onerror="@((e) => OnImageError(result))" />
+                            }
+                            @if (string.IsNullOrEmpty(result.CoverUrl) || failedCovers.Contains(result.BookUrl))
+                            {
+                                <div class="cover-placeholder">
+                                    <span class="cover-text">@GetFirstChar(result.Name)</span>
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- 右侧信息区域 -->
+                        <div class="search-item-info">
+                            <!-- 第一行：标题 -->
+                            <MudText Typo="Typo.subtitle1" Class="book-title">@result.Name</MudText>
+                            
+                            <!-- 第二行：作者·类别·状态 -->
+                            <MudText Typo="Typo.body2" Class="book-meta">
+                                @result.Author
+                                @if (!string.IsNullOrEmpty(result.Kind))
+                                {
+                                    <span> · @result.Kind</span>
+                                }
+                                @if (!string.IsNullOrEmpty(result.WordCount))
+                                {
+                                    <span> · @(result.WordCount.Contains("完") || result.WordCount.Contains("结") ? "完结" : "连载")</span>
+                                }
+                            </MudText>
+                            
+                            <!-- 第三行：简介（最多两行） -->
+                            @if (!string.IsNullOrEmpty(result.Intro))
+                            {
+                                <MudText Typo="Typo.caption" Class="book-intro">@result.Intro</MudText>
+                            }
+                        </div>
+                    </MudPaper>
                 }
-            </MudGrid>
+            </div>
         }
         else if (hasSearched)
         {
             <MudAlert Severity="Severity.Info" Elevation="0">未找到相关结果</MudAlert>
         }
-    </MudCardContent>
-</MudCard>
+            </MudCardContent>
+        </MudCard>
+    </MudContainer>
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .page-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .search-results-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .search-item {
+        display: flex;
+        flex-direction: row;
+        padding: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .search-item:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+    }
+
+    .search-item-cover {
+        flex-shrink: 0;
+        width: 80px;
+        height: 110px;
+        margin-right: 12px;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: #f5f5f5;
+    }
+
+    .cover-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .cover-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+    }
+
+    .cover-text {
+        font-size: 36px;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .search-item-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 4px;
+    }
+
+    .book-title {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .book-meta {
+        color: #666;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .book-intro {
+        color: #888;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-height: 1.4;
+        margin-top: 4px;
+    }
+
+    /* iPhone 15 Pro Max 适配 (430px) */
+    @@media (max-width: 600px) {
+        .page-content {
+            padding: 8px !important;
+        }
+
+        .gap-4 {
+            gap: 8px !important;
+        }
+
+        .search-item {
+            padding: 10px;
+        }
+
+        .search-item-cover {
+            width: 70px;
+            height: 96px;
+            margin-right: 10px;
+        }
+
+        .book-title {
+            font-size: 15px;
+        }
+
+        .book-meta {
+            font-size: 12px;
+        }
+
+        .book-intro {
+            font-size: 12px;
+        }
+
+        .cover-text {
+            font-size: 28px;
+        }
+    }
+</style>
 
 @code {
     private string SearchQuery { get; set; } = "诡秘之主";
     private List<Book> searchResults = new();
     private bool hasSearched = false;
+    private HashSet<string> failedCovers = new();
+
+    /// <summary>
+    /// 获取书名第一个字符
+    /// </summary>
+    private string GetFirstChar(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "书";
+        return name.Substring(0, 1);
+    }
+
+    /// <summary>
+    /// 封面图片加载失败处理
+    /// </summary>
+    private void OnImageError(Book book)
+    {
+        if (!string.IsNullOrEmpty(book.BookUrl))
+        {
+            failedCovers.Add(book.BookUrl);
+            StateHasChanged();
+        }
+    }
 
     private async Task DoSearchAsync()
     {

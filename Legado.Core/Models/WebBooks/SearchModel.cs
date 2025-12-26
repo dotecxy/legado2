@@ -128,7 +128,7 @@ namespace Legado.Core.Models.WebBooks
                             var timeout = new CancellationTokenSource(30000);
                             var linkedToken = CancellationTokenSource.CreateLinkedTokenSource(token, timeout.Token).Token;
 
-                            var items = await webBook.SearchBookAwait(
+                            var items = await webBook.SearchBookAsync(
                                 bookSource,
                                 _searchKey,
                                 _searchPage,

@@ -1,18 +1,27 @@
-﻿using SQLite; // 对应 sqlite-net-pcl
+﻿using Newtonsoft.Json;
+using SQLite;
 
 namespace Legado.Core.Data.Entities
 {
     /// <summary>
-    /// Cookie 存储 (对应 Cookie.kt)
+    /// Cookie存储（对应 Cookie.kt）
     /// </summary>
     [Table("cookies")]
     public class CookieEntity
     {
-        [PrimaryKey] // sourceUrl 作为主键
+        /// <summary>
+        /// 源URL（主键）
+        /// </summary>
+        [PrimaryKey]
         [Column("url")]
+        [JsonProperty("url")]
         public string Url { get; set; }
 
+        /// <summary>
+        /// Cookie内容
+        /// </summary>
         [Column("cookie")]
+        [JsonProperty("cookie")]
         public string Cookie { get; set; }
     }
 }

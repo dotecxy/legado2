@@ -14,51 +14,123 @@ namespace Legado.Core.Data.Entities
     /// 章节模型（功能增强版，对应 Kotlin 的 BookChapter.kt）
     /// 实现 IRuleData 接口，支持规则解析
     /// </summary>
-    [Table("chapters")]
+    [Table("book_chapters")]
     public class BookChapter : IEquatable<BookChapter>, IRuleData
     {
-        // 复合主键在 sqlite-net-pcl 中不直接支持，通常建议添加一个自增 ID 或联合唯一索引
-        // 这里为了保持逻辑，我们假设 url 和 bookUrl 的组合是唯一的
+        /// <summary>
+        /// 章节地址
+        /// </summary>
+        [Indexed(Name = "IX_BookChapter_Url", Order = 1, Unique = true)]
+        [Column("url")]
+        [JsonProperty("url")]
+        public string Url { get; set; } = "";
 
-        [Indexed(Name = "IX_BookChapter_Url_BookUrl", Order = 1, Unique = true)]
-        public string Url { get; set; } = "";               // 章节地址
+        /// <summary>
+        /// 书籍URL（外键）
+        /// </summary>
+        [Indexed(Name = "IX_BookChapter_BookUrl", Order = 2)]
+        [Column("book_url")]
+        [JsonProperty("bookUrl")]
+        public string BookUrl { get; set; } = "";
 
-        [Indexed(Name = "IX_BookChapter_Url_BookUrl", Order = 2)]
-        public string BookUrl { get; set; } = "";           // 书籍URL（外键）
+        /// <summary>
+        /// 章节序号
+        /// </summary>
+        [Indexed(Name = "IX_BookChapter_Index")]
+        [Column("index")]
+        [JsonProperty("index")]
+        public int Index { get; set; } = 0;
 
-        [Indexed]
-        public int Index { get; set; } = 0;                 // 章节序号
+        /// <summary>
+        /// 章节标题
+        /// </summary>
+        [Column("title")]
+        [JsonProperty("title")]
+        public string Title { get; set; } = "";
 
-        public string Title { get; set; } = "";             // 章节标题
+        /// <summary>
+        /// 章节解析时的BaseURL（用于相对路径）
+        /// </summary>
+        [Column("base_url")]
+        [JsonProperty("baseUrl")]
+        public string BaseUrl { get; set; } = "";
 
-        public string BaseUrl { get; set; } = "";           // 章节解析时的BaseURL（用于相对路径）
+        /// <summary>
+        /// 书签内容（用于定位）
+        /// </summary>
+        [Column("bookmark_text")]
+        [JsonProperty("bookmarkText")]
+        public string BookmarkText { get; set; } = "";
 
-        public string BookmarkText { get; set; } = "";      // 书签内容（用于定位）
+        /// <summary>
+        /// 内容字符数
+        /// </summary>
+        [Column("bookmark_content")]
+        [JsonProperty("bookmarkContent")]
+        public long BookmarkContent { get; set; } = 0;
 
-        public long BookmarkContent { get; set; } = 0;      // 内容字符数
+        /// <summary>
+        /// 页面索引（用于分页）
+        /// </summary>
+        [Column("page_index")]
+        [JsonProperty("pageIndex")]
+        public int PageIndex { get; set; } = -1;
 
-        public int PageIndex { get; set; } = -1;            // 页面索引（用于分页）
+        /// <summary>
+        /// 总章节数
+        /// </summary>
+        [Column("total_chapter_num")]
+        [JsonProperty("totalChapterNum")]
+        public int TotalChapterNum { get; set; } = 0;
 
-        public int TotalChapterNum { get; set; } = 0;       // 总章节数
-
+        /// <summary>
+        /// 是否为卷名（分卷）
+        /// </summary>
         [Ignore]
-        public bool IsVolume { get; set; } = false;         // 是否为卷名（分卷）
+        [JsonProperty("isVolume")]
+        public bool IsVolume { get; set; } = false;
 
+        /// <summary>
+        /// 是否VIP章节
+        /// </summary>
         [Ignore]
-        public bool IsVip { get; set; } = false;            // 是否VIP章节
+        [JsonProperty("isVip")]
+        public bool IsVip { get; set; } = false;
 
+        /// <summary>
+        /// 是否付费章节
+        /// </summary>
         [Ignore]
-        public bool IsPay { get; set; } = false;            // 是否付费章节
+        [JsonProperty("isPay")]
+        public bool IsPay { get; set; } = false;
 
-        public string Tag { get; set; } = "";               // 章节标签（如：最新、VIP等）
+        /// <summary>
+        /// 章节标签（如：最新、VIP等）
+        /// </summary>
+        [Column("tag")]
+        [JsonProperty("tag")]
+        public string Tag { get; set; } = "";
 
-        public long StartFragmentId { get; set; } = 0;      // 起始片段ID
+        /// <summary>
+        /// 起始片段ID
+        /// </summary>
+        [Column("start_fragment_id")]
+        [JsonProperty("startFragmentId")]
+        public long StartFragmentId { get; set; } = 0;
 
-        public long EndFragmentId { get; set; } = 0;        // 结束片段ID
+        /// <summary>
+        /// 结束片段ID
+        /// </summary>
+        [Column("end_fragment_id")]
+        [JsonProperty("endFragmentId")]
+        public long EndFragmentId { get; set; } = 0;
 
+        /// <summary>
+        /// 变量（JSON格式）
+        /// </summary>
         [Ignore]
         [JsonIgnore]
-        public string Variable { get; set; }                // 变量（JSON格式）
+        public string Variable { get; set; }
 
         /// <summary>
         /// 变量映射表（用于规则解析）
@@ -67,7 +139,9 @@ namespace Legado.Core.Data.Entities
         [JsonIgnore]
         public Dictionary<string, string> VariableMap { get; set; } = new Dictionary<string, string>();
 
-        // IRuleData 接口实现
+        /// <summary>
+        /// 存储变量
+        /// </summary>
         public virtual bool PutVariable(string key, string value)
         {
             VariableMap[key] = value;

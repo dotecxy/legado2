@@ -53,7 +53,7 @@ namespace Legado.Core
             try
             {
                 var webBook = new WebBook();
-                var results = await webBook.SearchBookAwait(bookSource, keyword, page);
+                var results = await webBook.SearchBookAsync(bookSource, keyword, page);
                 return results ?? new List<SearchBook>();
             }
             catch (Exception ex)

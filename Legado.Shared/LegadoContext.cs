@@ -60,7 +60,7 @@ namespace Legado.Shared
             }
         }
 
-        public async Task SaveToShelf()
+        public async Task SaveToShelfAsync()
         {
             if (CurrentBookSource != null)
             {
@@ -81,7 +81,7 @@ namespace Legado.Shared
         {
             CurrentBookSource.ThrowIfNull();
 
-            var searchBooks = await WebBook.SearchBookAwait(CurrentBookSource, key, page, filter, shouldBreak);
+            var searchBooks = await WebBook.SearchBookAsync(CurrentBookSource, key, page, filter, shouldBreak);
             if (searchBooks?.Count > 0)
             {
                 return searchBooks.Select(s => s.ToBook()).ToList();
@@ -93,7 +93,9 @@ namespace Legado.Shared
         {
             CurrentBookSource.ThrowIfNull();
             CurrentBook.ThrowIfNull();
-            return await WebBook.GetBookInfoAwait(CurrentBookSource, CurrentBook, canRename);
+            var book = await WebBook.GetBookInfoAsync(CurrentBookSource, CurrentBook, canRename);
+            CurrentBook = book;
+            return book;
         }
 
         public async Task<List<BookChapter>> GetBookChapterListAsync(bool runPreUpdateJs = false,
@@ -111,7 +113,7 @@ namespace Legado.Shared
 
             if (result != null)
             {
-                var result2 = await WebBook.GetChapterListAwait(CurrentBookSource, CurrentBook, runPreUpdateJs, cancellationToken);
+                var result2 = await WebBook.GetChapterListAsync(CurrentBookSource, CurrentBook, runPreUpdateJs, cancellationToken);
 
                 if (result.SequenceEqual(result2))
                 {
@@ -128,13 +130,13 @@ namespace Legado.Shared
             return CurrentChapters = (result ?? new List<BookChapter>());
         }
 
-        public async Task<string> GetBookContent()
+        public async Task<string> GetBookContentAsync()
         {
             CurrentBookSource.ThrowIfNull();
             CurrentBook.ThrowIfNull();
             CurrentChapter.ThrowIfNull();
 
-            return await WebBook.GetContentAwait(CurrentBookSource, CurrentBook, CurrentChapter);
+            return await WebBook.GetContentAsync(CurrentBookSource, CurrentBook, CurrentChapter);
         }
 
         public async Task SaveAllChapterAsync(List<BookChapter> list)

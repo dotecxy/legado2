@@ -1,7 +1,11 @@
 @page "/Chapter"
 @inherits AppComponentBase
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+<div class="page-container">
+    <TopCompoent PageTitle="@(book?.Name ?? "章节目录")" />
+    
+    <div class="page-content">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     @if (isLoading)
     {
         <MudCard Class="elevation-4">
@@ -171,7 +175,9 @@
             </MudCardContent>
         </MudCard>
     }
-</MudContainer>
+        </MudContainer>
+    </div>
+</div>
 
 @code {
     private Book? book;
@@ -303,11 +309,34 @@
 }
 
 <style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .page-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
     .highlight {
         background-color: #fff2cc;
         padding: 2px 4px;
         border-radius: 3px;
         font-weight: bold;
         color: #d35400;
+    }
+
+    @@media (max-width: 600px) {
+        .page-content {
+            padding: 0 !important;
+        }
+
+        .py-4 {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+        }
     }
 </style>

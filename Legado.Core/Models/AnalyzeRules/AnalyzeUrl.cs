@@ -37,30 +37,30 @@ namespace Legado.Core.Models.AnalyzeRules
         public CookieStore CookieStore { get => QServiceProvider.GetService<CookieStore>(); }
         public CacheManager CacheManager { get => CacheManager.Instance; }
 
-        private string mUrl;
-        private string key;
-        private int? page;
-        private string speakText;
-        private int? speakSpeed;
-        private string baseUrl;
-        private BookSource source;
-        private object ruleData; // Book or other data
-        private BookChapter chapter;
+        private string _mUrl;
+        private string _key;
+        private int? _page;
+        private string _speakText;
+        private int? _speakSpeed;
+        private string _baseUrl;
+        private BookSource _source;
+        private object _ruleData; // Book or other data
+        private BookChapter _chapter;
 
         // HTTP 请求相关
-        private string body;
-        private string urlNoQuery;
-        private string encodedForm;
-        private string encodedQuery;
-        private string charset;
-        private string method = "GET";
-        private string proxy;
-        private int retry = 0;
-        private bool useWebView = false;
-        private string webJs;
-        private bool enabledCookieJar;
-        private string domain;
-        private long webViewDelayTime = 0;
+        private string _body;
+        private string _urlNoQuery;
+        private string _encodedForm;
+        private string _encodedQuery;
+        private string _charset;
+        private string _method = "GET";
+        private string _proxy;
+        private int _retry = 0;
+        private bool _useWebView = false;
+        private string _webJs;
+        private bool _enabledCookieJar;
+        private string _domain;
+        private long _webViewDelayTime = 0;
 
         // JS 引擎封装 (假设使用了之前提供的 Jint 封装类)
         private AnalyzeRule _jsContext;
@@ -78,22 +78,22 @@ namespace Legado.Core.Models.AnalyzeRules
             BookChapter chapter = null,
             Dictionary<string, string> headerMapF = null) : base("cache_path")
         {
-            this.mUrl = mUrl;
-            this.key = key;
-            this.page = page;
-            this.speakText = speakText;
-            this.speakSpeed = speakSpeed;
-            this.baseUrl = baseUrl;
-            this.source = source;
-            this.ruleData = ruleData;
-            this.chapter = chapter;
-            this.enabledCookieJar = source?.EnabledCookieJar ?? false;
+            this._mUrl = mUrl;
+            this._key = key;
+            this._page = page;
+            this._speakText = speakText;
+            this._speakSpeed = speakSpeed;
+            this._baseUrl = baseUrl;
+            this._source = source;
+            this._ruleData = ruleData;
+            this._chapter = chapter;
+            this._enabledCookieJar = source?.EnabledCookieJar ?? false;
 
             // 处理 BaseUrl
-            var urlMatcher = PARAM_PATTERN.Match(this.baseUrl);
+            var urlMatcher = PARAM_PATTERN.Match(this._baseUrl);
             if (urlMatcher.Success)
             {
-                this.baseUrl = this.baseUrl.Substring(0, urlMatcher.Index);
+                this._baseUrl = this._baseUrl.Substring(0, urlMatcher.Index);
             }
 
             // 处理 Headers
@@ -104,19 +104,19 @@ namespace Legado.Core.Models.AnalyzeRules
             else
             {
                 // TODO: 实现 source.getHeaderMap
-                var sourceHeaders = source?.HeaderMap;
+                var sourceHeaders = _source?.HeaderMap;
                 if (sourceHeaders != null)
                 {
                     foreach (var kvp in sourceHeaders)
                     {
-                        if (kvp.Key == "proxy") proxy = kvp.Value;
+                        if (kvp.Key == "proxy") _proxy = kvp.Value;
                         else HeaderMap[kvp.Key] = kvp.Value;
                     }
                 }
             }
 
             InitUrl();
-            this.domain = GetSubDomain(source?.BookSourceUrl ?? Url);
+            this._domain = GetSubDomain(_source?.BookSourceUrl ?? Url);
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace Legado.Core.Models.AnalyzeRules
         /// </summary>
         private void InitUrl()
         {
-            RuleUrl = mUrl;
+            RuleUrl = _mUrl;
             AnalyzeJs();       // 执行 <js>
             ReplaceKeyPageJs(); // 替换 {{js}} 和 <page>
             AnalyzeUrlInternal(); // 解析 URL 参数
@@ -191,12 +191,12 @@ namespace Legado.Core.Models.AnalyzeRules
             }
 
             // 2. 替换分页 <1,2,3>
-            if (page.HasValue)
+            if (_page.HasValue)
             {
                 RuleUrl = PAGE_PATTERN.Replace(RuleUrl, m =>
                 {
                     var pages = m.Groups[1].Value.Split(',');
-                    int idx = page.Value - 1;
+                    int idx = _page.Value - 1;
                     if (idx < 0) idx = 0;
 
                     if (idx < pages.Length)
@@ -218,11 +218,11 @@ namespace Legado.Core.Models.AnalyzeRules
             string urlNoOption = match.Success ? RuleUrl.Substring(0, match.Index) : RuleUrl;
 
             // 处理绝对路径 
-            Url = NetworkUtils.GetAbsoluteUrl(baseUrl, urlNoOption);
+            Url = NetworkUtils.GetAbsoluteUrl(_baseUrl, urlNoOption);
 
             // 更新 baseUrl
             string newBase = GetBaseUrl(Url);
-            if (!string.IsNullOrEmpty(newBase)) baseUrl = newBase;
+            if (!string.IsNullOrEmpty(newBase)) _baseUrl = newBase;
 
             // 解析 JSON 选项
             if (urlNoOption.Length != RuleUrl.Length)
@@ -237,7 +237,7 @@ namespace Legado.Core.Models.AnalyzeRules
                     var option = JsonConvert.DeserializeObject<UrlOption>(jsonStr);
                     if (option != null)
                     {
-                        if (!string.IsNullOrEmpty(option.Method)) method = option.Method.ToUpper();
+                        if (!string.IsNullOrEmpty(option.Method)) _method = option.Method.ToUpper();
 
                         if (option.Headers != null)
                         {
@@ -248,14 +248,14 @@ namespace Legado.Core.Models.AnalyzeRules
                             }
                         }
 
-                        body = option.GetBody();
+                        _body = option.GetBody();
                         Type = option.Type;
-                        charset = option.Charset;
-                        retry = option.Retry ?? 0;
-                        useWebView = option.UseWebView();
-                        webJs = option.WebJs;
+                        _charset = option.Charset;
+                        _retry = option.Retry ?? 0;
+                        _useWebView = option.UseWebView();
+                        _webJs = option.WebJs;
                         ServerID = option.ServerID;
-                        webViewDelayTime = option.WebViewDelayTime ?? 0;
+                        _webViewDelayTime = option.WebViewDelayTime ?? 0;
 
                         // 执行 UrlOption 中的 js 
                         if (!string.IsNullOrEmpty(option.Js))
@@ -271,25 +271,25 @@ namespace Legado.Core.Models.AnalyzeRules
                 }
             }
 
-            urlNoQuery = Url;
+            _urlNoQuery = Url;
 
-            if (method == "GET")
+            if (_method == "GET")
             {
                 int pos = Url.IndexOf('?');
                 if (pos != -1)
                 {
                     AnalyzeQuery(Url.Substring(pos + 1));
-                    urlNoQuery = Url.Substring(0, pos);
+                    _urlNoQuery = Url.Substring(0, pos);
                 }
             }
-            else if (method == "POST" && body != null)
+            else if (_method == "POST" && _body != null)
             {
                 // 简单判断是否为 JSON 或 XML
-                bool isJson = body.Trim().StartsWith("{") || body.Trim().StartsWith("[");
-                bool isXml = body.Trim().StartsWith("<");
+                bool isJson = _body.Trim().StartsWith("{") || _body.Trim().StartsWith("[");
+                bool isXml = _body.Trim().StartsWith("<");
                 if (!isJson && !isXml && !HeaderMap.ContainsKey("Content-Type"))
                 {
-                    AnalyzeFields(body);
+                    AnalyzeFields(_body);
                 }
             }
         }
@@ -298,12 +298,12 @@ namespace Legado.Core.Models.AnalyzeRules
 
         private void AnalyzeFields(string fieldsTxt)
         {
-            encodedForm = EncodeParams(fieldsTxt, charset, false);
+            _encodedForm = EncodeParams(fieldsTxt, _charset, false);
         }
 
         private void AnalyzeQuery(string query)
         {
-            encodedQuery = EncodeParams(query, charset, true);
+            _encodedQuery = EncodeParams(query, _charset, true);
         }
 
         private string EncodeParams(string paramsStr, string charsetName, bool isQuery)
@@ -395,9 +395,9 @@ namespace Legado.Core.Models.AnalyzeRules
             return Regex.IsMatch(text, "%[0-9A-Fa-f]{2}");
         }
 
-        public void put(string key, string value)
+        public void Put(string key, string value)
         {
-            if (ruleData is IRuleData data)
+            if (_ruleData is IRuleData data)
             {
                 data.PutBigVariable(key, value);
             }
@@ -406,9 +406,9 @@ namespace Legado.Core.Models.AnalyzeRules
         /// <summary>
         /// 获取存储的变量值
         /// </summary>
-        public string get(string key)
+        public string Get(string key)
         {
-            if (ruleData is IRuleData data)
+            if (_ruleData is IRuleData data)
             {
                 return data.GetBigVariable(key);
             }
@@ -420,11 +420,11 @@ namespace Legado.Core.Models.AnalyzeRules
         /// <summary>
         /// 异步获取字符串响应（对应 Kotlin 的 getStrResponseAwait）
         /// </summary>
-        public async Task<StrResponse> GetStrResponseAwait(string jsStr = null, string sourceRegex = null, bool useWebView = true)
+        public async Task<StrResponse> GetStrResponseAsync(string jsStr = null, string sourceRegex = null, bool useWebView = true)
         {
             if (Type != null)
             {
-                byte[] bytes = await GetByteArrayAwait();
+                byte[] bytes = await GetByteArrayAsync();
                 // 假设 HexUtil.encodeHexStr
                 return new StrResponse(Url, BitConverter.ToString(bytes).Replace("-", "").ToLower());
             }
@@ -434,35 +434,35 @@ namespace Legado.Core.Models.AnalyzeRules
 
             await SetCookieAsync();
 
-            if (this.useWebView && useWebView)
+            if (this._useWebView && useWebView)
             {
-                var body = await webViewAsync("", this.Url, jsStr);
-                return new StrResponse(Url, body);
+                var respBody = await webViewAsync("", this.Url, jsStr);
+                return new StrResponse(Url, respBody);
             }
 
             using (var client = CreateHttpClient())
             {
                 // 构建请求
-                var request = new HttpRequestMessage(new HttpMethod(method), Url);
+                var request = new HttpRequestMessage(new HttpMethod(_method), Url);
 
                 // Headers
                 foreach (var kv in HeaderMap) request.Headers.TryAddWithoutValidation(kv.Key, kv.Value);
 
                 // Body / Query
-                if (method == "GET" && !string.IsNullOrEmpty(encodedQuery))
+                if (_method == "GET" && !string.IsNullOrEmpty(_encodedQuery))
                 {
-                    request.RequestUri = new Uri(urlNoQuery + "?" + encodedQuery);
+                    request.RequestUri = new Uri(_urlNoQuery + "?" + _encodedQuery);
                 }
-                else if (method == "POST")
+                else if (_method == "POST")
                 {
-                    if (!string.IsNullOrEmpty(encodedForm))
+                    if (!string.IsNullOrEmpty(_encodedForm))
                     {
-                        request.Content = new StringContent(encodedForm, Encoding.UTF8, "application/x-www-form-urlencoded");
+                        request.Content = new StringContent(_encodedForm, Encoding.UTF8, "application/x-www-form-urlencoded");
                     }
-                    else if (!string.IsNullOrEmpty(body))
+                    else if (!string.IsNullOrEmpty(_body))
                     {
                         var contentType = HeaderMap.ContainsKey("Content-Type") ? HeaderMap["Content-Type"] : "application/json";
-                        request.Content = new StringContent(body, Encoding.UTF8, contentType);
+                        request.Content = new StringContent(_body, Encoding.UTF8, contentType);
                     }
                 }
 
@@ -485,15 +485,15 @@ namespace Legado.Core.Models.AnalyzeRules
         /// </summary>
         public StrResponse GetStrResponse(string jsStr = null, string sourceRegex = null, bool useWebView = true)
         {
-            return GetStrResponseAwait(jsStr, sourceRegex, useWebView).GetAwaiter().GetResult();
+            return GetStrResponseAsync(jsStr, sourceRegex, useWebView).GetAwaiter().GetResult();
         }
 
-        public async Task<byte[]> GetByteArrayAwait()
+        public async Task<byte[]> GetByteArrayAsync()
         {
             // Data URI 处理
-            if (urlNoQuery.StartsWith("data:"))
+            if (_urlNoQuery.StartsWith("data:"))
             {
-                var match = DATA_URI_REGEX.Match(urlNoQuery);
+                var match = DATA_URI_REGEX.Match(_urlNoQuery);
                 if (match.Success)
                 {
                     return Convert.FromBase64String(match.Groups[1].Value);
@@ -514,39 +514,39 @@ namespace Legado.Core.Models.AnalyzeRules
         /// </summary>
         public byte[] GetByteArray()
         {
-            return GetByteArrayAwait().GetAwaiter().GetResult();
+            return GetByteArrayAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>
         /// 异步获取 HttpResponseMessage（对应 Kotlin 的 getResponseAwait）
         /// </summary>
-        public async Task<HttpResponseMessage> GetResponseAwait()
+        public async Task<HttpResponseMessage> GetResponseAsync()
         {
             await SetCookieAsync();
 
             using (var client = CreateHttpClient())
             {
-                var request = new HttpRequestMessage(new HttpMethod(method), urlNoQuery);
+                var request = new HttpRequestMessage(new HttpMethod(_method), _urlNoQuery);
 
                 // Headers
                 foreach (var kv in HeaderMap)
                     request.Headers.TryAddWithoutValidation(kv.Key, kv.Value);
 
                 // Body / Query
-                if (method == "GET" && !string.IsNullOrEmpty(encodedQuery))
+                if (_method == "GET" && !string.IsNullOrEmpty(_encodedQuery))
                 {
-                    request.RequestUri = new Uri(urlNoQuery + "?" + encodedQuery);
+                    request.RequestUri = new Uri(_urlNoQuery + "?" + _encodedQuery);
                 }
-                else if (method == "POST")
+                else if (_method == "POST")
                 {
-                    if (!string.IsNullOrEmpty(encodedForm))
+                    if (!string.IsNullOrEmpty(_encodedForm))
                     {
-                        request.Content = new StringContent(encodedForm, Encoding.UTF8, "application/x-www-form-urlencoded");
+                        request.Content = new StringContent(_encodedForm, Encoding.UTF8, "application/x-www-form-urlencoded");
                     }
-                    else if (!string.IsNullOrEmpty(body))
+                    else if (!string.IsNullOrEmpty(_body))
                     {
                         var contentType = HeaderMap.ContainsKey("Content-Type") ? HeaderMap["Content-Type"] : "application/json";
-                        request.Content = new StringContent(body, Encoding.UTF8, contentType);
+                        request.Content = new StringContent(_body, Encoding.UTF8, contentType);
                     }
                 }
 
@@ -559,18 +559,18 @@ namespace Legado.Core.Models.AnalyzeRules
         /// </summary>
         public HttpResponseMessage GetResponse()
         {
-            return GetResponseAwait().GetAwaiter().GetResult();
+            return GetResponseAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>
         /// 异步获取输入流（对应 Kotlin 的 getInputStreamAwait）
         /// </summary>
-        public async Task<System.IO.Stream> GetInputStreamAwait()
+        public async Task<System.IO.Stream> GetInputStreamAsync()
         {
             // Data URI 处理
-            if (urlNoQuery.StartsWith("data:"))
+            if (_urlNoQuery.StartsWith("data:"))
             {
-                var match = DATA_URI_REGEX.Match(urlNoQuery);
+                var match = DATA_URI_REGEX.Match(_urlNoQuery);
                 if (match.Success)
                 {
                     var bytes = Convert.FromBase64String(match.Groups[1].Value);
@@ -578,7 +578,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 }
             }
 
-            var response = await GetResponseAwait();
+            var response = await GetResponseAsync();
             return await response.Content.ReadAsStreamAsync();
         }
 
@@ -587,7 +587,7 @@ namespace Legado.Core.Models.AnalyzeRules
         /// </summary>
         public System.IO.Stream GetInputStream()
         {
-            return GetInputStreamAwait().GetAwaiter().GetResult();
+            return GetInputStreamAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -595,7 +595,7 @@ namespace Legado.Core.Models.AnalyzeRules
         /// </summary>
         public bool IsPost()
         {
-            return method == "POST";
+            return _method == "POST";
         }
 
         /// <summary>
@@ -614,10 +614,10 @@ namespace Legado.Core.Models.AnalyzeRules
         private HttpClient CreateHttpClient()
         {  
             var handler = new HttpClientHandler();
-            if (!string.IsNullOrEmpty(proxy))
+            if (!string.IsNullOrEmpty(_proxy))
             {
                 // proxy 格式通常是 http://ip:port
-                handler.Proxy = new WebProxy(proxy);
+                handler.Proxy = new WebProxy(_proxy);
                 handler.UseProxy = true;
             }
             // 自动管理 Cookies 可以在这里开启，但在 Legado 中是手动管理的
@@ -629,7 +629,7 @@ namespace Legado.Core.Models.AnalyzeRules
 
         private async Task SetCookieAsync()
         {
-            string cookie = await CookieStore.GetCookieAsync(domain);
+            string cookie = await CookieStore.GetCookieAsync(_domain);
             if (!string.IsNullOrEmpty(cookie))
             {
                 // Merge Logic needed
@@ -654,23 +654,23 @@ namespace Legado.Core.Models.AnalyzeRules
             using JsEvaluator evaluator = new JsEvaluator();
             Dictionary<string, object> bindings = new Dictionary<string, object>();
             bindings.Add("java", this);
-            bindings.Add("baseUrl", this.baseUrl);
+            bindings.Add("baseUrl", this._baseUrl);
             bindings.Add("cookie", this.CookieStore);
             bindings.Add("cache", CacheManager);
-            bindings.Add("page", page);
-            bindings.Add("key", key);
-            bindings.Add("speakText", speakText);
-            bindings.Add("speakSpeed", speakSpeed);
-            bindings.Add("book", this.ruleData as Book);
-            bindings.Add("source", this.source);
+            bindings.Add("page", _page);
+            bindings.Add("key", _key);
+            bindings.Add("speakText", _speakText);
+            bindings.Add("speakSpeed", _speakSpeed);
+            bindings.Add("book", this._ruleData as Book);
+            bindings.Add("source", this._source);
             bindings.Add("result", result);
             evaluator.Bindings = bindings;
             return evaluator.EvalJs(jsStr, result);
         }
 
-        public override IBaseSource getSource()
+        public override IBaseSource GetSource()
         {
-            return this.source;
+            return this._source;
         }
     }
 

@@ -4,8 +4,12 @@
 @inherits AppComponentBase
 @inject WebBook wb;
 
-<MudCard Class="h-full" Elevation="3">
-    <MudCardContent>
+<div class="page-container">
+    <TopCompoent PageTitle="首页" />
+    
+    <MudContainer MaxWidth="MaxWidth.Large" Class="page-content py-4">
+        <MudCard Class="h-full" Elevation="3">
+            <MudCardContent>
         <MudText Typo="Typo.h4" Class="mb-6 font-weight-bold">欢迎使用Legado应用</MudText>
 
         @* @if (!string.IsNullOrEmpty(FileContent))
@@ -31,8 +35,30 @@
             </MudButton>
         }
 
-    </MudCardContent>
-</MudCard>
+            </MudCardContent>
+        </MudCard>
+    </MudContainer>
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .page-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    @@media (max-width: 600px) {
+        .page-content {
+            padding: 8px !important;
+        }
+    }
+</style>
 
 @code {
     private List<LoginUI> loginUIs = new List<LoginUI>();

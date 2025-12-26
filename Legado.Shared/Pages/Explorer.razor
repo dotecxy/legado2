@@ -1,8 +1,12 @@
 @page "/Explorer"
 @inherits AppComponentBase
 
-<MudCard Elevation="3" Class="h-full">
-    <MudCardContent>
+<div class="page-container">
+    <TopCompoent PageTitle="文件浏览" />
+    
+    <MudContainer MaxWidth="MaxWidth.Large" Class="page-content py-4">
+        <MudCard Elevation="3" Class="h-full">
+            <MudCardContent>
         <MudText Typo="Typo.h5" Class="mb-6 font-weight-bold">文件浏览</MudText>
         
         <MudTable Items="@files">
@@ -18,8 +22,30 @@
                 <MudTd>@file.Size</MudTd>
             </RowTemplate>
         </MudTable>
-    </MudCardContent>
-</MudCard>
+            </MudCardContent>
+        </MudCard>
+    </MudContainer>
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .page-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    @@media (max-width: 600px) {
+        .page-content {
+            padding: 8px !important;
+        }
+    }
+</style>
 
 @code {
     public class FileInfo

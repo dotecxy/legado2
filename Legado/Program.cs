@@ -66,7 +66,7 @@ namespace Legado
 
                         try
                         {
-                            var searchResults = await webBook.SearchBookAwait(bookSource, keyword);
+                            var searchResults = await webBook.SearchBookAsync(bookSource, keyword);
 
                             if (searchResults != null && searchResults.Count > 0)
                             {
@@ -93,10 +93,10 @@ namespace Legado
 
                             var first = searchResults.Where(s => s.Author == "爱潜水的乌贼" && s.Name == keyword).First();
                             var book = first.ToBook();
-                            var infoList = await webBook.GetBookInfoAwait(bookSource, book);
-                            var chapterList = await webBook.GetChapterListAwait(bookSource, book);
+                            var infoList = await webBook.GetBookInfoAsync(bookSource, book);
+                            var chapterList = await webBook.GetChapterListAsync(bookSource, book);
                             var first2 = chapterList.First();
-                            var content =  await  webBook.GetContentAwait(bookSource, book, first2);
+                            var content =  await  webBook.GetContentAsync(bookSource, book, first2);
                             var content3 = ContentHelper.ReSegment(content, first2.Title);
                             AnalyzeUrl ar = new AnalyzeUrl(first2.BookUrl);
                             content= ar.htmlFormat(content); 
@@ -122,7 +122,7 @@ namespace Legado
                 var wb = new WebBook();
                 var url = bookSources[0].ExploreUrl;
                 var urls = JsonConvert.DeserializeObject<List<ExploreKind>>(bookSources[0].ExploreUrl);
-                await wb.ExploreBookAwait(bookSources[0], urls[0].Url);
+                await wb.ExploreBookAsync(bookSources[0], urls[0].Url);
 
 
 

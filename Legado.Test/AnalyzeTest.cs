@@ -51,7 +51,7 @@ namespace Legado.Test
         {
             var first = bookList.First();
             WebBook wb = new WebBook();
-            await wb.SearchBookAwait(first, "诡秘之主");
+            await wb.SearchBookAsync(first, "诡秘之主");
 
         }
     }

@@ -2,8 +2,12 @@
 @inherits AppComponentBase
 @using Legado.Core.Data.Entities
 
-<MudCard Class="h-full" Elevation="3">
-    <MudCardContent>
+<div class="page-container">
+    <TopCompoent PageTitle="我的书架" />
+    
+    <MudContainer MaxWidth="MaxWidth.Large" Class="page-content py-4">
+        <MudCard Class="h-full" Elevation="3">
+            <MudCardContent>
         <div class="d-flex justify-space-between align-center mb-6">
             <MudText Typo="Typo.h4" Class="font-weight-bold">我的书架</MudText>
             <MudButton Variant="Variant.Filled" 
@@ -93,14 +97,36 @@
                 </MudButton>
             </div>
         }
-    </MudCardContent>
-</MudCard>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
 
 <!-- 右键菜单弹窗 -->
 <MudMenu AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
     <MudMenuItem OnClick="() => RemoveFromBookshelf(currentBook)">移出书架</MudMenuItem>
     <MudMenuItem OnClick="() => RefreshBookInfo(currentBook)">刷新信息</MudMenuItem>
 </MudMenu>
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .page-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    @@media (max-width: 600px) {
+        .page-content {
+            padding: 8px !important;
+        }
+    }
+</style>
 
 @code {
     // 书架中的书籍列表

@@ -914,14 +914,6 @@ namespace Legado.Core.Models.AnalyzeRules
         }
 
         /// <summary>
-        /// 获取 Source
-        /// </summary>
-        public IBaseSource GetSource()
-        {
-            return _source;
-        }
-
-        /// <summary>
         /// 获取 RuleData
         /// </summary>
         public IRuleData GetRuleData()
@@ -929,7 +921,7 @@ namespace Legado.Core.Models.AnalyzeRules
             return _ruleData;
         }
 
-        public override IBaseSource getSource()
+        public override IBaseSource GetSource()
         {
             return this._source;
         }

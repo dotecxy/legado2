@@ -47,19 +47,19 @@ namespace Legado.Core.Helps
             return browserService.WebViewAsync(null, url, null, false).Result;
         }
 
-        public async Task<StrResponse> StartBrowserAwait(string url, string title, bool refetchAfterSuccess)
+        public async Task<StrResponse> StartBrowserAsync(string url, string title, bool refetchAfterSuccess)
         {
             if (browserService == null)
             {
                 browserService = new BrowserService();
             }
-            var body = await SourceVerificationHelper.GetVerificationResult(getSource(), url, title, true, refetchAfterSuccess);
+            var body = await SourceVerificationHelper.GetVerificationResult(GetSource(), url, title, true, refetchAfterSuccess);
             return new StrResponse(url, body);
         }
 
-        public Task<StrResponse> StartBrowserAwait(string url, string title)
+        public Task<StrResponse> StartBrowserAsync(string url, string title)
         {
-            return StartBrowserAwait(url, title, true);
+            return StartBrowserAsync(url, title, true);
         }
     }
 }

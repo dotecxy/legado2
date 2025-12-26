@@ -5,7 +5,11 @@
 
 <!-- 音频播放器将使用INativeAudioService -->
 
-<MudLayout>
+<div class="page-container">
+    <TopCompoent PageTitle="@GetCurrentChapterTitle()" />
+    
+    <div class="page-content">
+        <MudLayout>
     <!-- 主内容区域 -->
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.Medium" Class="py-6">
@@ -157,7 +161,29 @@
             </MudTabPanel>
         </MudTabs>
     </MudDrawer>
-</MudLayout>
+        </MudLayout>
+    </div>
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .page-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    @@media (max-width: 600px) {
+        .page-content {
+            padding: 0 !important;
+        }
+    }
+</style>
 
 @code {
     // 播放状态
@@ -336,7 +362,7 @@
             totalTime = AudioService.CurrentDurationMillisecond / 1000;
             currentTime = 0.0;
 
-            await LegadoContext.SaveToShelf();
+            await LegadoContext.SaveToShelfAsync();
         }
     }
 
@@ -407,7 +433,7 @@
         // 这里应该根据章节信息返回实际的音频URL
         // 暂时返回一个示例URL
 
-        var content = await LegadoContext.WebBook.GetContentAwait(LegadoContext.CurrentBookSource, LegadoContext.CurrentBook, chapter);
+        var content = await LegadoContext.GetBookContentAsync(); //LegadoContext.WebBook.GetContentAwait(LegadoContext.CurrentBookSource, LegadoContext.CurrentBook, chapter);
         return content;
 
         // return "https://example.com/audio/chapter" + chapter.Index + ".mp3";

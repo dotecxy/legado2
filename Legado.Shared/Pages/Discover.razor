@@ -1,7 +1,11 @@
 @page "/Discover"
 @inherits AppComponentBase
 
-<MudCard Elevation="3" Class="mb-4">
+<div class="page-container">
+    <TopCompoent PageTitle="发现" />
+    
+    <MudContainer MaxWidth="MaxWidth.Large" Class="page-content py-4">
+        <MudCard Elevation="3" Class="mb-4">
     <MudCardContent>
         <MudText Typo="Typo.h5" Class="mb-2 font-weight-bold">发现页面</MudText>
         <MudText Typo="Typo.body1" Class="text-secondary mb-4">探索推荐内容和热门资源</MudText>
@@ -39,3 +43,25 @@
         </MudGrid>
     </MudCardContent>
 </MudCard>
+    </MudContainer>
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .page-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    @@media (max-width: 600px) {
+        .page-content {
+            padding: 8px !important;
+        }
+    }
+</style>

@@ -1,12 +1,13 @@
 @page "/Index"
+@inherits AppComponentBase
 
-<MudLayout>
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+<div class="page-container">
+    <TopCompoent PageTitle="应用首页" />
+    
+    <MudContainer MaxWidth="MaxWidth.Large" Class="page-content py-4">
             <MudText Typo="Typo.h4" Class="mb-6">应用首页</MudText>
             <MudText>这是Legado应用的首页内容区域。</MudText>
-        </MudContainer>
-    </MudMainContent>
+    </MudContainer>
     
     <div class="fixed-bottom-nav">
         <MudPaper Elevation="6">
@@ -28,7 +29,37 @@
             </MudStack>
         </MudPaper>
     </div>
-</MudLayout>
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .page-content {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 70px;
+    }
+
+    .fixed-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+    }
+
+    @@media (max-width: 600px) {
+        .page-content {
+            padding: 8px !important;
+            padding-bottom: 70px !important;
+        }
+    }
+</style>
 
 @code {
     private void NavigateToVolume()

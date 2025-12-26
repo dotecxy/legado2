@@ -13,6 +13,7 @@ namespace Legado.Core.Data.Entities
         /// 书籍名称（主键之一）
         /// </summary>
         [PrimaryKey]
+        [Column("name")]
         [JsonProperty("name")]
         public string Name { get; set; } = "";
 
@@ -20,30 +21,35 @@ namespace Legado.Core.Data.Entities
         /// 作者（主键之一）
         /// </summary>
         [PrimaryKey]
+        [Column("author")]
         [JsonProperty("author")]
         public string Author { get; set; } = "";
 
         /// <summary>
         /// 当前章节索引
         /// </summary>
+        [Column("dur_chapter_index")]
         [JsonProperty("durChapterIndex")]
         public int DurChapterIndex { get; set; } = 0;
 
         /// <summary>
         /// 当前章节位置
         /// </summary>
+        [Column("dur_chapter_pos")]
         [JsonProperty("durChapterPos")]
         public int DurChapterPos { get; set; } = 0;
 
         /// <summary>
         /// 当前章节时间
         /// </summary>
+        [Column("dur_chapter_time")]
         [JsonProperty("durChapterTime")]
         public long DurChapterTime { get; set; } = 0L;
 
         /// <summary>
         /// 当前章节标题
         /// </summary>
+        [Column("dur_chapter_title")]
         [JsonProperty("durChapterTitle")]
         public string DurChapterTitle { get; set; }
 

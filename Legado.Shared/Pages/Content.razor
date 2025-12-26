@@ -1,7 +1,11 @@
 @page "/Content"
 @inherits AppComponentBase
 
-<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+<div class="page-container">
+    <TopCompoent PageTitle="@(CurrentChapter?.Title ?? "阅读")" />
+    
+    <div class="page-content">
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="py-4">
     <!-- 顶部导航栏 -->
     <MudStack direction="Direction.Row" alignItems="AlignItems.Center" Class="mb-4">
         <MudButton 
@@ -152,7 +156,34 @@
             </MudStack>
         </div>
     </MudDrawer>
-</MudContainer>
+        </MudContainer>
+    </div>
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .page-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    @@media (max-width: 600px) {
+        .page-content {
+            padding: 0 !important;
+        }
+
+        .py-4 {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+        }
+    }
+</style>
 
 @code {
     [Parameter]
