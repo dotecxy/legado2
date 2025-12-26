@@ -65,3 +65,106 @@
     right: 0;
     z-index: 100;
 }
+
+/* 全局滚动条隐藏 - 页面容器不显示滚动条 */
+html, body, .page-container, .page-content, .mud-layout, .mud-main-content {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.page-container::-webkit-scrollbar,
+.page-content::-webkit-scrollbar,
+.mud-layout::-webkit-scrollbar,
+.mud-main-content::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
+    width: 0;
+    height: 0;
+}
+
+/* 只在特定容器显示滚动条 */
+.scrollable-content {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    -ms-overflow-style: auto;
+}
+
+.scrollable-content::-webkit-scrollbar {
+    display: block;
+    width: 6px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* MudPaper/Grid/List 内部滚动 */
+.mud-paper.scrollable,
+.mud-grid.scrollable,
+.mud-list.scrollable,
+.search-results-list {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    -ms-overflow-style: auto;
+}
+
+.mud-paper.scrollable::-webkit-scrollbar,
+.mud-grid.scrollable::-webkit-scrollbar,
+.mud-list.scrollable::-webkit-scrollbar,
+.search-results-list::-webkit-scrollbar {
+    display: block;
+    width: 6px;
+}
+
+.mud-paper.scrollable::-webkit-scrollbar-track,
+.mud-grid.scrollable::-webkit-scrollbar-track,
+.mud-list.scrollable::-webkit-scrollbar-track,
+.search-results-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mud-paper.scrollable::-webkit-scrollbar-thumb,
+.mud-grid.scrollable::-webkit-scrollbar-thumb,
+.mud-list.scrollable::-webkit-scrollbar-thumb,
+.search-results-list::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.mud-paper.scrollable::-webkit-scrollbar-thumb:hover,
+.mud-grid.scrollable::-webkit-scrollbar-thumb:hover,
+.mud-list.scrollable::-webkit-scrollbar-thumb:hover,
+.search-results-list::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* 移动端始终隐藏滚动条 */
+@media (max-width: 600px) {
+    .scrollable-content::-webkit-scrollbar,
+    .mud-paper.scrollable::-webkit-scrollbar,
+    .mud-grid.scrollable::-webkit-scrollbar,
+    .mud-list.scrollable::-webkit-scrollbar,
+    .search-results-list::-webkit-scrollbar {
+        display: none;
+        width: 0;
+    }
+
+    .scrollable-content,
+    .mud-paper.scrollable,
+    .mud-grid.scrollable,
+    .mud-list.scrollable,
+    .search-results-list {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+}

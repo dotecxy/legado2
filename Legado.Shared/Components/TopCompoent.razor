@@ -6,12 +6,18 @@
 
 <div class="top-component d-flex align-center px-3 py-2" style="min-height: 64px;">
     <!-- 返回按钮 -->
-    <MudButton Variant="Variant.Text" Color="Color.Inherit" edge="Edge.Start" OnClick="GoBackAsync" Class="me-2">
-        <MudIcon Icon="@Icons.Material.Filled.ArrowBack" />
-    </MudButton>
+    @if (ShowBackButton)
+    {
+        <MudButton Variant="Variant.Text" Color="Color.Inherit" edge="Edge.Start" OnClick="GoBackAsync" Class="me-2">
+            <MudIcon Icon="@Icons.Material.Filled.ArrowBack" />
+        </MudButton>
+    }
 
-    <!-- 页面标题 -->
-    <div class="page-title flex-grow-1 text-truncate">
+    <!-- 页面标题（可拖拽区域） -->
+    <div class="page-title flex-grow-1 text-truncate drag-region"
+         @onmousedown="OnMouseDown"
+         @onmousemove="OnMouseMove"
+         @onmouseup="OnMouseUp" >
         <MudText Typo="Typo.h6" Class="text-truncate">@PageTitle</MudText>
     </div>
 
@@ -48,14 +54,44 @@
     [Parameter]
     public string? PageUrl { get; set; }
 
+    /// <summary>
+    /// 是否显示返回按钮，默认显示
+    /// </summary>
+    [Parameter]
+    public bool ShowBackButton { get; set; } = true;
+
     private MudMenu? menuRef;
+
+    /// <summary>
+    /// 鼠标按下开始拖拽
+    /// </summary>
+    private void OnMouseDown(MouseEventArgs e)
+    {
+        WindowTitleBar?.DragMouseDown();
+    }
+
+    /// <summary>
+    /// 鼠标移动拖拽窗口
+    /// </summary>
+    private Task OnMouseMove(MouseEventArgs e)
+    {
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 鼠标释放停止拖拽
+    /// </summary>
+    private void OnMouseUp(MouseEventArgs e)
+    {
+        WindowTitleBar?.DragMouseUp();
+    }
 
     /// <summary>
     /// 返回上一页
     /// </summary>
     private async Task GoBackAsync()
     {
-        await JSRuntime.InvokeVoidAsync("history.back",null);
+        await JSRuntime.InvokeVoidAsync("history.back", null);
     }
 
     /// <summary>
@@ -123,6 +159,12 @@
 
     .page-title {
         max-width: calc(100% - 200px);
+    }
+
+    .drag-region {
+        cursor: default;
+        -webkit-app-region: drag;
+        user-select: none;
     }
 
     .desktop-title-bar {

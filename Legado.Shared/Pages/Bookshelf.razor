@@ -3,16 +3,13 @@
 @using Legado.Core.Data.Entities
 
 <div class="page-container">
-    <TopCompoent PageTitle="我的书架" />
-    
-    <MudContainer MaxWidth="MaxWidth.Large" Class="page-content py-4">
-        <MudCard Class="h-full" Elevation="3">
-            <MudCardContent>
+
+    <MudCardContent>
         <div class="d-flex justify-space-between align-center mb-6">
             <MudText Typo="Typo.h4" Class="font-weight-bold">我的书架</MudText>
-            <MudButton Variant="Variant.Filled" 
-                       Color="Color.Primary" 
-                       StartIcon="@Icons.Material.Filled.Add" 
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
                        OnClick="NavigateToSearch">
                 添加书籍
             </MudButton>
@@ -26,62 +23,53 @@
         }
         else if (bookshelf.Any())
         {
-            <MudGrid Spacing="3">
+            <div class="bookshelf-list">
                 @foreach (var book in bookshelf)
                 {
-                    <MudItem xs="12" sm="6" md="3" lg="2">
-                        <MudCard Class="h-100 d-flex flex-column" Elevation="2" 
-                                 @onclick="() => ViewBookDetail(book)">
-                            @if (!string.IsNullOrEmpty(book.CoverUrl))
+                    <MudPaper Elevation="1" Class="book-item" @onclick="() => ViewBookDetail(book)">
+                        <!-- 左侧封面图片 -->
+                        <div class="book-item-cover">
+                            @if (!string.IsNullOrEmpty(book.CoverUrl) && !failedCovers.Contains(book.BookUrl))
                             {
-                                <MudImage Src="@book.CoverUrl" 
-                                          Alt="@book.Name" 
-                                          Height="200" 
-                                          Class="object-cover"
-                                          FallbackSrc="https://via.placeholder.com/150x200?text=暂无封面" />
+                                <MudImage Src="@book.CoverUrl"
+                                          Class="cover-image"
+                                          ObjectFit="ObjectFit.Cover"
+                                          @onerror="@(() => OnImageError(book))" />
                             }
                             else
                             {
-                                <MudImage Src="https://via.placeholder.com/150x200?text=暂无封面" 
-                                          Alt="@book.Name" 
-                                          Height="200" 
-                                          Class="object-cover" />
+                                <div class="cover-placeholder">
+                                    <span class="cover-text">@GetFirstChar(book.Name)</span>
+                                </div>
                             }
-                            
-                            <MudCardContent Class="flex-grow-1">
-                                <MudText Typo="Typo.h6" Class="font-weight-bold mb-1 text-truncate">@book.Name</MudText>
-                                <MudText Typo="Typo.body2" Class="text-secondary mb-1 text-truncate">@book.Author</MudText>
-                                
-                                @if (!string.IsNullOrEmpty(book.LatestChapterTitle))
-                                {
-                                    <MudText Typo="Typo.caption" Class="text-secondary text-truncate">
-                                        最新: @book.LatestChapterTitle
-                                    </MudText>
-                                }
-                                
-                                @if (book.DurChapterIndex >= 0)
-                                {
-                                    <MudText Typo="Typo.caption" Class="text-info text-truncate">
-                                        已读: @(book.DurChapterTitle ?? "第" + (book.DurChapterIndex + 1) + "章")
-                                    </MudText>
-                                }
-                            </MudCardContent>
-                            
-                            <MudCardActions Class="d-flex justify-space-between">
-                                <MudButton Size="Size.Small" 
-                                           Variant="Variant.Text" 
-                                           Color="Color.Secondary"
-                                           OnClick="() => StartReading(book)">
-                                    阅读
-                                </MudButton>
-                                <MudIconButton Size="Size.Small" 
-                                               Icon="@Icons.Material.Filled.MoreVert" 
-                                               OnClick="() => OpenBookMenu(book)" />
-                            </MudCardActions>
-                        </MudCard>
-                    </MudItem>
+                        </div>
+
+                        <!-- 右侧信息区域 -->
+                        <div class="book-item-info">
+                            <!-- 第一行：标题 -->
+                            <MudText Typo="Typo.subtitle1" Class="book-title">@book.Name</MudText>
+
+                            <!-- 第二行：未读章节数 -->
+                            <MudText Typo="Typo.body2" Class="book-unread">
+                                @GetUnreadInfo(book)
+                            </MudText>
+
+                            <!-- 第三行：最新章节 -->
+                            @if (!string.IsNullOrEmpty(book.LatestChapterTitle))
+                            {
+                                <MudText Typo="Typo.caption" Class="book-latest">最新: @book.LatestChapterTitle</MudText>
+                            }
+                        </div>
+
+                        <!-- 右侧操作按钮 -->
+                        <div class="book-item-actions" @onclick:stopPropagation="true">
+                            <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
+                                           Size="Size.Small"
+                                           OnClick="@(() => OpenBookMenu(book))" />
+                        </div>
+                    </MudPaper>
                 }
-            </MudGrid>
+            </div>
         }
         else
         {
@@ -89,23 +77,21 @@
                 <MudIcon Icon="@Icons.Material.Filled.Book" Size="Size.Large" Class="mb-4" />
                 <MudText Typo="Typo.h6" Class="mb-2">书架空空如也</MudText>
                 <MudText Typo="Typo.body1" Class="text-secondary mb-6">快去添加一些书籍开始阅读吧</MudText>
-                <MudButton Variant="Variant.Filled" 
-                           Color="Color.Primary" 
-                           StartIcon="@Icons.Material.Filled.Add" 
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
                            OnClick="NavigateToSearch">
                     搜索书籍
                 </MudButton>
             </div>
         }
-        </MudCardContent>
-    </MudCard>
-</MudContainer>
+    </MudCardContent>
 
-<!-- 右键菜单弹窗 -->
-<MudMenu AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
-    <MudMenuItem OnClick="() => RemoveFromBookshelf(currentBook)">移出书架</MudMenuItem>
-    <MudMenuItem OnClick="() => RefreshBookInfo(currentBook)">刷新信息</MudMenuItem>
-</MudMenu>
+    <!-- 右键菜单弹窗 -->
+    <MudMenu AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+        <MudMenuItem OnClick="() => RemoveFromBookshelf(currentBook)">移出书架</MudMenuItem>
+        <MudMenuItem OnClick="() => RefreshBookInfo(currentBook)">刷新信息</MudMenuItem>
+    </MudMenu>
 </div>
 
 <style>
@@ -114,16 +100,134 @@
         flex-direction: column;
         height: 100%;
         width: 100%;
+        overflow: hidden;
     }
 
     .page-content {
         flex: 1;
+        overflow: hidden;
+    }
+
+    .bookshelf-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: calc(100vh - 200px);
         overflow-y: auto;
+    }
+
+    .book-item {
+        display: flex;
+        flex-direction: row;
+        padding: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        align-items: center;
+    }
+
+        .book-item:hover {
+            background-color: rgba(0, 0, 0, 0.04);
+        }
+
+    .book-item-cover {
+        flex-shrink: 0;
+        width: 60px;
+        height: 80px;
+        margin-right: 12px;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: #f5f5f5;
+    }
+
+    .cover-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .cover-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+    }
+
+    .cover-text {
+        font-size: 28px;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .book-item-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .book-title {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .book-unread {
+        color: #1976d2;
+        font-size: 13px;
+    }
+
+    .book-latest {
+        color: #888;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .book-item-actions {
+        flex-shrink: 0;
+        margin-left: 8px;
     }
 
     @@media (max-width: 600px) {
         .page-content {
             padding: 8px !important;
+        }
+
+        .bookshelf-list {
+            max-height: calc(100vh - 180px);
+            gap: 8px;
+        }
+
+        .book-item {
+            padding: 10px;
+        }
+
+        .book-item-cover {
+            width: 50px;
+            height: 68px;
+            margin-right: 10px;
+        }
+
+        .cover-text {
+            font-size: 22px;
+        }
+
+        .book-title {
+            font-size: 15px;
+        }
+
+        .book-unread {
+            font-size: 12px;
+        }
+
+        .book-latest {
+            font-size: 12px;
         }
     }
 </style>
@@ -133,6 +237,49 @@
     private List<Book> bookshelf = new();
     private Book currentBook = null;
     private bool isLoading = true;
+    private HashSet<string> failedCovers = new();
+
+    /// <summary>
+    /// 获取书名第一个字符
+    /// </summary>
+    private string GetFirstChar(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "书";
+        return name.Substring(0, 1);
+    }
+
+    /// <summary>
+    /// 封面图片加载失败处理
+    /// </summary>
+    private void OnImageError(Book book)
+    {
+        if (!string.IsNullOrEmpty(book.BookUrl))
+        {
+            failedCovers.Add(book.BookUrl);
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 获取未读章节信息
+    /// </summary>
+    private string GetUnreadInfo(Book book)
+    {
+        var totalChapters = book.TotalChapterNum;
+        var readChapter = book.DurChapterIndex + 1;
+
+        if (totalChapters <= 0)
+        {
+            return book.DurChapterIndex >= 0 ? $"已读至第{readChapter}章" : "尚未阅读";
+        }
+
+        var unread = totalChapters - readChapter;
+        if (unread <= 0)
+        {
+            return "已读完";
+        }
+        return $"{unread}章未读";
+    }
 
     /// <summary>
     /// 页面初始化时加载书架数据
@@ -176,10 +323,19 @@
     /// 查看书籍详情
     /// </summary>
     /// <param name="book">要查看的书籍</param>
-    private void ViewBookDetail(Book book)
+    private async void ViewBookDetail(Book book)
     {
-        LegadoContext.CurrentBook = book;
-        Nav.NavigateTo("/Detail");
+         LegadoContext.CurrentBook = book;
+        _ = await LegadoContext.GetBookChapterListAsync(false);
+        LegadoContext.CurrentChapter = LegadoContext.CurrentChapters.ElementAt(book.DurChapterIndex);
+        if (book.Type == 1)
+        {
+            Nav.NavigateTo($"/Audio/{book.DurChapterPos}");
+        }
+        else
+        {
+            Nav.NavigateTo("/Content");
+        }
     }
 
     /// <summary>

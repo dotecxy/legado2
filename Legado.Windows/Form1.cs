@@ -20,7 +20,7 @@ using static Legado.Windows.Program;
 namespace Legado.Windows
 {
     [SingletonDependency]
-    public partial class Form1 : Form, IMessageProc
+    public partial class Form1 : BorderlessForm, IMessageProc
     {
 
         const string URL = "https://jihulab.com/aoaostar/legado/-/raw/release/cache/71e56d4f1d8f1bff61fdd3582ef7513600a9e108.json";

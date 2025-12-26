@@ -1,4 +1,4 @@
-@page "/Audio"
+@page "/Audio/{Pos}"
 @using System.Threading
 @inherits AppComponentBase
 @implements IAsyncDisposable
@@ -7,160 +7,160 @@
 
 <div class="page-container">
     <TopCompoent PageTitle="@GetCurrentChapterTitle()" />
-    
+
     <div class="page-content">
         <MudLayout>
-    <!-- 主内容区域 -->
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Medium" Class="py-6">
-            <MudCard Elevation="3" Class="h-full">
-                <!-- 封面和书籍信息 -->
-                <MudCardContent Class="text-center">
-                    <MudPaper Elevation="5"
-                              Class="mx-auto mb-6"
-                              Style="width: 250px; height: 350px; overflow: hidden;">
-                        <MudImage Src="@GetCoverUrl()"
-                                  Alt="Book Cover"
-                                  Class="w-100 h-100"
-                                  ObjectFit="ObjectFit.Cover"
-                                  loading="lazy" />
-                    </MudPaper>
+            <!-- 主内容区域 -->
+            <MudMainContent>
+                <MudContainer MaxWidth="MaxWidth.Medium" Class="py-6">
+                    <MudCard Elevation="3" Class="h-full">
+                        <!-- 封面和书籍信息 -->
+                        <MudCardContent Class="text-center">
+                            <MudPaper Elevation="5"
+                                      Class="mx-auto mb-6"
+                                      Style="width: 250px; height: 350px; overflow: hidden;">
+                                <MudImage Src="@GetCoverUrl()"
+                                          Alt="Book Cover"
+                                          Class="w-100 h-100"
+                                          ObjectFit="ObjectFit.Cover"
+                                          loading="lazy" />
+                            </MudPaper>
 
-                    <MudText Typo="Typo.h5" Class="mb-1 font-weight-bold">@(LegadoContext.CurrentBook?.Name ?? "未知书籍")</MudText>
-                    <MudText Typo="Typo.body1" Class="mb-3 text-muted">@(LegadoContext.CurrentBook?.Author ?? "未知作者")</MudText>
-                    <MudText Typo="Typo.body2" Class="mb-6">@GetCurrentChapterTitle()</MudText>
+                            <MudText Typo="Typo.h5" Class="mb-1 font-weight-bold">@(LegadoContext.CurrentBook?.Name ?? "未知书籍")</MudText>
+                            <MudText Typo="Typo.body1" Class="mb-3 text-muted">@(LegadoContext.CurrentBook?.Author ?? "未知作者")</MudText>
+                            <MudText Typo="Typo.body2" Class="mb-6">@GetCurrentChapterTitle()</MudText>
 
-                    <!-- 播放进度条 -->
-                    <div class="mb-2">
-                        <div class="d-flex justify-between mb-1">
-                            <MudText Typo="Typo.caption">@FormatTime(currentTime)</MudText>
-                            <MudText Typo="Typo.caption">/</MudText>
-                            <MudText Typo="Typo.caption">@FormatTime(totalTime)</MudText>
-                        </div>
-                        <MudSlider @bind-Value="currentTime"
-                                   Min="0"
-                                   Max="@totalTime"
-                                   Step="1"
-                                   Class="w-100"
-                                   Disabled="!isPlaying" />
-                    </div>
+                            <!-- 播放进度条 -->
+                            <div class="mb-2">
+                                <div class="d-flex justify-between mb-1">
+                                    <MudText Typo="Typo.caption">@FormatTime(currentTime)</MudText>
+                                    <MudText Typo="Typo.caption">/</MudText>
+                                    <MudText Typo="Typo.caption">@FormatTime(totalTime)</MudText>
+                                </div>
+                                <MudSlider @bind-Value="currentTime"
+                                           Min="0"
+                                           Max="@totalTime"
+                                           Step="1"
+                                           Class="w-100"
+                                           Disabled="!isPlaying" />
+                            </div>
 
-                    <!-- 播放控制按钮 -->
-                    <div class="d-flex justify-center gap-4 mb-6">
-                        <MudIconButton Icon="@Icons.Material.Filled.SkipPrevious"
-                                       Color="Color.Primary"
-                                       Size="Size.Large"
-                                       OnClick="PreviousChapter" />
+                            <!-- 播放控制按钮 -->
+                            <div class="d-flex justify-center gap-4 mb-6">
+                                <MudIconButton Icon="@Icons.Material.Filled.SkipPrevious"
+                                               Color="Color.Primary"
+                                               Size="Size.Large"
+                                               OnClick="PreviousChapter" />
 
-                        <MudIconButton Icon="@(isPlaying? Icons.Material.Filled.Pause : Icons.Material.Filled.PlayArrow)"
-                                       Color="Color.Primary"
-                                       Size="Size.Large"
-                                       OnClick="TogglePlay" />
+                                <MudIconButton Icon="@(isPlaying? Icons.Material.Filled.Pause : Icons.Material.Filled.PlayArrow)"
+                                               Color="Color.Primary"
+                                               Size="Size.Large"
+                                               OnClick="TogglePlay" />
 
-                        <MudIconButton Icon="@Icons.Material.Filled.SkipNext"
-                                       Color="Color.Primary"
-                                       Size="Size.Large"
-                                       OnClick="NextChapter" />
-                    </div>
+                                <MudIconButton Icon="@Icons.Material.Filled.SkipNext"
+                                               Color="Color.Primary"
+                                               Size="Size.Large"
+                                               OnClick="NextChapter" />
+                            </div>
 
-                    <!-- 音量控制 -->
-                    <div class="d-flex justify-center align-items-center gap-2">
-                        <MudIconButton Icon="@(volumeSlider == 0 ? Icons.Material.Filled.VolumeMute : volumeSlider < 50 ? Icons.Material.Filled.VolumeDown : Icons.Material.Filled.VolumeUp)"
-                                       Color="Color.Primary"
-                                       Size="Size.Small"
-                                       OnClick="ToggleMute" />
-                        <MudSlider @bind-Value="volumeSlider"
-                                   Min="0"
-                                   Max="100"
-                                   Step="1"
-                                   Class="w-50" />
-                        <MudText Typo="Typo.caption">@volumeSlider%</MudText>
-                    </div>
-                </MudCardContent>
+                            <!-- 音量控制 -->
+                            <div class="d-flex justify-center align-items-center gap-2">
+                                <MudIconButton Icon="@(volumeSlider == 0 ? Icons.Material.Filled.VolumeMute : volumeSlider < 50 ? Icons.Material.Filled.VolumeDown : Icons.Material.Filled.VolumeUp)"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               OnClick="ToggleMute" />
+                                <MudSlider @bind-Value="volumeSlider"
+                                           Min="0"
+                                           Max="100"
+                                           Step="1"
+                                           Class="w-50" />
+                                <MudText Typo="Typo.caption">@volumeSlider%</MudText>
+                            </div>
+                        </MudCardContent>
 
-                <!-- 底部操作按钮 -->
-                <MudCardActions Class="justify-center pb-6">
-                    <MudButton Color="Color.Secondary"
-                               Variant="Variant.Outlined"
-                               StartIcon="@Icons.Material.Filled.List"
-                               OnClick="toggleDrawer">
-                        目录
-                    </MudButton>
-                    <MudButton Color="Color.Secondary"
-                               Variant="Variant.Outlined"
-                               StartIcon="@Icons.Material.Filled.Speed"
-                               OnClick="toggleDrawer">
-                        设置
-                    </MudButton>
-                </MudCardActions>
-            </MudCard>
-        </MudContainer>
-    </MudMainContent>
+                        <!-- 底部操作按钮 -->
+                        <MudCardActions Class="justify-center pb-6">
+                            <MudButton Color="Color.Secondary"
+                                       Variant="Variant.Outlined"
+                                       StartIcon="@Icons.Material.Filled.List"
+                                       OnClick="toggleDrawer">
+                                目录
+                            </MudButton>
+                            <MudButton Color="Color.Secondary"
+                                       Variant="Variant.Outlined"
+                                       StartIcon="@Icons.Material.Filled.Speed"
+                                       OnClick="toggleDrawer">
+                                设置
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudContainer>
+            </MudMainContent>
 
-    <!-- 抽屉窗口 -->
-    <MudDrawer Anchor="Anchor.Right"
-               Open="@drawerOpen"
-               onclose="toggleDrawer"
-               Elevation="3"
-               Class="w-80">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">@(drawerTab == 0 ? "章节列表" : "播放设置")</MudText>
-        </MudDrawerHeader>
+            <!-- 抽屉窗口 -->
+            <MudDrawer Anchor="Anchor.Right"
+                       Open="@drawerOpen"
+                       onclose="toggleDrawer"
+                       Elevation="3"
+                       Class="w-80">
+                <MudDrawerHeader>
+                    <MudText Typo="Typo.h6">@(drawerTab == 0 ? "章节列表" : "播放设置")</MudText>
+                </MudDrawerHeader>
 
-        <!-- 抽屉标签页 -->
-        <MudTabs @bind-ActivePanelIndex="drawerTab" Class="border-bottom">
-            <MudTabPanel Text="章节列表">
-                <MudList T="BookChapter" Dense>
-                    @if (chapterList != null && chapterList.Count > 0)
-                    {
-                        @foreach (var chapter in chapterList)
-                        {
-                            <MudListItem T="object"
-                                         Class="@(chapter.Index == CurrentChapterIndex ? "bg-primary text-white" : "")"
-                                         OnClick="() => NavigateToChapter(chapter)">
-                                <MudText Class="flex-grow">@chapter.Title</MudText>
-                                @if (chapter.IsVip)
+                <!-- 抽屉标签页 -->
+                <MudTabs @bind-ActivePanelIndex="drawerTab" Class="border-bottom">
+                    <MudTabPanel Text="章节列表">
+                        <MudList T="BookChapter" Dense>
+                            @if (chapterList != null && chapterList.Count > 0)
+                            {
+                                @foreach (var chapter in chapterList)
                                 {
-                                    <MudChip T="object" Color="Color.Secondary" Size="Size.Small">VIP</MudChip>
+                                    <MudListItem T="object"
+                                                 Class="@(chapter.Index == CurrentChapterIndex ? "bg-primary text-white" : "")"
+                                                 OnClick="() => NavigateToChapter(chapter)">
+                                        <MudText Class="flex-grow">@chapter.Title</MudText>
+                                        @if (chapter.IsVip)
+                                        {
+                                            <MudChip T="object" Color="Color.Secondary" Size="Size.Small">VIP</MudChip>
+                                        }
+                                    </MudListItem>
                                 }
-                            </MudListItem>
-                        }
-                    }
-                    else
-                    {
-                        <MudListItem T="object">
-                            <MudText Class="text-muted">暂无章节列表</MudText>
-                        </MudListItem>
-                    }
-                </MudList>
-            </MudTabPanel>
+                            }
+                            else
+                            {
+                                <MudListItem T="object">
+                                    <MudText Class="text-muted">暂无章节列表</MudText>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </MudTabPanel>
 
-            <MudTabPanel Text="播放设置">
-                <MudCardContent>
-                    <!-- 播放速度控制 -->
-                    <div class="mb-6">
-                        <MudText Typo="Typo.subtitle2" Class="mb-3">播放速度</MudText>
-                        <MudSlider @bind-Value="playbackSpeed"
-                                   Min="0.5"
-                                   Max="2.0"
-                                   Step="0.1"
-                                   Class="w-100" />
-                        <div class="d-flex justify-center gap-2 mt-2">
-                            <MudText Typo="Typo.body2">@playbackSpeed.ToString("F1")x</MudText>
-                        </div>
-                    </div>
+                    <MudTabPanel Text="播放设置">
+                        <MudCardContent>
+                            <!-- 播放速度控制 -->
+                            <div class="mb-6">
+                                <MudText Typo="Typo.subtitle2" Class="mb-3">播放速度</MudText>
+                                <MudSlider @bind-Value="playbackSpeed"
+                                           Min="0.5"
+                                           Max="2.0"
+                                           Step="0.1"
+                                           Class="w-100" />
+                                <div class="d-flex justify-center gap-2 mt-2">
+                                    <MudText Typo="Typo.body2">@playbackSpeed.ToString("F1")x</MudText>
+                                </div>
+                            </div>
 
-                    <!-- 其他设置选项 -->
-                    <div class="mb-4">
-                        <MudSwitch T="bool" @bind-checked="autoPlayNext" Label="自动播放下一章" />
-                    </div>
-                    <div class="mb-4">
-                        <MudSwitch T="bool" @bind-checked="rememberPosition" Label="记住播放位置" />
-                    </div>
-                </MudCardContent>
-            </MudTabPanel>
-        </MudTabs>
-    </MudDrawer>
+                            <!-- 其他设置选项 -->
+                            <div class="mb-4">
+                                <MudSwitch T="bool" @bind-checked="autoPlayNext" Label="自动播放下一章" />
+                            </div>
+                            <div class="mb-4">
+                                <MudSwitch T="bool" @bind-checked="rememberPosition" Label="记住播放位置" />
+                            </div>
+                        </MudCardContent>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudDrawer>
         </MudLayout>
     </div>
 </div>
@@ -171,11 +171,12 @@
         flex-direction: column;
         height: 100%;
         width: 100%;
+        overflow: hidden;
     }
 
     .page-content {
         flex: 1;
-        overflow-y: auto;
+        overflow: hidden;
     }
 
     @@media (max-width: 600px) {
@@ -186,6 +187,8 @@
 </style>
 
 @code {
+    [Parameter] public string Pos { get; set; }
+
     // 播放状态
     private bool isPlaying = false;
     private double _currentTime = 0; // 当前播放时间（秒）
@@ -349,7 +352,7 @@
     }
 
     // 跳转到指定章节
-    private async Task NavigateToChapter(BookChapter chapter)
+    private async Task NavigateToChapter(BookChapter chapter, int pos = 0)
     {
         if (chapter != null)
         {
@@ -357,7 +360,7 @@
 
             // 设置音频源并播放
             await AudioService.InitializeAsync(await GetAudioUrlAsync(chapter));
-            await AudioService.PlayAsync();
+            await AudioService.PlayAsync(pos);
 
             totalTime = AudioService.CurrentDurationMillisecond / 1000;
             currentTime = 0.0;

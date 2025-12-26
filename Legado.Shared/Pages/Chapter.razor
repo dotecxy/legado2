@@ -314,10 +314,16 @@
         flex-direction: column;
         height: 100%;
         width: 100%;
+        overflow: hidden;
     }
 
     .page-content {
         flex: 1;
+        overflow: hidden;
+    }
+
+    #chapter-list {
+        max-height: calc(100vh - 320px);
         overflow-y: auto;
     }
 
@@ -337,6 +343,10 @@
         .py-4 {
             padding-top: 8px !important;
             padding-bottom: 8px !important;
+        }
+
+        #chapter-list {
+            max-height: calc(100vh - 280px);
         }
     }
 </style>

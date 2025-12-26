@@ -35,10 +35,9 @@ namespace Legado.Shared
         /// <summary>
         /// 拖拽窗口
         /// </summary>
-        /// <param name="x">X坐标偏移量</param>
-        /// <param name="y">Y坐标偏移量</param>
         /// <returns></returns>
-        Task DragMoveAsync(int x, int y);
+        Task DragMouseDown();
+        Task DragMouseUp();
 
         /// <summary>
         /// 获取或设置窗口标题

@@ -1,8 +1,7 @@
 @page "/Discover"
 @inherits AppComponentBase
 
-<div class="page-container">
-    <TopCompoent PageTitle="发现" />
+<div class="page-container"> 
     
     <MudContainer MaxWidth="MaxWidth.Large" Class="page-content py-4">
         <MudCard Elevation="3" Class="mb-4">
@@ -52,11 +51,12 @@
         flex-direction: column;
         height: 100%;
         width: 100%;
+        overflow: hidden;
     }
 
     .page-content {
         flex: 1;
-        overflow-y: auto;
+        overflow: hidden;
     }
 
     @@media (max-width: 600px) {

@@ -42,18 +42,7 @@ namespace Legado.Shared
         {
             // 在非Windows平台上不执行任何操作
             await Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// 拖拽窗口 - 在非Windows平台上不执行任何操作
-        /// </summary>
-        /// <param name="x">X坐标偏移量</param>
-        /// <param name="y">Y坐标偏移量</param>
-        public async Task DragMoveAsync(int x, int y)
-        {
-            // 在非Windows平台上不执行任何操作
-            await Task.CompletedTask;
-        }
+        } 
 
         /// <summary>
         /// 获取窗口标题 - 返回默认标题
@@ -87,6 +76,16 @@ namespace Legado.Shared
         public async Task<bool> IsMinimizedAsync()
         {
             return await Task.FromResult(false);
+        }
+
+        public Task DragMouseDown()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task DragMouseUp()
+        {
+            return Task.CompletedTask;
         }
     }
 }

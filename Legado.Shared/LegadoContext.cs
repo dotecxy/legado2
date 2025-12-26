@@ -98,7 +98,7 @@ namespace Legado.Shared
             return book;
         }
 
-        public async Task<List<BookChapter>> GetBookChapterListAsync(bool runPreUpdateJs = false,
+        public async Task<List<BookChapter>> GetBookChapterListAsync(bool query = true, bool runPreUpdateJs = false,
             CancellationToken cancellationToken = default)
         {
             CurrentBookSource.ThrowIfNull();

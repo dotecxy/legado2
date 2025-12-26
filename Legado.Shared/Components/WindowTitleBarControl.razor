@@ -76,7 +76,7 @@
     {
         var isMaximized = await WindowTitleBar.IsMaximizedAsync();
         var isMinimized = await WindowTitleBar.IsMinimizedAsync();
-        
+
         if (isMaximized)
         {
             windowStateText = "最大化";
@@ -121,7 +121,6 @@
 
     private async Task DragWindow()
     {
-        // 模拟拖拽窗口功能，实际调用API
-        await WindowTitleBar.DragMoveAsync(0, 0);
+        await Task.Delay(1);
     }
 }

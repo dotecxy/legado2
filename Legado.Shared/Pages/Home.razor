@@ -1,43 +1,60 @@
 @page "/"
+@inherits AppComponentBase
 @using Legado.Core.Helps.Login
 @using Legado.Core.Models.AnalyzeRules
-@inherits AppComponentBase
 @inject WebBook wb;
 
 <div class="page-container">
-    <TopCompoent PageTitle="首页" />
-    
-    <MudContainer MaxWidth="MaxWidth.Large" Class="page-content py-4">
-        <MudCard Class="h-full" Elevation="3">
-            <MudCardContent>
-        <MudText Typo="Typo.h4" Class="mb-6 font-weight-bold">欢迎使用Legado应用</MudText>
+    <TopCompoent ShowBackButton="false" ></TopCompoent>
+    @switch (States.IndexState)
+    {
+        case IndexState.Bookshelf:
+        default:
+            <Bookshelf></Bookshelf>
+            break;
+        case IndexState.Discover:
+            <Discover></Discover>
+            break;
+        case IndexState.User:
+            break;
+    }
 
-        @* @if (!string.IsNullOrEmpty(FileContent))
-        {
-            <MudText Class="mb-4">l.txt文件内容:</MudText>
-            <MudPaper Elevation="2" Class="p-4 bg-gray-50">
-                <MudText Typo="Typo.body1">@FileContent</MudText>
-            </MudPaper>
-        } *@
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <MudPaper Elevation="4" Class="bottom-nav-paper">
+            <div class="nav-buttons">
+                <MudButton Variant="Variant.Text"
+                           Color="@(States.IndexState== IndexState.Bookshelf ? Color.Primary : Color.Default)"
+                           Class="nav-btn"
+                           OnClick="@(() => States.IndexState= IndexState.Bookshelf)">
+                    <div class="nav-btn-content">
+                        <MudIcon Icon="@Icons.Material.Filled.Book" Size="Size.Medium" />
+                        <MudText Typo="Typo.caption">书架</MudText>
+                    </div>
+                </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" @onclick="ShowSearchAsync">
-            Search
-        </MudButton>
+                <MudButton Variant="Variant.Text"
+                           Color="@(States.IndexState== IndexState.Discover? Color.Primary : Color.Default)"
+                           Class="nav-btn"
+                           OnClick="@(() =>States.IndexState= IndexState.Discover)">
+                    <div class="nav-btn-content">
+                        <MudIcon Icon="@Icons.Material.Filled.Explore" Size="Size.Medium" />
+                        <MudText Typo="Typo.caption">发现</MudText>
+                    </div>
+                </MudButton>
 
-        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Class="mt-2" @onclick="Test">
-            芯象
-        </MudButton>
-
-        @foreach (var loginUI in loginUIs)
-        {
-            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Class="mt-2" @onclick="() => Login(loginUI)">
-                芯象登录
-            </MudButton>
-        }
-
-            </MudCardContent>
-        </MudCard>
-    </MudContainer>
+                <MudButton Variant="Variant.Text"
+                           Color="@(States.IndexState== IndexState.User ? Color.Primary : Color.Default)"
+                           Class="nav-btn"
+                           OnClick="@(() => States.IndexState= IndexState.User)">
+                    <div class="nav-btn-content">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Medium" />
+                        <MudText Typo="Typo.caption">我的</MudText>
+                    </div>
+                </MudButton>
+            </div>
+        </MudPaper>
+    </div>
 </div>
 
 <style>
@@ -46,16 +63,53 @@
         flex-direction: column;
         height: 100%;
         width: 100%;
+        overflow: hidden;
     }
 
     .page-content {
         flex: 1;
-        overflow-y: auto;
+        overflow: hidden;
+        padding-bottom: 60px;
+    }
+
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+    }
+
+    .bottom-nav-paper {
+        border-radius: 0;
+    }
+
+    .nav-buttons {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        height: 56px;
+    }
+
+    .nav-btn {
+        flex: 1;
+        height: 100%;
+        border-radius: 0;
+        min-width: 0;
+    }
+
+    .nav-btn-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
     }
 
     @@media (max-width: 600px) {
         .page-content {
             padding: 8px !important;
+            padding-bottom: 60px !important;
         }
     }
 </style>
@@ -63,6 +117,16 @@
 @code {
     private List<LoginUI> loginUIs = new List<LoginUI>();
     private BookSource current;
+    private int currentTab = 0;
+
+    /// <summary>
+    /// 导航到指定页面
+    /// </summary>
+    private void NavigateTo(string path, int tab)
+    {
+        currentTab = tab;
+        Nav.NavigateTo(path);
+    }
 
     protected override async Task OnInitializedAsync()
     {

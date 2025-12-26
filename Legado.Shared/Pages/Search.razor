@@ -96,13 +96,15 @@
 
     .page-content {
         flex: 1;
-        overflow-y: auto;
+        overflow: hidden;
     }
 
     .search-results-list {
         display: flex;
         flex-direction: column;
         gap: 12px;
+        max-height: calc(100vh - 280px);
+        overflow-y: auto;
     }
 
     .search-item {
@@ -187,6 +189,11 @@
     @@media (max-width: 600px) {
         .page-content {
             padding: 8px !important;
+            overflow: hidden;
+        }
+
+        .search-results-list {
+            max-height: calc(100vh - 240px);
         }
 
         .gap-4 {

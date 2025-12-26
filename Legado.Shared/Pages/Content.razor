@@ -166,10 +166,16 @@
         flex-direction: column;
         height: 100%;
         width: 100%;
+        overflow: hidden;
     }
 
     .page-content {
         flex: 1;
+        overflow: hidden;
+    }
+
+    .mud-container {
+        max-height: calc(100vh - 80px);
         overflow-y: auto;
     }
 
@@ -181,6 +187,10 @@
         .py-4 {
             padding-top: 8px !important;
             padding-bottom: 8px !important;
+        }
+
+        .mud-container {
+            max-height: calc(100vh - 70px);
         }
     }
 </style>

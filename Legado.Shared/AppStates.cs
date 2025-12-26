@@ -36,6 +36,6 @@ namespace Legado.Shared
 
     public enum IndexState
     {
-        Home, Discover, User
+        Bookshelf, Discover, User
     }
 }

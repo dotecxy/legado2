@@ -1,7 +1,10 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Timers;
 using Legado.Shared;
+using Vanara.PInvoke;
+using Timer = System.Threading.Timer;
 
 namespace Legado.Windows
 {
@@ -10,25 +13,14 @@ namespace Legado.Windows
     /// </summary>
     public class WindowTitleBarService : IWindowTitleBar
     {
-        // Windows API常量
-        private const int WM_SYSCOMMAND = 0x0112;
-        private const int SC_CLOSE = 0xF060;
-        private const int SC_MAXIMIZE = 0xF030;
-        private const int SC_MINIMIZE = 0xF020;
-        private const int SC_RESTORE = 0xF120;
-        private const int HTCAPTION = 0x0002;
-
-        // Windows API函数导入
-        [DllImport("user32.dll")]
-        private static extern bool ReleaseCapture();
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr PostMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
-
         private readonly IServiceProvider _serviceProvider;
+        private Timer _dragMoveTimer;
+        private bool _isMoving = false;
+        private double _mouseStartX;
+        private double _mouseStartY;
+        private double _windowStartLeft;
+        private double _windowStartTop;
+        private IntPtr hWnd;
 
         /// <summary>
         /// 构造函数
@@ -37,6 +29,23 @@ namespace Legado.Windows
         public WindowTitleBarService(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _dragMoveTimer = new Timer((_) =>
+            {
+                if (!_isMoving)
+                {
+                    return;
+                }
+                if (User32.GetCursorPos(out var point))
+                {
+                    var mauiWindow = InvokeOnUIAsync(frm =>
+                    {
+                        var x = _windowStartLeft - _mouseStartX + point.X;
+                        var y = _windowStartTop - _mouseStartY + point.Y;
+                        frm.Location = new System.Drawing.Point((int)x, (int)y);
+                    });
+
+                }
+            }, null, 10, 10);
         }
 
         private Form GetMainForm()
@@ -47,24 +56,46 @@ namespace Legado.Windows
             }
             throw new InvalidOperationException("无法获取主窗体实例");
         }
+        private async Task InvokeOnUIAsync(Action<Form> act)
+        {
+            _ = await InvokeOnUIAsync(new Func<Form, object>((f) =>
+            {
+                act.Invoke(f);
+                return null;
+            }));
+        }
+
+        private async Task<T> InvokeOnUIAsync<T>(Func<Form, T> act)
+        {
+            var result = default(T);
+            if (act == null)
+            {
+                return result;
+            }
+            await Task.Run(() =>
+            {
+                var frm = GetMainForm();
+                if (frm.InvokeRequired)
+                {
+                    result = frm.Invoke(() =>
+                    {
+                        return act.Invoke(frm);
+                    });
+                }
+                else
+                {
+                    result = act(frm);
+                }
+            });
+            return result;
+        }
 
         /// <summary>
         /// 关闭窗口
         /// </summary>
         public async Task CloseAsync()
         {
-            var mainForm = GetMainForm();
-            await Task.Run(() =>
-            {
-                if (mainForm.InvokeRequired)
-                {
-                    mainForm.Invoke(new Action(() => mainForm.Close()));
-                }
-                else
-                {
-                    mainForm.Close();
-                }
-            });
+            await InvokeOnUIAsync((frm) => frm.Close());
         }
 
         /// <summary>
@@ -72,16 +103,15 @@ namespace Legado.Windows
         /// </summary>
         public async Task MaximizeAsync()
         {
-            var mainForm = GetMainForm();
-            await Task.Run(() =>
+            await InvokeOnUIAsync((frm) =>
             {
-                if (mainForm.InvokeRequired)
+                if (frm.WindowState == FormWindowState.Maximized)
                 {
-                    mainForm.Invoke(new Action(() => mainForm.WindowState = FormWindowState.Maximized));
+                    frm.WindowState = FormWindowState.Normal;
                 }
                 else
                 {
-                    mainForm.WindowState = FormWindowState.Maximized;
+                    frm.WindowState = FormWindowState.Maximized;
                 }
             });
         }
@@ -91,17 +121,9 @@ namespace Legado.Windows
         /// </summary>
         public async Task MinimizeAsync()
         {
-            var mainForm = GetMainForm();
-            await Task.Run(() =>
+            await InvokeOnUIAsync((frm) =>
             {
-                if (mainForm.InvokeRequired)
-                {
-                    mainForm.Invoke(new Action(() => mainForm.WindowState = FormWindowState.Minimized));
-                }
-                else
-                {
-                    mainForm.WindowState = FormWindowState.Minimized;
-                }
+                frm.WindowState = FormWindowState.Minimized;
             });
         }
 
@@ -110,18 +132,7 @@ namespace Legado.Windows
         /// </summary>
         public async Task RestoreAsync()
         {
-            var mainForm = GetMainForm();
-            await Task.Run(() =>
-            {
-                if (mainForm.InvokeRequired)
-                {
-                    mainForm.Invoke(new Action(() => mainForm.WindowState = FormWindowState.Normal));
-                }
-                else
-                {
-                    mainForm.WindowState = FormWindowState.Normal;
-                }
-            });
+            await MaximizeAsync();
         }
 
         /// <summary>
@@ -131,11 +142,13 @@ namespace Legado.Windows
         /// <param name="y">Y坐标偏移量</param>
         public async Task DragMoveAsync(int x, int y)
         {
-            var mainForm = GetMainForm();
-            await Task.Run(() =>
+            await InvokeOnUIAsync((frm) =>
             {
-                ReleaseCapture();
-                PostMessage(mainForm.Handle, WM_SYSCOMMAND, (IntPtr)(HTCAPTION), IntPtr.Zero);
+                //ReleaseCapture();
+                var pos = frm.Location;
+                pos.X += x;
+                pos.Y += y;
+                frm.Location = pos;
             });
         }
 
@@ -144,18 +157,7 @@ namespace Legado.Windows
         /// </summary>
         public async Task<string> GetTitleAsync()
         {
-            var mainForm = GetMainForm();
-            return await Task.Run(() =>
-            {
-                if (mainForm.InvokeRequired)
-                {
-                    return (string)mainForm.Invoke(new Func<string>(() => mainForm.Text));
-                }
-                else
-                {
-                    return mainForm.Text;
-                }
-            });
+            return await InvokeOnUIAsync((frm) => frm.Text);
         }
 
         /// <summary>
@@ -164,18 +166,7 @@ namespace Legado.Windows
         /// <param name="title">标题文本</param>
         public async Task SetTitleAsync(string title)
         {
-            var mainForm = GetMainForm();
-            await Task.Run(() =>
-            {
-                if (mainForm.InvokeRequired)
-                {
-                    mainForm.Invoke(new Action(() => mainForm.Text = title ?? string.Empty));
-                }
-                else
-                {
-                    mainForm.Text = title ?? string.Empty;
-                }
-            });
+            await InvokeOnUIAsync((frm) => frm.Text = title);
         }
 
         /// <summary>
@@ -183,18 +174,7 @@ namespace Legado.Windows
         /// </summary>
         public async Task<bool> IsMaximizedAsync()
         {
-            var mainForm = GetMainForm();
-            return await Task.Run(() =>
-            {
-                if (mainForm.InvokeRequired)
-                {
-                    return (bool)mainForm.Invoke(new Func<bool>(() => mainForm.WindowState == FormWindowState.Maximized));
-                }
-                else
-                {
-                    return mainForm.WindowState == FormWindowState.Maximized;
-                }
-            });
+            return await InvokeOnUIAsync((frm) => frm.WindowState == FormWindowState.Maximized);
         }
 
         /// <summary>
@@ -202,18 +182,30 @@ namespace Legado.Windows
         /// </summary>
         public async Task<bool> IsMinimizedAsync()
         {
-            var mainForm = GetMainForm();
-            return await Task.Run(() =>
+            return await InvokeOnUIAsync((frm) => frm.WindowState == FormWindowState.Minimized);
+        }
+
+        public async Task DragMouseDown()
+        {
+            if (User32.GetCursorPos(out var point))
             {
-                if (mainForm.InvokeRequired)
+                _mouseStartX = point.X;
+                _mouseStartY = point.Y;
+                var location = await InvokeOnUIAsync((frm) =>
                 {
-                    return (bool)mainForm.Invoke(new Func<bool>(() => mainForm.WindowState == FormWindowState.Minimized));
-                }
-                else
-                {
-                    return mainForm.WindowState == FormWindowState.Minimized;
-                }
-            });
+                    hWnd = frm.Handle;
+                    return frm.Location;
+                });
+                _windowStartLeft = location.X;
+                _windowStartTop = location.Y;
+                _isMoving = true;
+            }
+        }
+
+        public Task DragMouseUp()
+        {
+            _isMoving = false;
+            return Task.CompletedTask;
         }
     }
 }
