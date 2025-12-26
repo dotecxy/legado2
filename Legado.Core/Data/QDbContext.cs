@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Legado.Core.Data;
+using System;
 using System.Data;
+using System.IO;
 
 namespace Legado.Core
 {
@@ -9,34 +11,23 @@ namespace Legado.Core
         {
             _serviceProvider = serviceProvider;
         }
-         
+
         private string _connectionString;
         public string ConnectionString
         {
             get
             {
-                if (_connectionString == null)
-                {
-                    string connStringName = ConnectionStringNameAttribute.GetConnStringName(GetType());
-                    var dbConfig = _serviceProvider.GetService<DatabaseConfiguration>();
-                    if (!dbConfig.ContainsKey(connStringName))
-                    {
-                        //throw new QException($"The database connection name {connStringName} dose not exist in configuration.");
-                        _connectionString = "Default";
-                        return _connectionString;
-                    }
-                    _connectionString = dbConfig[connStringName];
-                }
-                return _connectionString;
+                var options = _serviceProvider.GetService<QApplicationCreationOptions>();
+                return Path.Combine(options?.Configuration?.BasePath ?? AppDomain.CurrentDomain.BaseDirectory, AppDatabase.DatabaseName);
             }
         }
 
         private readonly IServiceProvider _serviceProvider;
         public IServiceProvider ServiceProvider => _serviceProvider;
-         
+
 
         public void Dispose()
-        { 
+        {
         }
     }
 }

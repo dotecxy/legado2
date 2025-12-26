@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using Microsoft.JSInterop;
+using System;
 
 namespace Legado.Shared.Components
 {
@@ -32,6 +33,9 @@ namespace Legado.Shared.Components
         public IJSRuntime JSRuntime { get; set; } = null!;
         [Inject]
         public INativeAudioService AudioService { get; set; } = null!;
+
+        [Inject]
+        public IHotKeyService HotKeyService { get; set; } = null!;
 
         public virtual void Dispose()
         {

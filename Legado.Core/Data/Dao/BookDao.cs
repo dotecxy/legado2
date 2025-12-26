@@ -16,7 +16,7 @@ namespace Legado.Core.Data.Dao
     /// 书籍数据访问实现（对应 Kotlin 的 BookDao.kt）
     /// 使用 SQLite-net-pcl 进行数据库访问
     /// </summary>
-    public class BookDao : DapperDao<Book>, IBookDao
+    public class BookDao : ProxyDao<Book>, IBookDao
     {
         public BookDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

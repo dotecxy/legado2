@@ -34,7 +34,7 @@ namespace Legado.Core.Models.AnalyzeRules
         public Dictionary<string, string> HeaderMap { get; private set; } = new Dictionary<string, string>();
         public long? ServerID { get; private set; }
 
-        public CookieStore CookieStore { get; private set; } = CookieStore.Instance;
+        public CookieStore CookieStore { get => QServiceProvider.GetService<CookieStore>(); }
         public CacheManager CacheManager { get => CacheManager.Instance; }
 
         private string mUrl;
@@ -612,7 +612,7 @@ namespace Legado.Core.Models.AnalyzeRules
         // ================= 辅助方法 ================
 
         private HttpClient CreateHttpClient()
-        {
+        {  
             var handler = new HttpClientHandler();
             if (!string.IsNullOrEmpty(proxy))
             {
@@ -623,11 +623,7 @@ namespace Legado.Core.Models.AnalyzeRules
             // 自动管理 Cookies 可以在这里开启，但在 Legado 中是手动管理的
             handler.UseCookies = false;
 
-            var client = new HttpClient(handler);
-            if (retry > 0)
-            {
-                // C# HttpClient 默认没有重试，需要 Polly 等库，或者手动循环
-            }
+            var client = new MyHttpClient(handler); 
             return client;
         }
 

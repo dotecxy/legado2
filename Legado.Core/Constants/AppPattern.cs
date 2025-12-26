@@ -14,9 +14,29 @@ namespace Legado.Core.Constants
         public static readonly Regex PAGE_PATTERN = new Regex(@"<(.*?)>"); // 匹配分页 <1,10>
         public static readonly Regex DATA_URI_REGEX = new Regex(@"data:.*?;base64,(.*)");
         public static readonly Regex XML_CONTENT_TYPE_REGEX = new Regex(@"(?i)((text|application)/xml|application/[a-z]+\+xml)");
-        
+
         // 书名和作者名的格式化正则
         public static readonly string NameRegex = "[\\\\/:*?\\\"〈><|\\r\\n]+";
         public static readonly string AuthorRegex = "作者[::：]\\s*";
+    }
+
+
+    public static class AppInfo
+    {
+        static string name = "";
+        public static string Name
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(name))
+                {
+                    return name;
+                }
+
+                var firstName = typeof(AppInfo).Assembly.FullName.Split(new char[] { '，' })[0].Split('.')[0].ToLower();
+
+                return name = firstName;
+            }
+        }
     }
 }

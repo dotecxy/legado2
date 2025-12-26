@@ -826,7 +826,7 @@ namespace Legado.Core.Models.AnalyzeRules
                 var bindingds = new Dictionary<string, object>();
                 // 添加全局对象
                 bindingds.Add("java", this);
-                bindingds.Add("cookie", CookieStore.Instance);
+                bindingds.Add("cookie", QServiceProvider.GetService<CookieStore>());
                 bindingds.Add("cache", _memoryCache);
                 bindingds.Add("source", _source);
                 bindingds.Add("book", _ruleData as Book);

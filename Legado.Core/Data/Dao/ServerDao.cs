@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 服务器数据访问实现（对应 Kotlin 的 ServerDao.kt）
     /// </summary>
-    public class ServerDao : DapperDao<Server>, IServerDao
+    public class ServerDao : ProxyDao<Server>, IServerDao
     {
         public ServerDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

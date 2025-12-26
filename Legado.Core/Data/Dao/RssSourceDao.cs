@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// RSS 源数据访问实现（对应 Kotlin 的 RssSourceDao.kt）
     /// </summary>
-    public class RssSourceDao : DapperDao<RssSource>, IRssSourceDao
+    public class RssSourceDao : ProxyDao<RssSource>, IRssSourceDao
     {
         public RssSourceDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

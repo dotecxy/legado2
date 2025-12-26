@@ -1,3 +1,4 @@
+using Legado.Core.Constants;
 using Legado.Core.Data.Dao;
 using Legado.Core.Data.Entities;
 using SQLite;
@@ -8,17 +9,18 @@ using System.Threading.Tasks;
 
 namespace Legado.Core.Data
 {
+    [SingletonDependency]
+    [ExposeServices(IncludeSelf = true)]
     /// <summary>
     /// 应用数据库管理器
-    /// 负责数据库初始化、迁移和DAO访问
-    /// 支持通过IDbContext访问数据库（兼容Dapper）
+    /// 负责数据库初始化、迁移和DAO访问 
     /// </summary>
-    public class AppDatabase : IDbContext
+    public class AppDatabase : QDbContext
     {
         /// <summary>
         /// 数据库名称
         /// </summary>
-        public const string DatabaseName = "legado.db";
+        public static readonly string DatabaseName = AppInfo.Name + ".db";
 
         /// <summary>
         /// 书籍表名
@@ -35,16 +37,13 @@ namespace Legado.Core.Data
         /// </summary>
         public const string RssSourceTableName = "rssSources";
 
-        private readonly IDbConnection _dbConnection;
-        private readonly SQLiteAsyncConnectionWrapper _asyncConnection;
-        private readonly string _databasePath;
+        private IDbConnection _dbConnection;
+        private SQLiteAsyncConnectionWrapper _asyncConnection;
         private readonly IServiceProvider _serviceProvider;
         private bool _initialized = false;
 
         // 实现IDbContext接口
         public IDbConnection DbConnection => _dbConnection;
-        public string ConnectionString { get; }
-        public IServiceProvider ServiceProvider => _serviceProvider;
 
         // DAO属性
         private BookDao _bookDao;
@@ -179,14 +178,8 @@ namespace Legado.Core.Data
         /// </summary>
         /// <param name="databasePath">数据库文件路径</param>
         /// <param name="serviceProvider">服务提供者（可选）</param>
-        public AppDatabase(string databasePath, IServiceProvider serviceProvider = null)
+        public AppDatabase(IServiceProvider serviceProvider = null) : base(serviceProvider)
         {
-            _databasePath = databasePath;
-            ConnectionString = $"Data Source={databasePath}";
-            _serviceProvider = serviceProvider;
-            // 初始化 SQLite-net-pcl 连接
-            _asyncConnection = new SQLiteAsyncConnectionWrapper(databasePath);
-            _dbConnection = null;
         }
 
         /// <summary>
@@ -196,6 +189,9 @@ namespace Legado.Core.Data
         {
             if (_initialized)
                 return;
+
+            _asyncConnection = new SQLiteAsyncConnectionWrapper(ConnectionString);
+            _dbConnection = null;
 
             // 检查数据库版本
             var currentVersion = await GetDatabaseVersionAsync();
@@ -351,46 +347,6 @@ namespace Legado.Core.Data
                     _dbConnection.Close();
                 _dbConnection.Dispose();
             }
-        }
-
-        /// <summary>
-        /// 创建数据库实例（单例模式）
-        /// </summary>
-        private static AppDatabase _instance;
-        private static readonly object _lock = new object();
-
-        /// <summary>
-        /// 获取数据库实例
-        /// </summary>
-        /// <param name="databasePath">数据库文件路径（可选，首次调用时必须提供）</param>
-        public static AppDatabase GetInstance(string databasePath = null)
-        {
-            if (_instance == null)
-            {
-                lock (_lock)
-                {
-                    if (_instance == null)
-                    {
-                        if (string.IsNullOrEmpty(databasePath))
-                        {
-                            // 使用默认路径
-                            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                            databasePath = Path.Combine(appDataPath, "Legado", DatabaseName);
-
-                            // 确保目录存在
-                            var directory = Path.GetDirectoryName(databasePath);
-                            if (!Directory.Exists(directory))
-                            {
-                                Directory.CreateDirectory(directory);
-                            }
-                        }
-
-                        _instance = new AppDatabase(databasePath, QServiceProvider.ServiceProvider);
-                    }
-                }
-            }
-
-            return _instance;
         }
     }
 }

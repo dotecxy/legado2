@@ -12,27 +12,31 @@ using System.Threading.Tasks;
 
 namespace Legado.Core.Helps.Http
 {
+    [SingletonDependency]
+    [ExposeServices(typeof(ICookieManager), IncludeSelf = true)]
     /// <summary>
     /// Cookie 存储管理（对应 Kotlin 的 CookieStore.kt）
     /// </summary>
     public class CookieStore : ICookieManager
     {
-        // 单例模式（对应 Kotlin 的 object）
-        private static readonly Lazy<CookieStore> _instance = new Lazy<CookieStore>(() => new CookieStore());
-        public static CookieStore Instance => _instance.Value;
+
+        private readonly AppDatabase _appDb;
 
         // 私有构造函数
-        private CookieStore() { }
+        public CookieStore(AppDatabase appDatabase)
+        {
+            _appDb = appDatabase;
+        }
 
         // 正则表达式（对应 Kotlin 的 AppPattern）
         private static readonly Regex SemicolonRegex = new Regex(@";");
         private static readonly Regex EqualsRegex = new Regex(@"=");
 
-        private static ICookieDao _cookieDao
+        private ICookieDao _cookieDao
         {
             get
             {
-                return AppDatabase.GetInstance("test.db").CookieDao;
+                return _appDb.CookieDao;
             }
         }
 
@@ -224,7 +228,7 @@ namespace Legado.Core.Helps.Http
             {
                 return cookie;
             }
-             
+
             var cookieEntity = await _cookieDao.GetAsync(domain);
             if (cookieEntity != null)
             {

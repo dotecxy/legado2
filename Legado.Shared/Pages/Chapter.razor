@@ -185,15 +185,8 @@
         try
         {
             isLoading = true;
-            book = LegadoContext.CurrentBook;
-            if (book != null && LegadoContext.CurrentBookSource != null)
-            {
-                chapters = await LegadoContext.WebBook.GetChapterListAwait(
-                    LegadoContext.CurrentBookSource,
-                    book
-                );
-                filteredChapters = chapters?.ToList();
-            }
+            book = LegadoContext.CurrentBook; 
+            chapters = filteredChapters = await LegadoContext.GetBookChapterListAsync();
         }
         catch (Exception ex)
         {
@@ -216,7 +209,7 @@
         FilterChapters();
     }
 
-    private void OnSearchKeyDown(  KeyboardEventArgs e)
+    private void OnSearchKeyDown(KeyboardEventArgs e)
     {
         if (e.Key.ToLower() == "enter")
         {

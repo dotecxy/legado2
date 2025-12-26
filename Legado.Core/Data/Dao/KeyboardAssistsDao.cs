@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 键盘辅助数据访问实现（对应 Kotlin 的 KeyboardAssistsDao.kt）
     /// </summary>
-    public class KeyboardAssistsDao : DapperDao<KeyboardAssist>, IKeyboardAssistDao
+    public class KeyboardAssistsDao : ProxyDao<KeyboardAssist>, IKeyboardAssistDao
     {
         public KeyboardAssistsDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

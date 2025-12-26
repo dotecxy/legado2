@@ -50,6 +50,12 @@
         {
             Snackbar.Add($"读取文件失败: {ex.Message}", Severity.Error);
         }
+
+        try
+        {
+            _ = HotKeyService.ApplyAsync();
+        }
+        catch { }
     }
 
     private async Task ShowSearchAsync()

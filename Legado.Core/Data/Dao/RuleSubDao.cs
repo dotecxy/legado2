@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 规则订阅数据访问实现（对应 Kotlin 的 RuleSubDao.kt）
     /// </summary>
-    public class RuleSubDao : DapperDao<RuleSub>, IRuleSubDao
+    public class RuleSubDao : ProxyDao<RuleSub>, IRuleSubDao
     {
         public RuleSubDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

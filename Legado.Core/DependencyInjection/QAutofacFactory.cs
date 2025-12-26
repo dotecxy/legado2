@@ -68,6 +68,9 @@ namespace Legado.Core.DependencyInjection
             QApplicationCreationOptions opt = new QApplicationCreationOptions(builder);
             _configurationAction(builder, opt);
             CreationOptions = opt;
+
+            //builder.RegisterInstance<QApplicationCreationOptions>(opt);
+
             AddCoreServices(builder);
             Modules = LoadModules(builder);
 

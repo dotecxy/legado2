@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 namespace Legado.Core.Data.Dao
 {
      
-    public abstract class DapperDao<T> :BaseDao<T> where T : class,new()
+    public abstract class ProxyDao<T> :BaseDao<T> where T : class,new()
     {
-        protected DapperDao(IServiceProvider serviceProvider) :base(serviceProvider)
+        protected ProxyDao(IServiceProvider serviceProvider) :base(serviceProvider)
         {
            
         }

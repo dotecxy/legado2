@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 搜索关键词数据访问实现（对应 Kotlin 的 SearchKeywordDao.kt）
     /// </summary>
-    public class SearchKeywordDao : DapperDao<SearchKeyword>, ISearchKeywordDao
+    public class SearchKeywordDao : ProxyDao<SearchKeyword>, ISearchKeywordDao
     {
         public SearchKeywordDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

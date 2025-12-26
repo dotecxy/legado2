@@ -20,7 +20,7 @@ using static Legado.Windows.Program;
 namespace Legado.Windows
 {
     [SingletonDependency]
-    public partial class Form1 : Form
+    public partial class Form1 : Form, IMessageProc
     {
 
         const string URL = "https://jihulab.com/aoaostar/legado/-/raw/release/cache/71e56d4f1d8f1bff61fdd3582ef7513600a9e108.json";
@@ -60,6 +60,9 @@ namespace Legado.Windows
 
 
         BlazorWebView blazorWebView;
+
+        public event EventHandler<Message> OnMessage;
+
         public Form1(IServiceProvider services)
         {
             InitializeComponent();
@@ -101,7 +104,13 @@ namespace Legado.Windows
 
 
 
-             
+
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            OnMessage?.Invoke(this, m);
+            base.WndProc(ref m);
         }
 
         protected async override void OnClosed(EventArgs e)

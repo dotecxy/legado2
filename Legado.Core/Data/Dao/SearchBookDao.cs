@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 搜索书籍数据访问实现（对应 Kotlin 的 SearchBookDao.kt）
     /// </summary>
-    public class SearchBookDao : DapperDao<SearchBook>, ISearchBookDao
+    public class SearchBookDao : ProxyDao<SearchBook>, ISearchBookDao
     {
         public SearchBookDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

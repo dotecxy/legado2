@@ -10,7 +10,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 书籍分组数据访问实现（对应 Kotlin 的 BookGroupDao.kt）
     /// </summary>
-    public class BookGroupDao : DapperDao<BookGroup>, IBookGroupDao
+    public class BookGroupDao : ProxyDao<BookGroup>, IBookGroupDao
     {
         public BookGroupDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

@@ -10,7 +10,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 替换规则数据访问实现（对应 Kotlin 的 ReplaceRuleDao.kt）
     /// </summary>
-    public class ReplaceRuleDao : DapperDao<ReplaceRule>, IReplaceRuleDao
+    public class ReplaceRuleDao : ProxyDao<ReplaceRule>, IReplaceRuleDao
     {
         public ReplaceRuleDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

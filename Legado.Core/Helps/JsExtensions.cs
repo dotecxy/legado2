@@ -4,6 +4,7 @@ using AngleSharp.XPath;
 using Jint;
 using Legado.Core.Data.Entities;
 using Legado.Core.Helps;
+using Legado.Core.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SharpCompress.Archives;
@@ -29,7 +30,7 @@ namespace Legado.Core.Helps
     public abstract partial class JsExtensions : JsEncodeUtils
     {
         private readonly string _cachePath;
-        private readonly HttpClient _httpClient;
+        private readonly MyHttpClient _httpClient;
         private readonly IConfiguration _angleSharpConfig;
 
         // 模拟 Source 对象，用于获取 Header 等信息
@@ -49,7 +50,7 @@ namespace Legado.Core.Helps
                 UseCookies = true,
                 AllowAutoRedirect = true // Legado 默认有时是 false，视情况调整
             };
-            _httpClient = new HttpClient(handler);
+            _httpClient = new MyHttpClient(handler);
 
             // 注册编码支持 (GBK等)
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);

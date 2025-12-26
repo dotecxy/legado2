@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 书籍章节数据访问实现（对应 Kotlin 的 BookChapterDao.kt）
     /// </summary>
-    public class BookChapterDao : DapperDao<BookChapter>, IBookChapterDao
+    public class BookChapterDao : ProxyDao<BookChapter>, IBookChapterDao
     {
         public BookChapterDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

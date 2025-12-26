@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// Cookie 数据访问实现（对应 Kotlin 的 CookieDao.kt）
     /// </summary>
-    public class CookieDao : DapperDao<CookieEntity>, ICookieDao
+    public class CookieDao : ProxyDao<CookieEntity>, ICookieDao
     {
         public CookieDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

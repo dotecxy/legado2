@@ -1,6 +1,7 @@
 ﻿using Legado.Core.Models;
 using Newtonsoft.Json;
-using SQLite; // 对应 sqlite-net-pcl
+using SQLite;
+using System; // 对应 sqlite-net-pcl
 
 namespace Legado.Core.Data.Entities
 {
@@ -164,6 +165,21 @@ namespace Legado.Core.Data.Entities
         {
             // TODO: 实现大变量读取
             return null;
+        }
+
+        public bool SetCurrentChapter(BookChapter chapter, BookChapter lastestChapter, int chapterIndex, int pos)
+        {
+            if (chapter == null) return false;
+
+            this.DurChapterIndex = chapterIndex;
+            this.DurChapterPos = pos;
+            this.DurChapterTime = DateTime.Now.ToTimeStamp();
+            this.LatestChapterTitle = lastestChapter?.Title ?? "";
+            this.LatestChapterTime = lastestChapter?.Index ?? 0;
+            this.TotalChapterNum = chapter.TotalChapterNum;
+            this.DurChapterTitle = chapter.Title;
+
+            return true;
         }
     }
 }

@@ -2,6 +2,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Legado.Core;
 using Legado.Core.App;
+using Legado.Core.Constants;
 using Legado.Core.Data;
 using Legado.Core.Data.Dao;
 using Legado.Core.Data.Entities;
@@ -27,6 +28,9 @@ namespace Legado.Windows
         {
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
+
+            _ = AppInfo.Name;
+
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             ApplicationConfiguration.Initialize();
             WinformHostedService service = new WinformHostedService();
@@ -97,14 +101,20 @@ namespace Legado.Windows
         [ExposeServices(serviceTypes: typeof(IWinDialog))]
         public sealed class WinformWinDialog : IWinDialog
         {
+            private readonly AppDatabase _appDb;
+            public WinformWinDialog(AppDatabase appDatabase)
+            {
+                _appDb = appDatabase;
+            }
+
             public async Task<bool> ShowBrowserDialogAsync(IntentData data)
-            { 
+            {
                 return await Task.Factory.StartNew(() =>
                 {
                     using AutoResetEvent autoResetEvent = new AutoResetEvent(false);
                     if (QServiceProvider.TryGetService<Form1>(out var form))
                     {
-                        form.BeginInvoke( () =>
+                        form.BeginInvoke(() =>
                         {
                             var url = "";
                             BrowserWinDialog dlg = new BrowserWinDialog(url = data.Get<string>("url")) { Text = data.Get<string>("title") };
@@ -117,8 +127,8 @@ namespace Legado.Windows
                                     Url = NetworkUtils.GetDomain(url),
                                     Cookie = cookie
                                 };
-                                 
-                                await AppDatabase.GetInstance("test.db").CookieDao.InsertOrReplaceAsync(cookieEntity);
+
+                                await _appDb.CookieDao.InsertOrReplaceAsync(cookieEntity);
                                 autoResetEvent.Set();
                             };
                             dlg.Show();

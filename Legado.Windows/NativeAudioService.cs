@@ -98,9 +98,15 @@ public class NativeAudioService : INativeAudioService
     {
         if (wasapiOut != null)
         {
-            wasapiOut.Volume = value != 0
+            var levels = new float[wasapiOut.AudioStreamVolume?.ChannelCount ?? 0];
+            var value2 = value != 0
                 ? value / 100f
                 : 0;
+            for (int i = 0; i < levels.Length; i++)
+            {
+                levels[i] = value2;
+            }
+            wasapiOut.AudioStreamVolume?.SetAllVolumes(levels);
         }
 
         return Task.CompletedTask;

@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 书签数据访问实现（对应 Kotlin 的 BookmarkDao.kt）
     /// </summary>
-    public class BookmarkDao : DapperDao<Bookmark>, IBookmarkDao
+    public class BookmarkDao : ProxyDao<Bookmark>, IBookmarkDao
     {
         public BookmarkDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

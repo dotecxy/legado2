@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// TXT 目录规则数据访问实现（对应 Kotlin 的 TxtTocRuleDao.kt）
     /// </summary>
-    public class TxtTocRuleDao : DapperDao<TxtTocRule>, ITxtTocRuleDao
+    public class TxtTocRuleDao : ProxyDao<TxtTocRule>, ITxtTocRuleDao
     {
         public TxtTocRuleDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
