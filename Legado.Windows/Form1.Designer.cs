@@ -32,8 +32,8 @@
             // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(11F, 24F);
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleDimensions = new SizeF(96F,96F);
+            AutoScaleMode = AutoScaleMode.Dpi;
             ClientSize = new Size(603, 720);
             Name = "Form1";
             Padding = new Padding(1);

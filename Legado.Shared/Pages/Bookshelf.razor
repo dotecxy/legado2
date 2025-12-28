@@ -200,7 +200,7 @@
         }
 
         .bookshelf-list {
-            max-height: calc(100vh - 180px);
+            max-height: calc(100vh - 200px);
             gap: 8px;
         }
 
@@ -238,6 +238,7 @@
     private Book currentBook = null;
     private bool isLoading = true;
     private HashSet<string> failedCovers = new();
+    
 
     /// <summary>
     /// 获取书名第一个字符
@@ -286,6 +287,8 @@
     /// </summary>
     protected override async Task OnInitializedAsync()
     {
+        
+
         await LoadBookshelfData();
     }
 

@@ -2,7 +2,7 @@
 using Jint.Native;
 using Jint.Runtime;
 using Jint.Runtime.Interop;
-using Legado.Core.Utils;
+using Legado.Core.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Reflection;

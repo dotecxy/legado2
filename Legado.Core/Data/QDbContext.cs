@@ -26,7 +26,7 @@ namespace Legado.Core
         public IServiceProvider ServiceProvider => _serviceProvider;
 
 
-        public void Dispose()
+        public virtual void Dispose()
         {
         }
     }

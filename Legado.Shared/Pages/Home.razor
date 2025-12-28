@@ -5,7 +5,8 @@
 @inject WebBook wb;
 
 <div class="page-container">
-    <TopCompoent ShowBackButton="false" ></TopCompoent>
+    <TopCompoent ShowBackButton="false" MenuList="@menuList"></TopCompoent>
+
     @switch (States.IndexState)
     {
         case IndexState.Bookshelf:
@@ -18,6 +19,8 @@
         case IndexState.User:
             break;
     }
+
+    <PlayerBar></PlayerBar>
 
     <!-- 底部导航栏 -->
     <div class="bottom-nav">
@@ -118,6 +121,7 @@
     private List<LoginUI> loginUIs = new List<LoginUI>();
     private BookSource current;
     private int currentTab = 0;
+    private List<(string, Action)> menuList;
 
     /// <summary>
     /// 导航到指定页面
@@ -131,6 +135,14 @@
     protected override async Task OnInitializedAsync()
     {
         await Task.Delay(1);
+
+        menuList = new List<(string, Action)>();
+        menuList.Add(("更新书籍", new Action(async () =>
+            {
+                  await LegadoContext.UpdateBookshelfAsync();
+            }
+        )));
+
         try
         {
 

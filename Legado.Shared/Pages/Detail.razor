@@ -1,190 +1,331 @@
 @page "/Detail"
 @inherits AppComponentBase
 
-<div class="page-container">
-    <TopCompoent PageTitle="@(BookInfo?.Name ?? "书籍详情")" />
+<div class="detail-page">
+    <TopCompoent PageTitle="书籍详情" />
     
-    <div class="page-content">
-        <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
-    @if (isLoading)
-    {
-        <MudCard Class="elevation-4">
-            <MudCardContent>
-                <div class="d-flex justify-center align-items-center py-6">
-                    <MudProgressCircular Color="Color.Primary" Size="Size.Large" />
-                    <MudText Class="ml-3">加载中...</MudText>
+    <div class="detail-content">
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <MudProgressCircular Color="Color.Primary" Size="Size.Large" />
+                <MudText Class="ml-3">加载中...</MudText>
+            </div>
+        }
+        else if (BookInfo == null)
+        {
+            <div class="loading-container">
+                <MudIcon Icon="@Icons.Material.Filled.BookmarkRemove" Size="Size.Large" Color="Color.Dark" />
+                <MudText Class="ml-3" Color="Color.Dark">未找到书籍信息</MudText>
+            </div>
+        }
+        else
+        {
+            <!-- 封面居中 -->
+            <div class="cover-section">
+                @if (!string.IsNullOrEmpty(BookInfo.CoverUrl))
+                {
+                    <MudImage Src="@BookInfo.CoverUrl"
+                              Alt="@BookInfo.Name"
+                              Class="book-cover"
+                              ObjectFit="ObjectFit.Cover" />
+                }
+                else
+                {
+                    <div class="cover-placeholder">
+                        <MudText Typo="Typo.h4">@(BookInfo.Name?.Length > 0 ? BookInfo.Name[0].ToString() : "?")</MudText>
+                    </div>
+                }
+                <MudText Typo="Typo.h6" Class="book-title">@BookInfo.Name</MudText>
+            </div>
+
+            <!-- 分类Tag标签 -->
+            <div class="info-row tags-row">
+                @if (!string.IsNullOrEmpty(BookInfo.Kind))
+                {
+                    @foreach (var tag in BookInfo.Kind.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@tag.Trim()</MudChip>
+                    }
+                }
+            </div>
+
+            <!-- 作者 -->
+            <div class="info-row" @onclick="() => {}">
+                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="info-icon" />
+                <MudText Class="info-label">作者</MudText>
+                <MudText Class="info-value">@(BookInfo.Author ?? "未知")</MudText>
+            </div>
+
+            <!-- 来源 -->
+            <div class="info-row" @onclick="() => {}">
+                <MudIcon Icon="@Icons.Material.Filled.Source" Size="Size.Small" Class="info-icon" />
+                <MudText Class="info-label">来源</MudText>
+                <MudText Class="info-value">@(BookInfo.OriginName ?? BookInfo.Origin ?? "未知")</MudText>
+            </div>
+
+            <!-- 最新章节 -->
+            <div class="info-row" @onclick="() => {}">
+                <MudIcon Icon="@Icons.Material.Filled.Update" Size="Size.Small" Class="info-icon" />
+                <MudText Class="info-label">最新</MudText>
+                <MudText Class="info-value text-truncate">@(BookInfo.LatestChapterTitle ?? "暂无")</MudText>
+            </div>
+
+            <!-- 目录 -->
+            <div class="info-row clickable" @onclick="NavigateToChapter">
+                <MudIcon Icon="@Icons.Material.Filled.List" Size="Size.Small" Class="info-icon" />
+                <MudText Class="info-label">目录</MudText>
+                <MudText Class="info-value">查看全部章节</MudText>
+                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="arrow-icon" />
+            </div>
+
+            <!-- 简介 -->
+            <div class="intro-section">
+                <div class="intro-header" @onclick="() => isIntroExpanded = !isIntroExpanded">
+                    <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="info-icon" />
+                    <MudText Class="info-label">简介</MudText>
+                    <MudIcon Icon="@(isIntroExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" 
+                             Size="Size.Small" Class="arrow-icon" />
                 </div>
-            </MudCardContent>
-        </MudCard>
-    }
-    else if (BookInfo == null)
-    {
-        <MudCard Class="elevation-4">
-            <MudCardContent>
-                <div class="d-flex justify-center align-items-center py-6">
-                    <MudIcon Icon="mdi-book-off" Size="Size.Large" Color="Color.Dark" />
-                    <MudText Class="ml-3" Color="Color.Dark">未找到书籍信息</MudText>
-                </div>
-            </MudCardContent>
-        </MudCard>
-    }
-    else
-    {
-        <MudCard Class="elevation-4 mb-4">
-            <MudCardContent>
-                <MudGrid>
-                    <!-- 书籍封面 -->
-                    <MudItem xs="12" sm="4" md="3" Class="d-flex justify-center">
-                        <MudImage Src="@BookInfo.CoverUrl"
-                                  Alt="@BookInfo.Name"
-                                  Class="book-cover"
-                                  Height="250"
-                                  Width="180"
-                                  ObjectFit="ObjectFit.Cover"
-                                  Style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
-                    </MudItem>
-
-                    <!-- 书籍基本信息 -->
-                    <MudItem xs="12" sm="8" md="9">
-                        <MudText Typo="Typo.h5" Class="font-weight-bold mb-1">@(BookInfo?.Name ?? "")</MudText>
-                        <MudText Typo="Typo.subtitle1" Color="Color.Secondary" Class="mb-3">作者：@BookInfo.Author</MudText>
-
-                        <MudGrid Class="mb-3">
-                            <MudItem xs="6">
-                                <MudText Color="Color.Secondary" Class="text-sm">分类：</MudText>
-                                <MudText>@BookInfo.Kind</MudText>
-                            </MudItem>
-                            <MudItem xs="6">
-                                <MudText Color="Color.Secondary" Class="text-sm">字数：</MudText>
-                                <MudText>@BookInfo.WordCount</MudText>
-                            </MudItem>
-                        </MudGrid>
-
-                        <MudGrid Class="mb-3">
-                            <MudItem xs="6">
-                                <MudText Color="Color.Secondary" Class="text-sm">最新章节：</MudText>
-                                <MudText Class="text-truncate">@BookInfo.LatestChapterTitle</MudText>
-                            </MudItem>
-                            <MudItem xs="6">
-                                <MudText Color="Color.Secondary" Class="text-sm">来源：</MudText>
-                                <MudText>@BookInfo.OriginName</MudText>
-                            </MudItem>
-                        </MudGrid>
-
-                        <!-- 操作按钮 -->
-                        <MudGrid Spacing="2">
-                            <MudItem xs="12" sm="6">
-                                <MudButton FullWidth Color="Color.Primary" Variant="Variant.Filled" StartIcon="mdi-book-open-page-variant" OnClick="() => StartReading()">
-                                    开始阅读
-                                </MudButton>
-                            </MudItem>
-                            <MudItem xs="12" sm="6">
-                                <MudButton FullWidth Color="Color.Secondary" Variant="Variant.Filled" StartIcon="mdi-bookmark-plus" OnClick="() => AddToBookshelf()">
-                                    加入书架
-                                </MudButton>
-                            </MudItem>
-                        </MudGrid>
-                    </MudItem>
-                </MudGrid>
-            </MudCardContent>
-        </MudCard>
-
-        <!-- 书籍简介 -->
-        <MudCard Class="elevation-4 mb-4">
-            <MudCardHeader>
-                <MudCardTitle>书籍简介</MudCardTitle>
-            </MudCardHeader>
-            <MudCardContent>
-                <MudCollapse @bind-isExpanded="isIntroExpanded">
-                    <MudText>
-                        @if (string.IsNullOrWhiteSpace(BookInfo.Intro))
-                        {
-                            <span>暂无简介</span>
-                        }
-                        else
-                        {
-                            <span>@BookInfo.Intro</span>
-                        }
-                    </MudText>
+                <MudCollapse Expanded="@isIntroExpanded">
+                    <div class="intro-content">
+                        <MudText Class="intro-text">
+                            @if (string.IsNullOrWhiteSpace(BookInfo.Intro))
+                            {
+                                <span>暂无简介</span>
+                            }
+                            else
+                            {
+                                @BookInfo.Intro
+                            }
+                        </MudText>
+                    </div>
                 </MudCollapse>
-                <MudButton Color="Color.Primary"
-                           Variant="Variant.Text"
-                           Size="Size.Small"
-                           OnClick="() => isIntroExpanded = !isIntroExpanded"
-                           Class="mt-2">
-                    @(isIntroExpanded ? "收起" : "展开")
-                    <MudIcon Icon="@(isIntroExpanded ? "mdi-chevron-up" : "mdi-chevron-down")" Size="Size.Small" />
-                </MudButton>
-            </MudCardContent>
-        </MudCard>
-
-        <!-- 目录入口 -->
-        <MudCard Class="elevation-4">
-            <MudCardHeader>
-                <MudCardTitle>章节目录</MudCardTitle>
-            </MudCardHeader>
-            <MudCardContent>
-                <MudButton FullWidth
-                           Color="Color.Primary"
-                           Variant="Variant.Outlined"
-                           StartIcon="mdi-book-open-variant"
-                           OnClick="() => NavigateToChapter()">
-                    查看全部章节
-                </MudButton>
-            </MudCardContent>
-        </MudCard>
-    }
-        </MudContainer>
+            </div>
+        }
     </div>
+
+    <!-- 底部固定按钮 -->
+    @if (BookInfo != null && !isLoading)
+    {
+        <div class="bottom-actions">
+            <MudButton Class="action-btn" 
+                       Variant="Variant.Outlined" 
+                       Color="@(isInBookshelf ? Color.Error : Color.Primary)"
+                       StartIcon="@(isInBookshelf ? Icons.Material.Filled.BookmarkRemove : Icons.Material.Filled.BookmarkAdd)"
+                       OnClick="ToggleBookshelf">
+                @(isInBookshelf ? "移除书架" : "加入书架")
+            </MudButton>
+            <MudButton Class="action-btn" 
+                       Variant="Variant.Filled" 
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.MenuBook"
+                       OnClick="StartReading">
+                开始阅读
+            </MudButton>
+        </div>
+    }
 </div>
 
 <style>
-    .page-container {
+    .detail-page {
         display: flex;
         flex-direction: column;
         height: 100%;
         width: 100%;
         overflow: hidden;
+        background: var(--mud-palette-background);
     }
 
-    .page-content {
+    .detail-content {
         flex: 1;
-        overflow: hidden;
-    }
-
-    .mud-container {
-        max-height: calc(100vh - 80px);
         overflow-y: auto;
+        padding: 12px;
+        padding-bottom: 72px;
     }
 
-    @@media (max-width: 600px) {
-        .page-content {
-            padding: 0 !important;
-        }
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+    }
 
-        .py-4 {
-            padding-top: 8px !important;
-            padding-bottom: 8px !important;
-        }
+    /* 封面区域 */
+    .cover-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 5px 0 3px 0;
+    }
 
-        .mud-container {
-            max-height: calc(100vh - 70px);
-        }
+    .book-cover {
+        width: 100px;
+        height: 140px;
+        border-radius: 6px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        object-fit: cover;
+    }
+
+    .cover-placeholder {
+        width: 100px;
+        height: 140px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    }
+
+    .book-title {
+        margin-top: 8px;
+        font-weight: 600;
+        text-align: center;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 16px;
+    }
+
+    /* Tag标签行 */
+    .tags-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 2px;
+        padding: 0;
+        min-height: auto;
+        margin-bottom: 2px;
+    }
+
+    .tags-row .mud-chip {
+        margin: 0;
+        padding: 0 6px;
+        height: 20px;
+        font-size: 11px;
+    }
+
+    /* 信息行 */
+    .info-row {
+        display: flex;
+        align-items: center;
+        padding: 2px 2px;
+        background: var(--mud-palette-surface);
+        border-radius: 2px;
+        margin-bottom: 2px;
+    }
+
+    .info-row.clickable {
+        cursor: pointer;
+    }
+
+    .info-row.clickable:active {
+        background: var(--mud-palette-action-default-hover);
+    }
+
+    .info-icon {
+        color: var(--mud-palette-primary);
+        margin-right: 10px;
+        font-size: 18px;
+    }
+
+    .info-label {
+        color: var(--mud-palette-text-secondary);
+        min-width: 40px;
+        font-size: 13px;
+    }
+
+    .info-value {
+        flex: 1;
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .arrow-icon {
+        color: var(--mud-palette-text-secondary);
+        margin-left: auto;
+    }
+
+    /* 简介区域 */
+    .intro-section {
+        background: var(--mud-palette-surface);
+        border-radius: 6px;
+        margin-bottom: 4px;
+    }
+
+    .intro-header {
+        display: flex;
+        align-items: center;
+        padding: 2px 2px;
+        cursor: pointer;
+    }
+
+    .intro-content {
+        padding: 0 12px 12px 12px;
+    }
+
+    .intro-text {
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--mud-palette-text-secondary);
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    /* 底部固定按钮 */
+    .bottom-actions {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        gap: 12px;
+        padding: 12px 16px;
+        background: var(--mud-palette-surface);
+        border-top: 1px solid var(--mud-palette-lines-default);
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+
+    .action-btn {
+        flex: 1;
+        height: 44px;
+    }
+
+    /* 滚动条隐藏 */
+    .detail-content::-webkit-scrollbar {
+        display: auto;
+    }
+
+    .detail-content {
+        -ms-overflow-style: none;
+        scrollbar-width: auto;
     }
 </style>
 
 @code {
     private Book? BookInfo;
     private bool isLoading = true;
-    private bool isIntroExpanded = false;
+    private bool isIntroExpanded = true;
+    private bool isInBookshelf = false;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             isLoading = true;
-           var bookInfo = await LegadoContext.UpdateBookInfoAsync(); 
+            var bookInfo = await LegadoContext.UpdateBookInfoAsync();
             BookInfo = bookInfo;
+
+            // 检查是否已在书架
+            if (BookInfo != null)
+            {
+                isInBookshelf = await LegadoContext.IsBookInBookshelfAsync(BookInfo.BookUrl);
+            }
         }
         catch (Exception ex)
         {
@@ -202,33 +343,39 @@
     private void StartReading()
     {
         // 实现开始阅读功能
-        Snackbar.Add("开始阅读功能待实现", Severity.Info);
+        Nav.NavigateTo("/Reader");
     }
 
-    private async Task AddToBookshelf()
+    private async Task ToggleBookshelf()
     {
+        if (BookInfo == null) return;
+
         try
         {
-            // 检查书籍是否已在书架中
-            if (await LegadoContext.IsBookInBookshelfAsync(BookInfo.BookUrl))
+            if (isInBookshelf)
             {
-                Snackbar.Add($"{BookInfo.Name} 已在书架中", Severity.Warning);
-                return;
+                // 从书架移除
+                await LegadoContext.RemoveFromBookshelfAsync(BookInfo);
+                isInBookshelf = false;
+                Snackbar.Add($"已将《{BookInfo.Name}》移出书架", Severity.Success);
             }
-
-            // 将书籍添加到书架
-            await LegadoContext.AddToBookshelfAsync(BookInfo);
-            Snackbar.Add($"{BookInfo.Name} 已加入书架", Severity.Success);
+            else
+            {
+                // 加入书架
+                await LegadoContext.AddToBookshelfAsync(BookInfo);
+                isInBookshelf = true;
+                Snackbar.Add($"已将《{BookInfo.Name}》加入书架", Severity.Success);
+            }
+            StateHasChanged();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"加入书架失败: {ex.Message}", Severity.Error);
+            Snackbar.Add($"操作失败: {ex.Message}", Severity.Error);
         }
     }
 
     private void NavigateToChapter()
     {
-        // 导航到目录页面
         Nav.NavigateTo("/Chapter");
     }
 }

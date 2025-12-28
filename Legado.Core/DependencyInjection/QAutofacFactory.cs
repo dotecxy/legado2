@@ -7,6 +7,8 @@ using Serilog.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Legado.Core.DependencyInjection
@@ -14,7 +16,7 @@ namespace Legado.Core.DependencyInjection
     /// <summary>
     /// A factory for creating a <see cref="ContainerBuilder"/> and an <see cref="IServiceProvider" />.
     /// </summary>
-    public class QAutofacFactory : IServiceProviderFactory<ContainerBuilder>
+    public class QAutofacFactory : IServiceProviderFactory<ContainerBuilder>, IDisposable
     {
         private readonly Action<ContainerBuilder, QApplicationCreationOptions> _configurationAction;
         private readonly ContainerBuildOptions _containerBuildOptions = ContainerBuildOptions.None;
@@ -73,6 +75,8 @@ namespace Legado.Core.DependencyInjection
 
             AddCoreServices(builder);
             Modules = LoadModules(builder);
+
+            builder.Register(_ => this).AsSelf().SingleInstance();
 
             return builder;
         }
@@ -199,6 +203,25 @@ namespace Legado.Core.DependencyInjection
             return ServiceProvider;
         }
 
+        private bool isShutdown = false;
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Shutdown()
+        {
+            if (isShutdown) return;
+            isShutdown = true;
+            ApplicationShutdownContext context = new ApplicationShutdownContext(ServiceProvider);
+            foreach (IQModuleDescriptor qModule in Modules.Reverse())
+            {
+                qModule.Instance.OnApplicationShutdown(context);
+            }
+            ServiceProvider.GetRequiredService<IQConfiguration>().Save();
+            ServiceProvider.GetRequiredService<ILocalStorage>().Save();
+        }
+
+        public void Dispose()
+        {
+            _containerAccessor.Value.Dispose();
+        }
     }
 
 }

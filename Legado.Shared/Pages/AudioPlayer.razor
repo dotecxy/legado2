@@ -1,187 +1,454 @@
 @page "/Audio/{Pos}"
 @using System.Threading
 @inherits AppComponentBase
-@implements IAsyncDisposable
+@implements IDisposable
 
-<!-- 音频播放器将使用INativeAudioService -->
+<div class="audio-page">
+    <TopCompoent PageTitle="音频播放" />
 
-<div class="page-container">
-    <TopCompoent PageTitle="@GetCurrentChapterTitle()" />
+    <div class="audio-content">
+        <!-- 封面和信息 -->
+        <div class="cover-section">
+            <div class="cover-wrapper">
+                @if (!string.IsNullOrEmpty(LegadoContext.CurrentBook?.CoverUrl))
+                {
+                    <MudImage Src="@LegadoContext.CurrentBook.CoverUrl"
+                              Alt="Book Cover"
+                              Class="book-cover"
+                              ObjectFit="ObjectFit.Cover" />
+                }
+                else
+                {
+                    <div class="cover-placeholder">
+                        <MudText Typo="Typo.h3">@GetCoverPlaceholder()</MudText>
+                    </div>
+                }
+            </div>
+            <MudText Class="book-title">@(LegadoContext.CurrentBook?.Name ?? "未知书籍")</MudText>
+            <MudText Class="book-author">@(LegadoContext.CurrentBook?.Author ?? "未知作者")</MudText>
+            <MudText Class="chapter-title">@GetCurrentChapterTitle()</MudText>
+        </div>
 
-    <div class="page-content">
-        <MudLayout>
-            <!-- 主内容区域 -->
-            <MudMainContent>
-                <MudContainer MaxWidth="MaxWidth.Medium" Class="py-6">
-                    <MudCard Elevation="3" Class="h-full">
-                        <!-- 封面和书籍信息 -->
-                        <MudCardContent Class="text-center">
-                            <MudPaper Elevation="5"
-                                      Class="mx-auto mb-6"
-                                      Style="width: 250px; height: 350px; overflow: hidden;">
-                                <MudImage Src="@GetCoverUrl()"
-                                          Alt="Book Cover"
-                                          Class="w-100 h-100"
-                                          ObjectFit="ObjectFit.Cover"
-                                          loading="lazy" />
-                            </MudPaper>
+        <!-- 播放控制区 -->
+        <div class="player-section">
+            <!-- 进度条 -->
+            <div class="progress-section">
+                <div class="time-display">
+                    <MudText Class="time-text">@FormatTime(LegadoContext.ReadPosition)</MudText>
+                    <MudText Class="time-text">/</MudText>
+                    <MudText Class="time-text">@FormatTime(LegadoContext.ReadTotal)</MudText>
+                </div>
+                <MudSlider T="double"
+                           Value="@LegadoContext.ReadPosition"
+                           ValueChanged="OnSeek"
+                           Min="0"
+                           Max="@Math.Max(LegadoContext.ReadTotal, 1)"
+                           Step="1"
+                           Class="progress-slider" />
+            </div>
 
-                            <MudText Typo="Typo.h5" Class="mb-1 font-weight-bold">@(LegadoContext.CurrentBook?.Name ?? "未知书籍")</MudText>
-                            <MudText Typo="Typo.body1" Class="mb-3 text-muted">@(LegadoContext.CurrentBook?.Author ?? "未知作者")</MudText>
-                            <MudText Typo="Typo.body2" Class="mb-6">@GetCurrentChapterTitle()</MudText>
+            <!-- 播放按钮 -->
+            <div class="control-buttons">
+                <MudIconButton Icon="@Icons.Material.Filled.SkipPrevious"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               OnClick="PreviousChapter" />
+                <MudIconButton Icon="@(LegadoContext.IsPlaying? Icons.Material.Filled.PauseCircle : Icons.Material.Filled.PlayCircle)"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               Class="play-button"
+                               OnClick="TogglePlay" />
+                <MudIconButton Icon="@Icons.Material.Filled.SkipNext"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               OnClick="NextChapter" />
+            </div>
 
-                            <!-- 播放进度条 -->
-                            <div class="mb-2">
-                                <div class="d-flex justify-between mb-1">
-                                    <MudText Typo="Typo.caption">@FormatTime(currentTime)</MudText>
-                                    <MudText Typo="Typo.caption">/</MudText>
-                                    <MudText Typo="Typo.caption">@FormatTime(totalTime)</MudText>
-                                </div>
-                                <MudSlider @bind-Value="currentTime"
-                                           Min="0"
-                                           Max="@totalTime"
-                                           Step="1"
-                                           Class="w-100"
-                                           Disabled="!isPlaying" />
-                            </div>
+            <!-- 音量控制 -->
+            <div class="volume-section">
+                <MudIconButton Icon="@GetVolumeIcon()"
+                               Color="Color.Default"
+                               Size="Size.Small"
+                               OnClick="ToggleMute" />
+                <MudSlider T="int"
+                           Value="@LegadoContext.Volume"
+                           ValueChanged="OnVolumeChange"
+                           Min="0"
+                           Max="100"
+                           Step="1"
+                           Class="volume-slider" />
+                <MudText Class="volume-text">@LegadoContext.Volume%</MudText>
+            </div>
+        </div>
 
-                            <!-- 播放控制按钮 -->
-                            <div class="d-flex justify-center gap-4 mb-6">
-                                <MudIconButton Icon="@Icons.Material.Filled.SkipPrevious"
-                                               Color="Color.Primary"
-                                               Size="Size.Large"
-                                               OnClick="PreviousChapter" />
+        <!-- 底部操作 -->
+        <div class="action-section">
+            <MudButton Color="Color.Primary"
+                       Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.List"
+                       OnClick="() => OpenDrawer(0)"
+                       Class="action-btn">
+                目录
+            </MudButton>
+            <MudButton Color="Color.Primary"
+                       Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.Settings"
+                       OnClick="() => OpenDrawer(1)"
+                       Class="action-btn">
+                设置
+            </MudButton>
+        </div>
+    </div>
 
-                                <MudIconButton Icon="@(isPlaying? Icons.Material.Filled.Pause : Icons.Material.Filled.PlayArrow)"
-                                               Color="Color.Primary"
-                                               Size="Size.Large"
-                                               OnClick="TogglePlay" />
-
-                                <MudIconButton Icon="@Icons.Material.Filled.SkipNext"
-                                               Color="Color.Primary"
-                                               Size="Size.Large"
-                                               OnClick="NextChapter" />
-                            </div>
-
-                            <!-- 音量控制 -->
-                            <div class="d-flex justify-center align-items-center gap-2">
-                                <MudIconButton Icon="@(volumeSlider == 0 ? Icons.Material.Filled.VolumeMute : volumeSlider < 50 ? Icons.Material.Filled.VolumeDown : Icons.Material.Filled.VolumeUp)"
-                                               Color="Color.Primary"
-                                               Size="Size.Small"
-                                               OnClick="ToggleMute" />
-                                <MudSlider @bind-Value="volumeSlider"
-                                           Min="0"
-                                           Max="100"
-                                           Step="1"
-                                           Class="w-50" />
-                                <MudText Typo="Typo.caption">@volumeSlider%</MudText>
-                            </div>
-                        </MudCardContent>
-
-                        <!-- 底部操作按钮 -->
-                        <MudCardActions Class="justify-center pb-6">
-                            <MudButton Color="Color.Secondary"
-                                       Variant="Variant.Outlined"
-                                       StartIcon="@Icons.Material.Filled.List"
-                                       OnClick="toggleDrawer">
-                                目录
-                            </MudButton>
-                            <MudButton Color="Color.Secondary"
-                                       Variant="Variant.Outlined"
-                                       StartIcon="@Icons.Material.Filled.Speed"
-                                       OnClick="toggleDrawer">
-                                设置
-                            </MudButton>
-                        </MudCardActions>
-                    </MudCard>
-                </MudContainer>
-            </MudMainContent>
-
-            <!-- 抽屉窗口 -->
-            <MudDrawer Anchor="Anchor.Right"
-                       Open="@drawerOpen"
-                       onclose="toggleDrawer"
-                       Elevation="3"
-                       Class="w-80">
-                <MudDrawerHeader>
+    @if (drawerOpen)
+    {
+        <!-- 抽屉窗口 -->
+        <MudDrawer @bind-Open="@drawerOpen"
+                   Anchor="Anchor.Bottom"
+                   Elevation="3"
+                   Variant="@DrawerVariant.Temporary"
+                   Class="drawer-panel">
+            <div class="drawer-content">
+                <div class="drawer-header">
                     <MudText Typo="Typo.h6">@(drawerTab == 0 ? "章节列表" : "播放设置")</MudText>
-                </MudDrawerHeader>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseDrawer" />
+                </div>
 
-                <!-- 抽屉标签页 -->
-                <MudTabs @bind-ActivePanelIndex="drawerTab" Class="border-bottom">
-                    <MudTabPanel Text="章节列表">
-                        <MudList T="BookChapter" Dense>
-                            @if (chapterList != null && chapterList.Count > 0)
+                @if (drawerTab == 0)
+                {
+                    <!-- 章节列表 -->
+                    <MudList T="BookChapter" Dense="true" Class="chapter-drawer-list">
+                        @if (chapterList != null && chapterList.Count > 0)
+                        {
+                            @foreach (var chapter in chapterList)
                             {
-                                @foreach (var chapter in chapterList)
-                                {
-                                    <MudListItem T="object"
-                                                 Class="@(chapter.Index == CurrentChapterIndex ? "bg-primary text-white" : "")"
-                                                 OnClick="() => NavigateToChapter(chapter)">
-                                        <MudText Class="flex-grow">@chapter.Title</MudText>
+                                <MudListItem T="BookChapter"
+                                             Class="@(chapter.Index == LegadoContext.CurrentChapter.Index ? "active-chapter" : "")"
+                                             OnClick="() => NavigateToChapter(chapter)">
+                                    <div class="chapter-drawer-item">
+                                        <span class="chapter-index">@chapter.Index</span>
+                                        <span class="chapter-name">@chapter.Title</span>
                                         @if (chapter.IsVip)
                                         {
-                                            <MudChip T="object" Color="Color.Secondary" Size="Size.Small">VIP</MudChip>
+                                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">VIP</MudChip>
                                         }
-                                    </MudListItem>
-                                }
-                            }
-                            else
-                            {
-                                <MudListItem T="object">
-                                    <MudText Class="text-muted">暂无章节列表</MudText>
+                                    </div>
                                 </MudListItem>
                             }
-                        </MudList>
-                    </MudTabPanel>
-
-                    <MudTabPanel Text="播放设置">
-                        <MudCardContent>
-                            <!-- 播放速度控制 -->
-                            <div class="mb-6">
-                                <MudText Typo="Typo.subtitle2" Class="mb-3">播放速度</MudText>
-                                <MudSlider @bind-Value="playbackSpeed"
+                        }
+                        else
+                        {
+                            <MudListItem T="BookChapter">
+                                <MudText Class="text-secondary">暂无章节列表</MudText>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+                else
+                {
+                    <!-- 播放设置 -->
+                    <div class="settings-content">
+                        <div class="setting-item">
+                            <MudText Class="setting-label">播放速度</MudText>
+                            <div class="speed-control">
+                                <MudSlider T="double"
+                                           Value="@LegadoContext.PlaybackSpeed"
+                                           ValueChanged="OnSpeedChange"
                                            Min="0.5"
                                            Max="2.0"
-                                           Step="0.1"
-                                           Class="w-100" />
-                                <div class="d-flex justify-center gap-2 mt-2">
-                                    <MudText Typo="Typo.body2">@playbackSpeed.ToString("F1")x</MudText>
-                                </div>
+                                           Step="0.1" />
+                                <MudText Class="speed-value">@LegadoContext.PlaybackSpeed.ToString("F1")x</MudText>
                             </div>
-
-                            <!-- 其他设置选项 -->
-                            <div class="mb-4">
-                                <MudSwitch T="bool" @bind-checked="autoPlayNext" Label="自动播放下一章" />
-                            </div>
-                            <div class="mb-4">
-                                <MudSwitch T="bool" @bind-checked="rememberPosition" Label="记住播放位置" />
-                            </div>
-                        </MudCardContent>
-                    </MudTabPanel>
-                </MudTabs>
-            </MudDrawer>
-        </MudLayout>
-    </div>
+                        </div>
+                        <div class="setting-item">
+                            <MudSwitch T="bool" @bind-Value="LegadoContext.AutoPlayNext" Label="自动播放下一章" Color="Color.Primary" />
+                        </div>
+                        <div class="setting-item">
+                            <MudSwitch T="bool" @bind-Value="LegadoContext.RememberPosition" Label="记住播放位置" Color="Color.Primary" />
+                        </div>
+                    </div>
+                }
+            </div>
+        </MudDrawer>
+    }
 </div>
 
 <style>
-    .page-container {
+    .audio-page {
         display: flex;
         flex-direction: column;
         height: 100%;
         width: 100%;
         overflow: hidden;
+        background: var(--mud-palette-background);
     }
 
-    .page-content {
+    .audio-content {
         flex: 1;
-        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 8px 12px;
     }
 
-    @@media (max-width: 600px) {
-        .page-content {
-            padding: 0 !important;
+        .audio-content::-webkit-scrollbar {
+            display: none;
+        }
+
+    /* 封面区域 */
+    .cover-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px 0;
+    }
+
+    .cover-wrapper {
+        width: 120px;
+        height: 160px;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .book-cover {
+        width: 100%;
+        height: 100%;
+    }
+
+    .cover-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%);
+        color: white;
+    }
+
+    .book-title {
+        margin-top: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        text-align: center;
+        max-width: 90%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .book-author {
+        font-size: 12px;
+        color: var(--mud-palette-text-secondary);
+        margin-top: 2px;
+    }
+
+    .chapter-title {
+        font-size: 11px;
+        color: var(--mud-palette-text-secondary);
+        margin-top: 4px;
+        text-align: center;
+        max-width: 85%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* 播放控制区 */
+    .player-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 8px 0;
+        min-height: 0;
+    }
+
+    .progress-section {
+        padding: 0 4px;
+    }
+
+    .time-display {
+        display: flex;
+        justify-content: center;
+        gap: 4px;
+        margin-bottom: 2px;
+    }
+
+    .time-text {
+        font-size: 11px;
+        color: var(--mud-palette-text-secondary);
+    }
+
+    .progress-slider {
+        width: 100%;
+    }
+
+    .control-buttons {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        padding: 8px 0;
+    }
+
+    .play-button {
+        transform: scale(1.6);
+    }
+
+    .volume-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 4px 12px;
+    }
+
+    .volume-slider {
+        width: 100px;
+    }
+
+    .volume-text {
+        font-size: 11px;
+        min-width: 32px;
+        color: var(--mud-palette-text-secondary);
+    }
+
+    /* 底部操作 */
+    .action-section {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-top: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .action-btn {
+        flex: 1;
+        max-width: 140px;
+        height: 36px;
+    }
+
+    /* 抽屉 */
+    .drawer-panel {
+        height: 55vh !important;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .drawer-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .chapter-drawer-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 !important;
+    }
+
+    .chapter-drawer-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+    }
+
+        .chapter-drawer-item .chapter-index {
+            min-width: 28px;
+            font-size: 10px;
+            color: var(--mud-palette-text-secondary);
+        }
+
+        .chapter-drawer-item .chapter-name {
+            flex: 1;
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+    .active-chapter {
+        background: var(--mud-palette-primary-lighten) !important;
+        color: var(--mud-palette-primary) !important;
+    }
+
+    .settings-content {
+        padding: 12px;
+    }
+
+    .setting-item {
+        margin-bottom: 12px;
+    }
+
+    .setting-label {
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    .speed-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .speed-control .mud-slider {
+            flex: 1;
+        }
+
+    .speed-value {
+        font-size: 13px;
+        min-width: 36px;
+        text-align: center;
+    }
+
+    /* 响应式布局 */
+    @@media (min-width: 500px) {
+        .audio-content {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 12px 16px;
+        }
+
+        .cover-wrapper {
+            width: 150px;
+            height: 200px;
+        }
+
+        .volume-slider {
+            width: 140px;
+        }
+    }
+
+    @@media (max-height: 600px) {
+        .cover-wrapper {
+            width: 100px;
+            height: 140px;
+        }
+
+        .cover-section {
+            padding: 4px 0;
+        }
+
+        .player-section {
+            padding: 4px 0;
+        }
+
+        .control-buttons {
+            padding: 4px 0;
+        }
+
+        .book-title {
+            font-size: 14px;
+            margin-top: 4px;
         }
     }
 </style>
@@ -189,262 +456,175 @@
 @code {
     [Parameter] public string Pos { get; set; }
 
-    // 播放状态
-    private bool isPlaying = false;
-    private double _currentTime = 0; // 当前播放时间（秒）
-    private double currentTime
-    {
-        get => _currentTime;
-        set
-        {
-            _currentTime = value;
-            AudioService.SetCurrentTime(value * 1000); // 转换为毫秒
-        }
-    }
-    private double totalTime = 3600; // 总时长（秒）
-
-    // 音量控制
-    private int _volumeSlider = 70;
-    private int volumeSlider
-    {
-        get => _volumeSlider;
-        set
-        {
-            _volumeSlider = value;
-            AudioService.SetVolume(value);
-            if (value > 0 && isMuted)
-            {
-                isMuted = false;
-                AudioService.SetMuted(false);
-            }
-            else if (value == 0 && !isMuted)
-            {
-                isMuted = true;
-                AudioService.SetMuted(true);
-            }
-        }
-    }
-    private bool isMuted = false;
-    private int previousVolume = 70;
-
     // 章节信息
     private List<BookChapter> chapterList = new List<BookChapter>();
-    private int CurrentChapterIndex => LegadoContext.CurrentChapter?.Index ?? 0;
 
-    // 抽屉窗口
+    // 抽屉状态
     private bool drawerOpen = false;
-    private int drawerTab = 0; // 0: 章节列表, 1: 播放设置
-
-    // 音频播放器引用已被INativeAudioService替代
-    private Timer _timer;
+    private int drawerTab = 0;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        // 加载章节列表
         await LoadChapterList();
 
-        // 订阅音频服务事件
-        AudioService.IsPlayingChanged += OnIsPlayingChanged;
-        AudioService.PlayFinished += OnPlayFinished;
-        AudioService.PlayFailed += OnPlayFailed;
+        // 初始化音频服务（如果还没有初始化）
+        LegadoContext.InitializeAudioService(AudioService);
 
-        _timer = new Timer(_ =>
-      {
-          UpdateProgress(null, EventArgs.Empty);
+        // 订阅属性变化以更新UI
+        LegadoContext.PropertyChanged += OnContextPropertyChanged;
 
-      }, null, 333, 333);
-
-        await NavigateToChapter(LegadoContext.CurrentChapter);
-    }
-
-    // 播放设置
-    private double _playbackSpeed = 1.0;
-    private double playbackSpeed
-    {
-        get => _playbackSpeed;
-        set
+        if (!LegadoContext.IsPlaying && LegadoContext.CurrentChapter != null)
         {
-            _playbackSpeed = value;
-            // 目前服务不支持播放速度设置
+            await LegadoContext.NavigateToChapterAsync(LegadoContext.CurrentChapter);
         }
     }
-    private bool autoPlayNext = true;
-    private bool rememberPosition = true;
 
-    // 获取封面URL
-    private string GetCoverUrl()
+    /// <summary>
+    /// 属性变化时更新UI
+    /// </summary>
+    private void OnContextPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (LegadoContext.CurrentBook?.CoverUrl != null && !string.IsNullOrEmpty(LegadoContext.CurrentBook.CoverUrl))
-        {
-            return LegadoContext.CurrentBook.CoverUrl;
-        }
-        // 默认封面
-        return "https://via.placeholder.com/250x350?text=No+Cover";
+        InvokeAsync(StateHasChanged);
     }
 
-    // 获取当前章节标题
+    /// <summary>
+    /// 获取封面占位符（书名第一个字符）
+    /// </summary>
+    private string GetCoverPlaceholder()
+    {
+        var name = LegadoContext.CurrentBook?.Name;
+        return !string.IsNullOrEmpty(name) ? name[0].ToString() : "?";
+    }
+
+    /// <summary>
+    /// 获取当前章节标题
+    /// </summary>
     private string GetCurrentChapterTitle()
     {
         return LegadoContext.CurrentChapter?.Title ?? "未选择章节";
     }
 
-    // 加载章节列表
+    /// <summary>
+    /// 获取音量图标
+    /// </summary>
+    private string GetVolumeIcon()
+    {
+        if (LegadoContext.Volume == 0 || LegadoContext.IsMuted)
+            return Icons.Material.Filled.VolumeMute;
+        if (LegadoContext.Volume < 50)
+            return Icons.Material.Filled.VolumeDown;
+        return Icons.Material.Filled.VolumeUp;
+    }
+
+    /// <summary>
+    /// 加载章节列表
+    /// </summary>
     private async Task LoadChapterList()
     {
-        this.chapterList = await LegadoContext.GetBookChapterListAsync();
+        chapterList = await LegadoContext.GetBookChapterListAsync();
         StateHasChanged();
     }
 
-    // 播放/暂停
+    /// <summary>
+    /// 播放/暂停
+    /// </summary>
     private async Task TogglePlay()
     {
-        if (isPlaying)
-        {
-            await AudioService.PauseAsync();
-        }
-        else
-        {
-            await AudioService.PlayAsync(AudioService.CurrentPositionMillisecond);
-        }
+        await LegadoContext.TogglePlayAsync();
     }
 
-    // 上一章
+    /// <summary>
+    /// 上一章
+    /// </summary>
     private async Task PreviousChapter()
     {
-        if (CurrentChapterIndex > 0)
-        {
-            var previousChapter = chapterList.FirstOrDefault(c => c.Index == CurrentChapterIndex - 1);
-            if (previousChapter != null)
-            {
-                await NavigateToChapter(previousChapter);
-            }
-        }
+        await LegadoContext.PreviousChapterAsync();
     }
 
-    // 下一章
+    /// <summary>
+    /// 下一章
+    /// </summary>
     private async Task NextChapter()
     {
-        if (CurrentChapterIndex < chapterList.Count - 1)
+        if (!LegadoContext.HasNextChapter)
         {
-            var nextChapter = chapterList.FirstOrDefault(c => c.Index == CurrentChapterIndex + 1);
-            if (nextChapter != null)
-            {
-                await NavigateToChapter(nextChapter);
-            }
-        }
-        else
-        {
+            // 尝试重新加载章节列表
             await LoadChapterList();
         }
+        await LegadoContext.NextChapterAsync();
     }
 
-    // 释放资源
-    public async ValueTask DisposeAsync()
-    {
-        // 取消订阅音频服务事件
-        AudioService.IsPlayingChanged -= OnIsPlayingChanged;
-        AudioService.PlayFinished -= OnPlayFinished;
-        AudioService.PlayFailed -= OnPlayFailed;
-
-        await _timer.DisposeAsync();
-
-    }
-
-    // 跳转到指定章节
-    private async Task NavigateToChapter(BookChapter chapter, int pos = 0)
+    /// <summary>
+    /// 跳转到指定章节
+    /// </summary>
+    private async Task NavigateToChapter(BookChapter chapter)
     {
         if (chapter != null)
         {
-            LegadoContext.CurrentChapter = chapter;
-
-            // 设置音频源并播放
-            await AudioService.InitializeAsync(await GetAudioUrlAsync(chapter));
-            await AudioService.PlayAsync(pos);
-
-            totalTime = AudioService.CurrentDurationMillisecond / 1000;
-            currentTime = 0.0;
-
-            await LegadoContext.SaveToShelfAsync();
+            CloseDrawer();
+            await LegadoContext.NavigateToChapterAsync(chapter);
         }
     }
 
+    /// <summary>
+    /// 进度跳转
+    /// </summary>
+    private async Task OnSeek(double value)
+    {
+        await LegadoContext.SeekAsync((long)value);
+    }
 
+    /// <summary>
+    /// 音量变化
+    /// </summary>
+    private async Task OnVolumeChange(int value)
+    {
+        await LegadoContext.SetVolumeAsync(value);
+    }
 
-    // 切换静音
+    /// <summary>
+    /// 切换静音
+    /// </summary>
     private async Task ToggleMute()
     {
-        if (isMuted)
-        {
-            volumeSlider = previousVolume;
-            isMuted = false;
-            await AudioService.SetVolume(volumeSlider);
-            await AudioService.SetMuted(false);
-        }
-        else
-        {
-            previousVolume = volumeSlider;
-            volumeSlider = 0;
-            isMuted = true;
-            await AudioService.SetVolume(0);
-            await AudioService.SetMuted(true);
-        }
+        await LegadoContext.ToggleMuteAsync();
     }
 
-    // 格式化时间
+    /// <summary>
+    /// 播放速度变化
+    /// </summary>
+    private void OnSpeedChange(double value)
+    {
+        LegadoContext.PlaybackSpeed = value;
+        // TODO: 应用到音频服务
+    }
+
+    /// <summary>
+    /// 格式化时间
+    /// </summary>
     private string FormatTime(double seconds)
     {
-        return TimeSpan.FromSeconds(seconds).ToString("mm':'ss");
-        // var minutes = Math.Floor(seconds / 60);
-        // var secs = Math.Floor(seconds % 60);
-        // return $"{minutes:f0}:{secs:f0}";
+        return TimeSpan.FromMilliseconds(seconds).ToString(@"mm\:ss");
     }
 
-    // 音频服务事件处理方法
-    private void OnIsPlayingChanged(object sender, bool isPlaying)
+    // 抽屉操作
+    private void OpenDrawer(int tab)
     {
-        this.isPlaying = isPlaying;
-        StateHasChanged();
+        drawerTab = tab;
+        drawerOpen = true;
     }
 
-    private void OnPlayFinished(object sender, EventArgs e)
+    private void CloseDrawer()
     {
-        isPlaying = false;
-        if (autoPlayNext)
-        {
-            NextChapter();
-        }
-        StateHasChanged();
+        drawerOpen = false;
     }
 
-    private void OnPlayFailed(object sender, EventArgs e)
+    /// <summary>
+    /// 释放资源
+    /// </summary>
+    public void Dispose()
     {
-        Console.WriteLine("Audio playback failed");
-        isPlaying = false;
-        StateHasChanged();
-    }
-
-
-
-    // 音频数据更新方法已被INativeAudioService事件替代
-
-
-
-    // 获取音频URL
-    private async Task<string> GetAudioUrlAsync(BookChapter chapter)
-    {
-        // 这里应该根据章节信息返回实际的音频URL
-        // 暂时返回一个示例URL
-
-        var content = await LegadoContext.GetBookContentAsync(); //LegadoContext.WebBook.GetContentAwait(LegadoContext.CurrentBookSource, LegadoContext.CurrentBook, chapter);
-        return content;
-
-        // return "https://example.com/audio/chapter" + chapter.Index + ".mp3";
-    }
-
-    // 切换抽屉窗口
-    private void toggleDrawer()
-    {
-        drawerOpen = !drawerOpen;
+        LegadoContext.PropertyChanged -= OnContextPropertyChanged;
     }
 }

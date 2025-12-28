@@ -3,6 +3,7 @@ using Flurl.Http;
 using Legado.Core;
 using Legado.Core.App;
 using Legado.Core.Data.Entities;
+using Legado.Core.DependencyInjection;
 using Legado.Core.Helps.Books;
 using Legado.Core.Models.AnalyzeRules;
 using Legado.Core.Models.WebBooks;
@@ -10,6 +11,7 @@ using Legado.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.WebView.WindowsForms;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -114,7 +116,7 @@ namespace Legado.Windows
         }
 
         protected async override void OnClosed(EventArgs e)
-        {
+        { 
             var host = QServiceProvider.GetService<IHost>();
             await host.StopAsync();
             base.OnClosed(e);

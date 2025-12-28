@@ -1,5 +1,6 @@
 ﻿using Legado.Core.Data.Entities;
 using Legado.Core.Models.WebBooks;
+using Legado.Core.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -66,7 +67,7 @@ namespace Legado.Core.Models
                     var printMsg = msg;
                     if (isHtml)
                     {
-                        printMsg = FormatHtml(printMsg);
+                        printMsg = HtmlFormatter.Format(printMsg);
                     }
 
                     if (showTime)
@@ -83,7 +84,7 @@ namespace Legado.Core.Models
                     var printMsg = msg;
                     if (isHtml)
                     {
-                        printMsg = FormatHtml(printMsg);
+                        printMsg = HtmlFormatter.Format(printMsg);
                     }
 
                     if (showTime && DebugTimeMap.TryGetValue(sourceUrl, out var debugTime))
@@ -440,18 +441,7 @@ namespace Legado.Core.Models
             return url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                    url.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
         }
-
-        /// <summary>
-        /// 格式化 HTML
-        /// 对应 Kotlin 的 HtmlFormatter.format()
-        /// </summary>
-        private static string FormatHtml(string html)
-        {
-            if (string.IsNullOrWhiteSpace(html))
-                return "";
-            // TODO: 实现完整的 HTML 格式化逻辑
-            return html.Trim();
-        }
+         
 
         /// <summary>
         /// 格式化调试时间

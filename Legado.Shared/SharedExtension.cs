@@ -47,6 +47,15 @@ namespace Legado.Shared
             base.PreConfigureServices(context);
         }
 
+        public override void OnApplicationShutdown(ApplicationShutdownContext context)
+        { 
+            TaskHelper.WaitAsync(() =>
+            {
+                var func = context.ServiceProvider.GetRequiredService<LegadoContext>().SaveToShelfAsync();
+                return func;
+            });
+        }
+
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             base.ConfigureServices(context);

@@ -1,5 +1,6 @@
 using Legado.Core.Data.Entities;
 using Legado.Core.Data.Entities.Rules;
+using Legado.Core.Helps.Books;
 using Legado.Core.Models.AnalyzeRules;
 using Legado.Core.Utils;
 using Newtonsoft.Json;
@@ -40,8 +41,8 @@ namespace Legado.Core.Models.WebBooks
             }
 
             var bookList = new List<SearchBook>();
-            // Debug.Log($"≡获取成功:{analyzeUrl.RuleUrl}");
-            // Debug.Log(body, state: 10);
+            Debug.Log($"≡获取成功:{analyzeUrl.RuleUrl}");
+            Debug.Log(body, state: 10);
 
             var analyzeRule = new AnalyzeRule(ruleData, bookSource);
             analyzeRule.SetContent(body).SetBaseUrl(baseUrl);
@@ -62,7 +63,7 @@ namespace Legado.Core.Models.WebBooks
                 var regex = new Regex(bookSource.BookUrlPattern);
                 if (regex.IsMatch(baseUrl))
                 {
-                    // Debug.Log("≡链接为详情页");
+                    Debug.Log("≡链接为详情页");
                     var searchBook = await GetInfoItem(
                         bookSource,
                         analyzeRule,
@@ -112,14 +113,14 @@ namespace Legado.Core.Models.WebBooks
                 ruleList = ruleList.Substring(1);
             }
 
-            // Debug.Log("┌获取书籍列表");
+            Debug.Log("┌获取书籍列表");
             var collections = analyzeRule.GetElements(ruleList);
             cancellationToken.ThrowIfCancellationRequested();
 
             // TODO: 实现 BookUrlPattern 检查
             if (collections.Count == 0) // && string.IsNullOrEmpty(bookSource.BookUrlPattern))
             {
-                // Debug.Log("└列表为空,按详情页解析");
+                Debug.Log("└列表为空,按详情页解析");
                 var searchBook = await GetInfoItem(
                     bookSource,
                     analyzeRule,
@@ -148,7 +149,7 @@ namespace Legado.Core.Models.WebBooks
                 var ruleLastChapter = analyzeRule.SplitSourceRule(bookListRule.LastChapter);
                 var ruleWordCount = analyzeRule.SplitSourceRule(bookListRule.WordCount);
 
-                // Debug.Log($"└列表大小:{collections.Count}");
+                Debug.Log($"└列表大小:{collections.Count}");
 
                 for (int index = 0; index < collections.Count; index++)
                 {
@@ -198,7 +199,7 @@ namespace Legado.Core.Models.WebBooks
                 }
             }
 
-            // Debug.Log($"◇书籍总数:{bookList.Count}");
+            Debug.Log($"◇书籍总数:{bookList.Count}");
             return bookList;
         }
 
@@ -282,16 +283,16 @@ namespace Legado.Core.Models.WebBooks
             analyzeRule.SetContent(item);
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Debug.Log("┌获取书名", log);
-            searchBook.Name = FormatBookName(analyzeRule.GetString(ruleName));
-            // Debug.Log($"└{searchBook.Name}", log);
+            Debug.Log("┌获取书名",print: log);
+            searchBook.Name = BookHelper.FormatBookName(analyzeRule.GetString(ruleName));
+            Debug.Log($"└{searchBook.Name}",print: log);
 
             if (!string.IsNullOrEmpty(searchBook.Name))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                // Debug.Log("┌获取作者", log);
-                searchBook.Author = FormatBookAuthor(analyzeRule.GetString(ruleAuthor));
-                // Debug.Log($"└{searchBook.Author}", log);
+                Debug.Log("┌获取作者",print: log);
+                searchBook.Author = BookHelper.FormatBookAuthor(analyzeRule.GetString(ruleAuthor));
+                Debug.Log($"└{searchBook.Author}",print: log);
 
                 if (filter?.Invoke(searchBook.Name, searchBook.Author) == false)
                 {
@@ -299,7 +300,7 @@ namespace Legado.Core.Models.WebBooks
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                // Debug.Log("┌获取分类", log);
+                Debug.Log("┌获取分类",print: log);
                 try
                 {
                     var kindList = analyzeRule.GetStringList(ruleKind);
@@ -307,56 +308,56 @@ namespace Legado.Core.Models.WebBooks
                     {
                         searchBook.Kind = string.Join(",", kindList);
                     }
-                    // Debug.Log($"└{searchBook.Kind ?? ""}", log);
+                    Debug.Log($"└{searchBook.Kind ?? ""}",print: log);
                 }
                 catch (Exception e)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    // Debug.Log($"└{e.Message}", log);
+                    Debug.Log($"└{e.Message}",print: log);
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                // Debug.Log("┌获取字数", log);
+                Debug.Log("┌获取字数",print: log);
                 try
                 {
-                    searchBook.WordCount = WordCountFormat(analyzeRule.GetString(ruleWordCount));
-                    // Debug.Log($"└{searchBook.WordCount}", log);
+                    searchBook.WordCount = StringUtils.WordCountFormat(analyzeRule.GetString(ruleWordCount));
+                    Debug.Log($"└{searchBook.WordCount}",print: log);
                 }
                 catch (Exception e)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    // Debug.Log($"└{e.Message}", log);
+                    Debug.Log($"└{e.Message}",print: log);
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                // Debug.Log("┌获取最新章节", log);
+                Debug.Log("┌获取最新章节",print: log);
                 try
                 {
                     searchBook.LatestChapterTitle = analyzeRule.GetString(ruleLastChapter);
-                    // Debug.Log($"└{searchBook.LatestChapterTitle}", log);
+                    Debug.Log($"└{searchBook.LatestChapterTitle}",print: log);
                 }
                 catch (Exception e)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    // Debug.Log($"└{e.Message}", log);
+                    Debug.Log($"└{e.Message}",print: log);
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                // Debug.Log("┌获取简介", log);
+                Debug.Log("┌获取简介",print: log);
                 try
                 {
                     var intro = analyzeRule.GetString(ruleIntro);
-                    searchBook.Intro = FormatHtml(intro);
-                    // Debug.Log($"└{searchBook.Intro}", log);
+                    searchBook.Intro = HtmlFormatter.Format(intro);
+                    Debug.Log($"└{searchBook.Intro}",print: log);
                 }
                 catch (Exception e)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    // Debug.Log($"└{e.Message}", log);
+                    Debug.Log($"└{e.Message}",print: log);
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                // Debug.Log("┌获取封面链接", log);
+                Debug.Log("┌获取封面链接",print: log);
                 try
                 {
                     var coverUrl = analyzeRule.GetString(ruleCoverUrl);
@@ -364,22 +365,22 @@ namespace Legado.Core.Models.WebBooks
                     {
                         searchBook.CoverUrl = NetworkUtils.GetAbsoluteURL(baseUrl, coverUrl);
                     }
-                    // Debug.Log($"└{searchBook.CoverUrl ?? ""}", log);
+                    Debug.Log($"└{searchBook.CoverUrl ?? ""}",print: log);
                 }
                 catch (Exception e)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    // Debug.Log($"└{e.Message}", log);
+                    Debug.Log($"└{e.Message}",print: log);
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                // Debug.Log("┌获取详情页链接", log);
+                Debug.Log("┌获取详情页链接",print: log);
                 searchBook.BookUrl = analyzeRule.GetString(ruleBookUrl, isUrl: true);
                 if (string.IsNullOrEmpty(searchBook.BookUrl))
                 {
                     searchBook.BookUrl = baseUrl;
                 }
-                // Debug.Log($"└{searchBook.BookUrl}", log);
+                Debug.Log($"└{searchBook.BookUrl}",print: log);
 
                 return searchBook;
             }
@@ -395,7 +396,7 @@ namespace Legado.Core.Models.WebBooks
         {
             // TODO: 实现 Debug.callback 检查
             // if (Debug.callback == null) return;
-            
+
             var json = ExploreKindsJson(bookSource);
             if (string.IsNullOrEmpty(json))
             {
@@ -412,7 +413,7 @@ namespace Legado.Core.Models.WebBooks
             }
             catch
             {
-                // Debug.Log("≡发现地址规则 JSON 格式不规范，请改为规范格式");
+                Debug.Log("≡发现地址规则 JSON 格式不规范，请改为规范格式");
             }
         }
 
@@ -457,52 +458,6 @@ namespace Legado.Core.Models.WebBooks
                 TocUrl = book.TocUrl,
                 Variable = book.Variable
             };
-        }
-
-        /// <summary>
-        /// 格式化书名
-        /// 对应 Kotlin 的 BookHelp.formatBookName()
-        /// </summary>
-        private static string FormatBookName(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                return "";
-            return name.Trim();
-        }
-
-        /// <summary>
-        /// 格式化作者名
-        /// 对应 Kotlin 的 BookHelp.formatBookAuthor()
-        /// </summary>
-        private static string FormatBookAuthor(string author)
-        {
-            if (string.IsNullOrWhiteSpace(author))
-                return "";
-            return author.Trim();
-        }
-
-        /// <summary>
-        /// 格式化 HTML 内容
-        /// 对应 Kotlin 的 HtmlFormatter.format()
-        /// </summary>
-        private static string FormatHtml(string html)
-        {
-            if (string.IsNullOrWhiteSpace(html))
-                return "";
-            // TODO: 实现完整的 HTML 格式化逻辑
-            return html.Trim();
-        }
-
-        /// <summary>
-        /// 格式化字数
-        /// 对应 Kotlin 的 StringUtils.wordCountFormat()
-        /// </summary>
-        private static string WordCountFormat(string wordCount)
-        {
-            if (string.IsNullOrWhiteSpace(wordCount))
-                return "";
-            // TODO: 实现字数格式化逻辑（如：10000 -> 1万字）
-            return wordCount.Trim();
         }
     }
 

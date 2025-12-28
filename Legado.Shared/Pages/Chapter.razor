@@ -1,181 +1,113 @@
 @page "/Chapter"
 @inherits AppComponentBase
 
-<div class="page-container">
-    <TopCompoent PageTitle="@(book?.Name ?? "章节目录")" />
-    
-    <div class="page-content">
-        <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
-    @if (isLoading)
-    {
-        <MudCard Class="elevation-4">
-            <MudCardContent>
-                <div class="d-flex justify-center align-items-center py-6">
-                    <MudProgressCircular Color="Color.Primary" Size="Size.Large" />
-                    <MudText Class="ml-3">加载目录中...</MudText>
+<div class="chapter-page">
+    <TopCompoent PageTitle="目录" />
+
+    <div class="chapter-content">
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <MudProgressCircular Color="Color.Primary" Size="Size.Large" />
+                <MudText Class="ml-3">加载目录中...</MudText>
+            </div>
+        }
+        else if (chapters == null || chapters.Count == 0)
+        {
+            <div class="loading-container">
+                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Large" Color="Color.Dark" />
+                <MudText Class="ml-3" Color="Color.Dark">未找到章节信息</MudText>
+            </div>
+        }
+        else
+        {
+            <!-- 书籍信息和搜索 -->
+            <div class="header-section">
+                <div class="book-info">
+                    <MudText Class="book-name">@book?.Name</MudText>
+                    <MudText Class="book-meta">@book?.Author · 共 @chapters.Count 章</MudText>
                 </div>
-            </MudCardContent>
-        </MudCard>
-    }
-    else if (chapters == null || chapters.Count == 0)
-    {
-        <MudCard Class="elevation-4">
-            <MudCardContent>
-                <div class="d-flex justify-center align-items-center py-6">
-                    <MudIcon Icon="mdi-book-open-variant-outline" Size="Size.Large" Color="Color.Dark" />
-                    <MudText Class="ml-3" Color="Color.Dark">未找到章节信息</MudText>
+
+                <div class="search-box">
+                    <MudTextField @bind-Value="searchTerm"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Placeholder="搜索章节..."
+                                  Clearable="true"
+                                  Immediate="true"
+                                  OnBlur="() => OnSearchInput()"
+                                  OnKeyDown="@OnSearchKeyDown"
+                                  Margin="Margin.Dense"
+                                  Class="search-input" />
                 </div>
-            </MudCardContent>
-        </MudCard>
-    }
-    else
-    {
-        <!-- 书籍信息 -->
-        <MudCard Class="elevation-4 mb-4">
-            <MudCardContent>
-                <MudText Typo="Typo.h5" Class="font-weight-bold">@book?.Name</MudText>
-                <MudText Typo="Typo.subtitle1" Color="Color.Secondary" Class="mb-2">@book?.Author</MudText>
-                <MudText Color="Color.Tertiary" Class="text-sm">共 @chapters.Count 个章节</MudText>
-            </MudCardContent>
-        </MudCard>
+            </div>
 
-        <!-- 搜索框 -->
-        <MudCard Class="elevation-4 mb-4">
-            <MudCardContent>
-                <MudTextField @bind-Value="searchTerm"
-                              Label="搜索章节"
-                              Variant="Variant.Outlined"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Search"
-                              Placeholder="输入章节标题关键词..."
-                              Clearable="true"
-                              Class="w-100"
-                              OnBlur="() => OnSearchInput()"
-                              OnKeyDown="@OnSearchKeyDown"
-                              Margin="Margin.Dense">
-                </MudTextField>
+            <!-- 操作栏 -->
+            <div class="action-bar">
+                <MudText Class="section-title"></MudText>
+                <div class="action-buttons">
+                    <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp"
+                                   Size="Size.Small"
+                                   OnClick="() => ScrollToTop()"
+                                   Title="回到顶部" />
+                    <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown"
+                                   Size="Size.Small"
+                                   OnClick="() => ScrollToBottom()"
+                                   Title="到底部" />
+                </div>
+            </div>
 
-            </MudCardContent>
-        </MudCard>
-
-        <!-- 章节列表 -->
-        <MudCard Class="elevation-4">
-            <MudCardHeader>
-                <MudCardTitle>章节目录</MudCardTitle>
-                <MudCardActions>
-                    <MudIconButton Icon="mdi-chevron-up" Size="Size.Small" OnClick="() => ScrollToTop()" tooltip="回到顶部" />
-                    <MudIconButton Icon="mdi-chevron-down" Size="Size.Small" OnClick="() => ScrollToBottom()" tooltip="到底部" />
-                </MudCardActions>
-            </MudCardHeader>
-            <MudCardContent>
-                <div id="chapter-list" style="max-height: 600px; overflow-y: auto;">
-                    @if (string.IsNullOrEmpty(searchTerm))
+            <!-- 章节列表 -->
+            <MudList T="BookChapter" id="chapter-list" Class="chapter-list" Dense="true">
+                @{
+                    var displayChapters = string.IsNullOrEmpty(searchTerm) ? chapters : filteredChapters;
+                }
+                @foreach (var chapter in displayChapters)
+                {
+                    @if (chapter.IsVolume)
                     {
-                        @foreach (var chapter in chapters)
-                        {
-                            if (chapter.IsVolume)
-                            {
-                                <!-- 卷名 -->
-                                <MudPaper Elevation="2" Class="my-2 px-4 py-2 bg-primary-light">
-                                    <MudText Typo="Typo.h6" Color="Color.Primary">@chapter.Title</MudText>
-                                </MudPaper>
-                            }
-                            else
-                            {
-                                <!-- 章节 -->
-                                <MudListItem T="object"
-                                             Class="py-2"
-                                             buttonVariant="Variant.Text"
-                                             OnClick="() => NavigateToContent(chapter)">
-                                    <MudChip T="object"
-                                             Color="Color.Secondary"
-                                             Size="Size.Small"
-                                             Class="mr-2"
-                                             Variant="Variant.Filled">
-                                        @chapter.Index
-                                    </MudChip>
-                                    <MudText Class="flex-grow-1">
-                                        @chapter.Title
-                                        @if (!string.IsNullOrEmpty(chapter.Tag))
-                                        {
-                                            <MudChip T="object"
-                                                     Color="Color.Warning"
-                                                     Size="Size.Small"
-                                                     Class="ml-2"
-                                                     Variant="Variant.Outlined">
-                                                @chapter.Tag
-                                            </MudChip>
-                                        }
-                                    </MudText>
-                                    @if (chapter.IsVip)
-                                    {
-                                        <MudIcon Icon="mdi-crown" Color="Color.Warning" Size="Size.Small" />
-                                    }
-                                    @if (chapter.IsPay)
-                                    {
-                                        <MudIcon Icon="mdi-cash" Color="Color.Error" Size="Size.Small" />
-                                    }
-                                </MudListItem>
-                                <MudDivider Class="my-0" />
-                            }
-                        }
+                        <MudListSubheader Class="volume-item">
+                            <MudText Class="volume-title">@chapter.Title</MudText>
+                        </MudListSubheader>
                     }
                     else
                     {
-                        @foreach (var chapter in filteredChapters)
-                        {
-                            if (chapter.IsVolume)
-                            {
-                                <!-- 卷名 -->
-                                <MudPaper Elevation="2" Class="my-2 px-4 py-2 bg-primary-light">
-                                    <MudText Typo="Typo.h6" Color="Color.Primary">@chapter.Title</MudText>
-                                </MudPaper>
-                            }
-                            else
-                            {
-                                <!-- 章节 -->
-                                <MudListItem T="object"
-                                             Class="py-2"
-                                             buttonVariant="Variant.Text"
-                                             OnClick="() => NavigateToContent(chapter)">
-                                    <MudChip T="object"
-                                             Color="Color.Secondary"
-                                             Size="Size.Small"
-                                             Class="mr-2"
-                                             Variant="Variant.Filled">
-                                        @chapter.Index
-                                    </MudChip>
-                                    <MudText Class="flex-grow-1">
+                        <MudListItem T="BookChapter" OnClick="() => NavigateToContent(chapter)" Class="chapter-item">
+                            <div class="chapter-item-content"> 
+                                <span class="chapter-title">
+                                    @if (!string.IsNullOrEmpty(searchTerm))
+                                    {
                                         @HighlightSearchTerm(chapter.Title, searchTerm)
+                                    }
+                                    else
+                                    {
+                                        @chapter.Title
+                                    }
+                                </span>
+                                @if (chapter.IsVip || chapter.IsPay || !string.IsNullOrEmpty(chapter.Tag))
+                                {
+                                    <span class="chapter-icons">
                                         @if (!string.IsNullOrEmpty(chapter.Tag))
                                         {
-                                            <MudChip T="object"
-                                                     Color="Color.Warning"
-                                                     Size="Size.Small"
-                                                     Class="ml-2"
-                                                     Variant="Variant.Outlined">
-                                                @chapter.Tag
-                                            </MudChip>
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined" Class="tag-chip">@chapter.Tag</MudChip>
                                         }
-                                    </MudText>
-                                    @if (chapter.IsVip)
-                                    {
-                                        <MudIcon Icon="mdi-crown" Color="Color.Warning" Size="Size.Small" />
-                                    }
-                                    @if (chapter.IsPay)
-                                    {
-                                        <MudIcon Icon="mdi-cash" Color="Color.Error" Size="Size.Small" />
-                                    }
-                                </MudListItem>
-                                <MudDivider Class="my-0" />
-                            }
-                        }
+                                        @if (chapter.IsVip)
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" />
+                                        }
+                                        @if (chapter.IsPay)
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Size="Size.Small" />
+                                        }
+                                    </span>
+                                }
+                            </div>
+                        </MudListItem>
                     }
-                </div>
-            </MudCardContent>
-        </MudCard>
-    }
-        </MudContainer>
+                }
+            </MudList>
+        }
     </div>
 </div>
 
@@ -191,7 +123,7 @@
         try
         {
             isLoading = true;
-            book = LegadoContext.CurrentBook; 
+            book = LegadoContext.CurrentBook;
             chapters = filteredChapters = await LegadoContext.GetBookChapterListAsync();
         }
         catch (Exception ex)
@@ -205,6 +137,11 @@
             StateHasChanged();
         }
         await base.OnInitializedAsync();
+    }
+
+    private string FormatIndex(BookChapter chapter)
+    {
+        return (chapter?.Index + 1).ToString();
     }
 
     /// <summary>
@@ -289,7 +226,7 @@
         LegadoContext.CurrentChapter = chapter;
         if (LegadoContext.CurrentBook.Type == 1)
         {
-            Nav.NavigateTo("/Audio");
+            Nav.NavigateTo("/Audio/0");
         }
         else
         {
@@ -299,54 +236,192 @@
 
     private async Task ScrollToTop()
     {
-        await JSRuntime.InvokeVoidAsync("scrollToElement", "#chapter-list", 0, 0);
+        await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('.chapter-list').scrollTop = 0");
     }
 
     private async Task ScrollToBottom()
     {
-        await JSRuntime.InvokeVoidAsync("scrollToElement", "#chapter-list", 0, 1000000);
+        await JSRuntime.InvokeVoidAsync("eval", "var el = document.querySelector('.chapter-list'); el.scrollTop = el.scrollHeight;");
     }
 }
 
 <style>
-    .page-container {
+    .chapter-page {
         display: flex;
         flex-direction: column;
         height: 100%;
         width: 100%;
         overflow: hidden;
+        background: var(--mud-palette-background);
     }
 
-    .page-content {
+    .chapter-content {
         flex: 1;
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
+        padding: 8px 12px;
     }
 
-    #chapter-list {
-        max-height: calc(100vh - 320px);
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+    }
+
+    /* 头部区域 */
+    .header-section {
+        padding: 8px 0;
+    }
+
+    .book-info {
+        margin-bottom: 8px;
+    }
+
+    .book-name {
+        font-size: 16px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .book-meta {
+        font-size: 12px;
+        color: var(--mud-palette-text-secondary);
+    }
+
+    .search-box {
+        margin-top: 6px;
+    }
+
+    .search-input {
+        font-size: 13px;
+    }
+
+    /* 操作栏 */
+    .action-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 0;
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .section-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--mud-palette-text-primary);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 4px;
+    }
+
+    /* 章节列表 */
+    .chapter-list {
+        @* display: flex; *@
+        flex-direction: column;
+        gap: 12px;
+        max-height: calc(100vh - 180px);
         overflow-y: auto;
+        height: calc(100vh - 200px);
     }
 
+        .chapter-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .chapter-list::-webkit-scrollbar-thumb {
+            background: var(--mud-palette-lines-default);
+            border-radius: 2px;
+        }
+
+    /* 卷名 */
+    .volume-item {
+        background: var(--mud-palette-primary-lighten);
+        padding: 6px 10px;
+        margin: 4px 0;
+        border-radius: 4px;
+    }
+
+    .volume-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--mud-palette-primary);
+    }
+
+    /* 章节项 */
+    .chapter-item {
+        padding: 0 !important;
+    }
+
+    .chapter-item-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 8px 4px;
+        gap: 8px;
+    }
+
+    .chapter-index {
+        min-width: 40px;
+        font-size: 11px;
+        color: var(--mud-palette-text-secondary);
+        text-align: center;
+        padding: 2px 4px;
+        background: var(--mud-palette-surface);
+        border-radius: 3px;
+    }
+
+    .chapter-title {
+        flex: 1;
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .chapter-icons {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .tag-chip {
+        height: 18px;
+        font-size: 10px;
+        margin: 0;
+        padding: 0 4px;
+    }
+
+    /* 高亮搜索 */
     .highlight {
         background-color: #fff2cc;
-        padding: 2px 4px;
-        border-radius: 3px;
-        font-weight: bold;
+        padding: 1px 2px;
+        border-radius: 2px;
+        font-weight: 600;
         color: #d35400;
     }
 
     @@media (max-width: 600px) {
-        .page-content {
-            padding: 0 !important;
+        .chapter-content {
+            padding: 6px 10px;
         }
 
-        .py-4 {
-            padding-top: 8px !important;
-            padding-bottom: 8px !important;
+        .book-name {
+            font-size: 15px;
         }
 
-        #chapter-list {
-            max-height: calc(100vh - 280px);
+        .chapter-item-content {
+            padding: 6px 2px;
+            gap: 6px;
+        }
+
+        .chapter-title {
+            font-size: 12px;
         }
     }
 </style>

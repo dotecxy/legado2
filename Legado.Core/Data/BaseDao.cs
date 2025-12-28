@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reactive.Concurrency;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,32 +16,39 @@ namespace Legado.Core.Data
     /// </summary>
     /// <typeparam name="T">实体类型</typeparam>
     public abstract class BaseDao<T> : QDbContext where T : class, new()
-    { 
+    {
+        static object lockObj = new object();
         public BaseDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
             using var conn = CreateConn();
             conn.CreateTable<T>();
         }
-         
+
 
         /// <summary>
         /// 创建同步连接（内部使用）
         /// </summary>
         protected SQLiteConnection CreateConn()
-        { 
-            var connStr = ConnectionString;
-            var conn = new SQLiteConnection(connStr);
-            return conn;
+        {
+            lock (lockObj)
+            {
+                var connStr = ConnectionString;
+                var conn = new SQLiteConnection(connStr);
+                return conn;
+            }
         }
 
         /// <summary>
         /// 创建异步连接（内部使用）
         /// </summary>
         protected SQLiteAsyncConnectionWrapper CreateAsyncConn()
-        { 
-            var connStr = ConnectionString;
-            var conn = new SQLiteAsyncConnectionWrapper(connStr);
-            return conn;
+        {
+            lock (lockObj)
+            {
+                var connStr = ConnectionString;
+                var conn = new SQLiteAsyncConnectionWrapper(connStr);
+                return conn;
+            }
         }
 
         // ================= 查询方法 =================
@@ -176,13 +184,17 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> InsertOrReplaceAllAsync(IEnumerable<T> entities)
         {
+            int count = 0;
             await using (var conn = CreateAsyncConn())
             {
                 foreach (var item in entities)
                 {
-                    await conn.InsertOrReplaceAsync(item);
+                    await conn.RunInTransactionAsync(transaction =>
+                    {
+                        count += transaction.InsertOrReplace(item);
+                    });
                 }
-                return 1;
+                return count;
             }
         }
 

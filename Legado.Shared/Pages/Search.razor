@@ -3,13 +3,12 @@
 
 <div class="page-container">
     <TopCompoent PageTitle="搜索" />
-    
-    <MudContainer MaxWidth="MaxWidth.Large" Class="page-content py-4">
-        <MudCard Elevation="3" Class="h-full">
-            <MudCardContent>
-        <MudText Typo="Typo.h5" Class="mb-6 font-weight-bold">搜索功能</MudText>
-
-        <div class="d-flex gap-4 mb-8">
+     
+   
+     
+        <div class="d-flex gap-4 ma-4">
+        <SearchBar OnSearch="DoSearchAsync"></SearchBar>
+@* 
             <MudTextField @bind-Value="SearchQuery"
                           Placeholder="请输入搜索关键词"
                           Variant="Variant.Outlined"
@@ -21,13 +20,13 @@
                        OnClick="DoSearchAsync"
                        EndIcon="@Icons.Material.Filled.Search">
                 搜索
-            </MudButton>
+            </MudButton> *@
         </div>
 
         @if (searchResults.Any())
         {
-            <MudText Typo="Typo.body1" Class="mb-4">搜索结果：</MudText>
-            <div class="search-results-list">
+            @* <MudText Typo="Typo.body1" Class="mb-4">搜索结果：</MudText> *@
+            <div class="search-results-list ma-4">
                 @foreach (var result in searchResults)
                 {
                     <MudPaper Elevation="1" Class="search-item" @onclick="() => ViewBookDetail(result)">
@@ -80,10 +79,7 @@
         else if (hasSearched)
         {
             <MudAlert Severity="Severity.Info" Elevation="0">未找到相关结果</MudAlert>
-        }
-            </MudCardContent>
-        </MudCard>
-    </MudContainer>
+        } 
 </div>
 
 <style>
@@ -103,7 +99,7 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
-        max-height: calc(100vh - 280px);
+        max-height: calc(100vh - 180px);
         overflow-y: auto;
     }
 
@@ -111,8 +107,7 @@
         display: flex;
         flex-direction: row;
         padding: 12px;
-        cursor: pointer;
-        transition: background-color 0.2s;
+        cursor: pointer; 
     }
 
     .search-item:hover {
@@ -193,7 +188,7 @@
         }
 
         .search-results-list {
-            max-height: calc(100vh - 240px);
+            max-height: calc(100vh - 180px);
         }
 
         .gap-4 {
@@ -228,8 +223,7 @@
     }
 </style>
 
-@code {
-    private string SearchQuery { get; set; } = "诡秘之主";
+@code { 
     private List<Book> searchResults = new();
     private bool hasSearched = false;
     private HashSet<string> failedCovers = new();
@@ -255,19 +249,19 @@
         }
     }
 
-    private async Task DoSearchAsync()
+    private async Task DoSearchAsync(string keyword)
     {
         hasSearched = true;
         searchResults.Clear();
 
-        if (string.IsNullOrEmpty(SearchQuery))
+        if (string.IsNullOrEmpty(keyword))
         {
             return;
         }
 
         try
         {
-            var result = await LegadoContext.SearchAsync(SearchQuery);
+            var result = await LegadoContext.SearchAsync(keyword);
             if (result?.Count > 0)
             {
                 searchResults.AddRange(result);

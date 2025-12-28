@@ -16,8 +16,18 @@ namespace Legado.Core.Constants
         public static readonly Regex XML_CONTENT_TYPE_REGEX = new Regex(@"(?i)((text|application)/xml|application/[a-z]+\+xml)");
 
         // 书名和作者名的格式化正则
-        public static readonly string NameRegex = "[\\\\/:*?\\\"〈><|\\r\\n]+";
+        public static readonly string NameRegex = "[\\\\/:*?\\\"\u3008><|\\r\\n]+";
         public static readonly string AuthorRegex = "作者[::：]\\s*";
+            
+        /// <summary>
+        /// 文件名不允许的字符正则
+        /// </summary>
+        public static readonly string FileNameRegex = "[\\\\/:*?\\\"<>|\\r\\n]";
+
+        /// <summary>
+        /// 换行符正则
+        /// </summary>
+        public static readonly Regex LFRegex = new Regex(@"\n", RegexOptions.Compiled);
     }
 
 

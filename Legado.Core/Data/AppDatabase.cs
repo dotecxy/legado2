@@ -253,9 +253,9 @@ namespace Legado.Core.Data
 
             // 更新书源登录UI字段（清除无效的"null"字符串）
             await _asyncConnection.ExecuteAsync("UPDATE book_sources SET loginUi = null WHERE loginUi = 'null'");
-            await _asyncConnection.ExecuteAsync("UPDATE rssSources SET loginUi = null WHERE loginUi = 'null'");
-            await _asyncConnection.ExecuteAsync("UPDATE httpTTS SET loginUi = null WHERE loginUi = 'null'");
-            await _asyncConnection.ExecuteAsync("UPDATE httpTTS SET concurrentRate = '0' WHERE concurrentRate IS NULL");
+            await _asyncConnection.ExecuteAsync("UPDATE rss_sources SET loginUi = null WHERE loginUi = 'null'");
+            await _asyncConnection.ExecuteAsync("UPDATE http_tts SET loginUi = null WHERE loginUi = 'null'");
+            await _asyncConnection.ExecuteAsync("UPDATE http_tts SET concurrentRate = '0' WHERE concurrentRate IS NULL");
 
             // 插入默认键盘辅助数据
             await InsertDefaultKeyboardAssistsAsync();
@@ -303,7 +303,7 @@ namespace Legado.Core.Data
         private async Task InsertDefaultKeyboardAssistsAsync()
         {
             var count = await _asyncConnection.ExecuteScalarAsync<int>(
-                "SELECT COUNT(*) FROM keyboardAssists");
+                "SELECT COUNT(*) FROM keyboard_assists");
 
             if (count == 0)
             {
@@ -334,12 +334,12 @@ namespace Legado.Core.Data
         private async Task SetDatabaseVersionAsync(int version)
         {
             await _asyncConnection.ExecuteAsync($"PRAGMA user_version = {version}");
-        }
+        } 
 
         /// <summary>
         /// 关闭数据库连接
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
             if (_dbConnection != null)
             {

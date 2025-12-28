@@ -1,0 +1,36 @@
+﻿
+
+<MudFocusTrap DefaultFocus="DefaultFocus.FirstChild">
+    <MudTextField T="string"
+                     @bind-Value="_searchKey"
+                     Label="搜索"
+                     MaxLength="30"
+                     Margin="Margin.Dense" 
+                     Variant="Variant.Outlined"  
+                     Clearable="true" 
+                     Immediate="true"
+                     AdornmentIcon="@Icons.Material.Filled.Search"
+                     AdornmentColor="Color.Primary"
+                     OnKeyUp="@OnSearchKeyUpAsync" > 
+    </MudTextField>
+</MudFocusTrap>
+
+@code {
+    private string _searchKey = "诡秘之主";
+
+    [Parameter]
+    public EventCallback<string> OnSearch { get; set; } 
+
+    private async Task OnSearchKeyUpAsync(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter")
+        {
+            await SearchAsync(_searchKey);
+        }
+    } 
+
+    private async Task SearchAsync(string key)
+    {
+        await OnSearch.InvokeAsync(key);
+    }
+}

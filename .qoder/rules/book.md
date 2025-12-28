@@ -19,3 +19,16 @@ alwaysApply: true
             [Column("column_name")]
             [JsonProperty("jsonPropertyName")]
             public Type PropertyName { get; set; } 
+
+13.kt代码文件移植的时候，结构保持一致，缺失的地方用TODO占位
+
+
+
+14支持MVVM的属性定义格式如下
+private int myVar;
+
+public int MyProperty
+{
+    get { return myVar; }
+    set { Set(ref myVar,value); }
+}

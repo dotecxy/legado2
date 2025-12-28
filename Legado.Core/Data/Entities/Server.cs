@@ -16,7 +16,7 @@ namespace Legado.Core.Data.Entities
         [PrimaryKey]
         [Column("id")]
         [JsonProperty("id")]
-        public long Id { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        public long Id { get; set; } = IdGenerator.New();
 
         /// <summary>
         /// 名称

@@ -1,0 +1,30 @@
+﻿@inject NavigationManager Nav 
+
+<MudChip T="string" Icon="@Icons.Material.Filled.Search"
+         Class="cursor-text"
+         IconColor="Color.Primary"
+         OnClick="GotoSearchPage"
+         Style="display: flex; justify-content: left; padding-left: 15px;">
+    <div class="hot-word @(_isLeave?"leave":"")">
+        @_text
+    </div>
+</MudChip>
+
+@code {
+    private bool _isLeave = false;
+    private string _text = "诡秘之主"; 
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+         
+    }
+
+    private void GotoSearchPage()
+    { 
+    }
+
+    public void Dispose()
+    { 
+    }
+}

@@ -1,4 +1,6 @@
 using Legado.Core.Data.Entities;
+using Legado.Core.Helps.Books;
+using Legado.Core.Helps.Source;
 using Legado.Core.Models.AnalyzeRules;
 using System;
 using System.Collections.Generic;
@@ -45,7 +47,7 @@ namespace Legado.Core.Models.WebBooks
 
             // 执行请求
             var resBody = await analyzeUrl.GetStrResponseAsync();
-            
+
             // 检测书源是否已登录
             if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
             {
@@ -122,30 +124,46 @@ namespace Legado.Core.Models.WebBooks
             Book book,
             bool canReName = true)
         {
-            var analyzeUrl = new AnalyzeUrl(
-                mUrl: book.BookUrl,
-                baseUrl: bookSource.BookSourceUrl,
-                source: bookSource,
-                ruleData: book
-            );
-
-            var resBody = await analyzeUrl.GetStrResponseAsync();
-
-            //检测书源是否已登录
-            if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
+            book.RemoveAllBookType();
+            book.AddType(bookSource.GetBookType());
+            if (!book.InfoHtml.IsNullOrEmpty())
             {
-                // TODO: 实现EvalJS方法
-                Console.WriteLine("执行登录检查JS: " + bookSource.LoginCheckJs);
+                await BookInfo.AnalyzeBookInfo(
+                   bookSource: bookSource,
+                   book: book,
+                   baseUrl: book.BookUrl,
+                   redirectUrl: book.BookUrl,
+                   body: book.InfoHtml,
+                    canReName: canReName
+                 );
             }
+            else
+            {
+                var analyzeUrl = new AnalyzeUrl(
+                    mUrl: book.BookUrl,
+                    baseUrl: bookSource.BookSourceUrl,
+                    source: bookSource,
+                    ruleData: book
+                );
+                var res = await analyzeUrl.GetStrResponseAsync();
+                //检测书源是否已登录
+                if (!string.IsNullOrWhiteSpace(bookSource.LoginCheckJs))
+                {
+                    res = analyzeUrl.EvalJS(jsStr: bookSource.LoginCheckJs, result: res) as StrResponse;
+                }
+                //TODO检查重定向
 
-            await BookInfo.AnalyzeBookInfo(
-                bookSource: bookSource,
+
+                await BookInfo.AnalyzeBookInfo(
+                    bookSource: bookSource,
                 book: book,
                 baseUrl: book.BookUrl,
-                redirectUrl: resBody.Url,
-                body: resBody.Body,
+                redirectUrl: res.Url,
+                body: res.Body,
                 canReName: canReName
-            );
+                );
+            }
+
 
             return book;
         }
@@ -234,7 +252,7 @@ namespace Legado.Core.Models.WebBooks
             Book book,
             BookChapter bookChapter,
             string nextChapterUrl = null)
-        {            
+        {
             var contentRule = bookSource.RuleContent;
             if (contentRule == null || string.IsNullOrWhiteSpace(contentRule.Content))
             {
@@ -301,6 +319,22 @@ namespace Legado.Core.Models.WebBooks
             }
 
             throw new Exception($"未搜索到 {name}({author}) 书籍");
+        }
+
+        public async Task<List<SearchBook>> PreciseSearchAsync(
+            BookSource bookSource,
+            string name, int page = 1)
+        {
+            var searchResults = await SearchBookAsync(
+                bookSource,
+                name,
+                filter: (fName, fAuthor) => fName.Contains(name) || fAuthor.Contains(name),
+                shouldBreak: (count) => count > 0,
+                page: page
+
+            );
+
+            return searchResults ?? new List<SearchBook>();
         }
 
         /// <summary>

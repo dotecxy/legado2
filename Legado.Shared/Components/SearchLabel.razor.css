@@ -1,0 +1,8 @@
+.hot-word {
+    transform: translateY(-25px);
+    transition: transform 1s linear;
+}
+
+.leave {
+    transform: translateY(0);
+}

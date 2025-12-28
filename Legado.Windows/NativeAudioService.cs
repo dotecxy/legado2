@@ -118,6 +118,7 @@ public class NativeAudioService : INativeAudioService
         {
             wasapiOut.PlaybackStopped -= WasapiOut_PlaybackStopped;
         }
+        wasapiOut?.Stop();
         wasapiOut?.Dispose();
         reader?.DisposeAsync();
         return ValueTask.CompletedTask;

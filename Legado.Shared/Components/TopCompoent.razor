@@ -17,15 +17,22 @@
     <div class="page-title flex-grow-1 text-truncate drag-region"
          @onmousedown="OnMouseDown"
          @onmousemove="OnMouseMove"
-         @onmouseup="OnMouseUp" >
+         @onmouseup="OnMouseUp">
         <MudText Typo="Typo.h6" Class="text-truncate">@PageTitle</MudText>
     </div>
 
     <!-- 更多按钮下拉菜单 -->
-    <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
-                   Size="Size.Medium"
-                   OnClick="ToggleMenu"
-                   Class="me-2" />
+    @if (MenuList?.Count > 0)
+    {
+        <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
+                       Size="Size.Medium"
+                       OnClick="ToggleMenu"
+                       Class="me-2" />
+    }
+    else
+    {
+        <MudSpacer></MudSpacer>
+    }
 
     <!-- 桌面端窗口控制按钮 -->
     @if (WindowTitleBar != null)
@@ -38,12 +45,11 @@
              TransformOrigin="Origin.TopRight"
              RTLDirection="false"
              @ref="menuRef">
-        <MudMenuItem OnClick="() => SharePage()">分享</MudMenuItem>
-        <MudMenuItem OnClick="() => CopyLink()">复制链接</MudMenuItem>
-        <MudMenuItem OnClick="() => OpenInBrowser()">在浏览器中打开</MudMenuItem>
-        <MudDivider />
-        <MudMenuItem OnClick="() => Settings()">设置</MudMenuItem>
-        <MudMenuItem OnClick="() => About()">关于</MudMenuItem>
+        @foreach (var item in MenuList)
+        {
+            <MudMenuItem OnClick="() => item.Item2()">@item.Item1</MudMenuItem>
+
+        }
     </MudMenu>
 </div>
 
@@ -59,6 +65,9 @@
     /// </summary>
     [Parameter]
     public bool ShowBackButton { get; set; } = true;
+
+    [Parameter]
+    public List<(string, Action)> MenuList { get; set; }
 
     private MudMenu? menuRef;
 

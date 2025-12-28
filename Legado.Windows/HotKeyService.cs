@@ -20,6 +20,7 @@ namespace Legado.Windows
         private readonly Form1 _form;
         private readonly INativeAudioService _audio;
         private readonly ILogger _logger;
+        private bool _initialization;
 
         private int _id = 1;
 
@@ -31,9 +32,10 @@ namespace Legado.Windows
             }
         }
 
+
         private readonly ConcurrentDictionary<int, (nint, Action)> _registerHotKetRecords = new ConcurrentDictionary<int, (nint, Action)>();
 
-        public HotKeyService(ILogger<HotKeyService> logger,Form1 form, INativeAudioService audioService)
+        public HotKeyService(ILogger<HotKeyService> logger, Form1 form, INativeAudioService audioService)
         {
             _form = form;
             _audio = audioService;
@@ -42,14 +44,20 @@ namespace Legado.Windows
 
         public async Task ApplyAsync()
         {
+            if (_initialization)
+            {
+                return;
+            }
+            _initialization = true;
             await Task.Delay(10);
+            if (_initialization) return;
             var id = ID;
             var hWnd = _form.Handle;
             if (User32.RegisterHotKey(hWnd, id, User32.HotKeyModifiers.MOD_ALT | User32.HotKeyModifiers.MOD_CONTROL, (uint)User32.VK.VK_SPACE))
             {
                 var action = new Action(async () =>
                 {
-                     
+
 
                     if (_audio.IsPlaying)
                     {

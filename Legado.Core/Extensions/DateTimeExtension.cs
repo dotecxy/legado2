@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace System;
+namespace Legado.Core.Extensions;
 
 public static class DateTimeExtension
 {

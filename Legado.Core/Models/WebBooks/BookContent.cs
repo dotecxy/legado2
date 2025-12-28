@@ -1,22 +1,26 @@
+using Legado.Core.Constants;
 using Legado.Core.Data.Entities;
 using Legado.Core.Data.Entities.Rules;
 using Legado.Core.Models.AnalyzeRules;
+using Legado.Core.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace Legado.Core.Models.WebBooks
 {
     /// <summary>
-    /// 章节内容解析类 (对应 Kotlin: BookContent.kt)
+    /// 获取正文 (对应 Kotlin: BookContent.kt)
     /// </summary>
     public static class BookContent
     {
         /// <summary>
-        /// 解析章节内容（对应 Kotlin 的 analyzeContent）
+        /// 解析正文内容
+        /// 对应 Kotlin 的 analyzeContent
         /// </summary>
         /// <param name="bookSource">书源</param>
         /// <param name="book">书籍</param>
@@ -24,9 +28,10 @@ namespace Legado.Core.Models.WebBooks
         /// <param name="baseUrl">基础URL</param>
         /// <param name="redirectUrl">重定向URL</param>
         /// <param name="body">HTML内容</param>
-        /// <param name="nextChapterUrl">下一章节URL</param>
+        /// <param name="nextChapterUrl">下一章URL</param>
         /// <param name="needSave">是否需要保存</param>
-        /// <returns>解析后的章节内容</returns>
+        /// <param name="cancellationToken">取消令牌</param>
+        /// <returns>正文内容</returns>
         public static async Task<string> AnalyzeContent(
             BookSource bookSource,
             Book book,
@@ -35,140 +40,243 @@ namespace Legado.Core.Models.WebBooks
             string redirectUrl,
             string body,
             string nextChapterUrl = null,
-            bool needSave = true)
+            bool needSave = true,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(body))
             {
-                throw new Exception("Error getting web content");
+                throw new Exception($"Error getting web content: {baseUrl}");
             }
 
-            var contentRule = bookSource.RuleContent;
-            if (contentRule == null)
+            Debug.Log(bookSource.BookSourceUrl, $"≡获取成功:{baseUrl}");
+            Debug.Log(bookSource.BookSourceUrl, body, state: 40);
+
+            // 获取下一章URL
+            var mNextChapterUrl = nextChapterUrl;
+            if (string.IsNullOrEmpty(mNextChapterUrl))
             {
-                throw new Exception("Content rule is null");
+                // TODO: 从数据库获取下一章URL
+                // mNextChapterUrl = appDb.bookChapterDao.getChapter(book.bookUrl, bookChapter.index + 1)?.url
+                //     ?? appDb.bookChapterDao.getChapter(book.bookUrl, 0)?.url;
             }
 
-            // Debug.Log(bookSource.BookSourceUrl, "┌获取正文内容");
-            // Debug.Log(bookSource.BookSourceUrl, "└$baseUrl");
-
-            var analyzeRule = new AnalyzeRule(bookChapter, bookSource);
-            analyzeRule.SetContent(body);
-            analyzeRule.SetBaseUrl(baseUrl);
-            analyzeRule.SetRedirectUrl(redirectUrl);
-            // analyzeRule.SetNextChapterUrl(nextChapterUrl);
-
-            var contentData = new StringBuilder();
-            var nextUrlList = new List<string>();
             var contentList = new List<string>();
+            var nextUrlList = new List<string> { redirectUrl };
+            var contentRule = bookSource.GetContentRule();
 
-            // 解析内容规则
-            var content = analyzeRule.GetString(contentRule.Content);
-            if (!string.IsNullOrWhiteSpace(content))
-            {
-                contentList.Add(content);
-            }
+            var analyzeRule = new AnalyzeRule(book, bookSource);
+            analyzeRule.SetContent(body, baseUrl);
+            analyzeRule.SetRedirectUrl(redirectUrl);
+            // TODO: analyzeRule.SetCoroutineContext(coroutineContext);
+            analyzeRule.SetChapter(bookChapter);
+            analyzeRule.SetNextChapterUrl(mNextChapterUrl);
 
-            // 解析下一页URL
-            if (!string.IsNullOrWhiteSpace(contentRule.NextContentUrl))
-            {
-                var nextUrl = analyzeRule.GetString(contentRule.NextContentUrl, isUrl: true);
-                if (!string.IsNullOrWhiteSpace(nextUrl) && nextUrl != baseUrl)
-                {
-                    nextUrlList.Add(nextUrl);
-                }
-            }
+            // TODO: coroutineContext.ensureActive()
+            cancellationToken.ThrowIfCancellationRequested();
 
-            // 处理分页内容
-            while (nextUrlList.Count > 0 && nextUrlList.Count <= 20) // 限制最大分页数
-            {
-                var nextUrl = nextUrlList[0];
-                nextUrlList.RemoveAt(0);
-
-                // TODO: 加载下一页内容
-                // var nextAnalyzeUrl = new AnalyzeUrl(nextUrl, bookSource, bookChapter);
-                // var nextRes = await nextAnalyzeUrl.GetStrResponseAwait();
-                // analyzeRule.SetContent(nextRes.Body, nextUrl);
-                
-                // var nextContent = analyzeRule.GetString(contentRule.Content);
-                // if (!string.IsNullOrWhiteSpace(nextContent))
-                // {
-                //     contentList.Add(nextContent);
-                // }
-
-                break; // 暂时只处理第一页
-            }
-
-            // 拼接内容
-            foreach (var str in contentList)
-            {
-                if (!string.IsNullOrWhiteSpace(str))
-                {
-                    if (contentData.Length > 0)
-                    {
-                        contentData.Append("\n");
-                    }
-                    contentData.Append(str);
-                }
-            }
-
-            var contentStr = contentData.ToString();
-
-            // 执行内容处理JS
-            if (!string.IsNullOrWhiteSpace(contentRule.WebJs))
+            // 获取标题
+            var titleRule = contentRule.Title;
+            if (!string.IsNullOrWhiteSpace(titleRule))
             {
                 try
                 {
-                    // TODO: 执行 JS 脚本
-                    // contentStr = analyzeRule.GetString(contentRule.WebJs) ?? contentStr;
+                    var title = analyzeRule.GetString(titleRule);
+                    if (!string.IsNullOrWhiteSpace(title))
+                    {
+                        bookChapter.Title = title;
+                        // TODO: bookChapter.TitleMD5 = null;
+                        // TODO: appDb.bookChapterDao.update(bookChapter);
+                    }
                 }
                 catch (Exception e)
                 {
-                    // Debug.Log error
+                    Debug.Log(bookSource.BookSourceUrl, $"获取标题出错, {e.Message}");
                 }
             }
 
-            // 内容净化和格式化
-            contentStr = FormatContent(contentStr);
+            // 解析正文
+            var contentData = await AnalyzeContentInternal(
+                book, baseUrl, redirectUrl, body, contentRule, bookChapter, bookSource, mNextChapterUrl,
+                cancellationToken: cancellationToken);
+            contentList.Add(contentData.Content);
 
-            await Task.CompletedTask;
+            // 单页次页模式
+            if (contentData.NextUrlList.Count == 1)
+            {
+                var nextUrl = contentData.NextUrlList[0];
+                while (!string.IsNullOrEmpty(nextUrl) && !nextUrlList.Contains(nextUrl))
+                {
+                    // 检查是否为下一章URL
+                    if (!string.IsNullOrEmpty(mNextChapterUrl) &&
+                        NetworkUtils.GetAbsoluteURL(redirectUrl, nextUrl) ==
+                        NetworkUtils.GetAbsoluteURL(redirectUrl, mNextChapterUrl))
+                    {
+                        break;
+                    }
+
+                    nextUrlList.Add(nextUrl);
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var analyzeUrl = new AnalyzeUrl(
+                        mUrl: nextUrl,
+                        source: bookSource,
+                        ruleData: book
+                    );
+
+                    var res = await analyzeUrl.GetStrResponseAsync();
+                    if (!string.IsNullOrEmpty(res.Body))
+                    {
+                        contentData = await AnalyzeContentInternal(
+                            book, nextUrl, res.Url, res.Body, contentRule,
+                            bookChapter, bookSource, mNextChapterUrl,
+                            printLog: false,
+                            cancellationToken: cancellationToken);
+                        nextUrl = contentData.NextUrlList.Count > 0 ? contentData.NextUrlList[0] : "";
+                        contentList.Add(contentData.Content);
+                        Debug.Log(bookSource.BookSourceUrl, $"第{contentList.Count}页完成");
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                Debug.Log(bookSource.BookSourceUrl, $"◇本章总页数:{nextUrlList.Count}");
+            }
+            // 并发解析模式
+            else if (contentData.NextUrlList.Count > 1)
+            {
+                Debug.Log(bookSource.BookSourceUrl, $"◇并发解析正文,总页数:{contentData.NextUrlList.Count}");
+
+                // TODO: 使用AppConfig.threadCount控制并发数
+                var tasks = contentData.NextUrlList.Select(async urlStr =>
+                {
+                    var analyzeUrl = new AnalyzeUrl(
+                        mUrl: urlStr,
+                        source: bookSource,
+                        ruleData: book
+                    );
+
+                    var res = await analyzeUrl.GetStrResponseAsync();
+                    var result = await AnalyzeContentInternal(
+                        book, urlStr, res.Url, res.Body, contentRule,
+                        bookChapter, bookSource, mNextChapterUrl,
+                        getNextPageUrl: false,
+                        printLog: false,
+                        cancellationToken: cancellationToken);
+                    return result.Content;
+                }).ToList();
+
+                var results = await Task.WhenAll(tasks);
+                foreach (var content in results)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    contentList.Add(content);
+                }
+            }
+
+            var contentStr = string.Join("\n", contentList);
+
+            // 全文替换
+            var replaceRegex = contentRule.ReplaceRegex;
+            if (!string.IsNullOrEmpty(replaceRegex))
+            {
+                contentStr = string.Join("\n", AppPattern.LFRegex.Split(contentStr).Select(s => s.Trim()));
+                contentStr = analyzeRule.GetString(replaceRegex, contentStr);
+                contentStr = string.Join("\n", AppPattern.LFRegex.Split(contentStr).Select(s => $"\u3000\u3000{s}"));
+            }
+
+            Debug.Log(bookSource.BookSourceUrl, "┌获取章节名称");
+            Debug.Log(bookSource.BookSourceUrl, $"└{bookChapter.Title}");
+            Debug.Log(bookSource.BookSourceUrl, "┌获取正文内容");
+            Debug.Log(bookSource.BookSourceUrl, $"└\n{contentStr}");
+
+            if (!bookChapter.IsVolume && string.IsNullOrWhiteSpace(contentStr))
+            {
+                throw new Exception("内容为空");
+            }
+
+            if (needSave)
+            {
+                // TODO: BookHelp.SaveContent(bookSource, book, bookChapter, contentStr);
+            }
+
             return contentStr;
         }
 
         /// <summary>
-        /// 格式化内容
+        /// 内部解析正文方法
+        /// 对应 Kotlin 的私有 analyzeContent
         /// </summary>
-        private static string FormatContent(string content)
-        {
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                return "";
-            }
-
-            // 移除空白字符
-            content = content.Trim();
-
-            // 规范化段落
-            content = Regex.Replace(content, "\r\n", "\n");
-            content = Regex.Replace(content, "\r", "\n");
-            content = Regex.Replace(content, "\n{3,}", "\n\n"); // 最多保留两个换行
-
-            return content;
-        }
-
-        /// <summary>
-        /// 解析章节内容（便捷方法，对应 Kotlin 的 analyzeContent）
-        /// </summary>
-        public static async Task<string> analyzeContent(
-            BookSource bookSource,
+        private static async Task<ContentData> AnalyzeContentInternal(
             Book book,
-            BookChapter bookChapter,
             string baseUrl,
             string redirectUrl,
             string body,
-            string nextChapterUrl = null,
-            bool needSave = true)
+            ContentRule contentRule,
+            BookChapter chapter,
+            BookSource bookSource,
+            string nextChapterUrl,
+            bool getNextPageUrl = true,
+            bool printLog = true,
+            CancellationToken cancellationToken = default)
         {
-            return await AnalyzeContent(bookSource, book, bookChapter, baseUrl, redirectUrl, body, nextChapterUrl, needSave);
+            var analyzeRule = new AnalyzeRule(book, bookSource);
+            analyzeRule.SetContent(body, baseUrl);
+            // TODO: analyzeRule.SetCoroutineContext(coroutineContext);
+            var rUrl = analyzeRule.SetRedirectUrl(redirectUrl);
+            analyzeRule.SetNextChapterUrl(nextChapterUrl);
+            var nextUrlList = new List<string>();
+            analyzeRule.SetChapter(chapter);
+
+            // 获取正文 (unescape=false因为我们后面会单独处理HTML解码)
+            var content = analyzeRule.GetString(contentRule.Content);
+            content = HtmlFormatter.FormatKeepImg(content, rUrl);
+
+            // HTML实体解码
+            if (content.IndexOf('&') > -1)
+            {
+                content = HttpUtility.HtmlDecode(content);
+            }
+
+            // 获取下一页链接
+            if (getNextPageUrl)
+            {
+                var nextUrlRule = contentRule.NextContentUrl;
+                if (!string.IsNullOrEmpty(nextUrlRule))
+                {
+                    Debug.Log(bookSource.BookSourceUrl, "┌获取正文下一页链接", printLog);
+                    try
+                    {
+                        var urls = analyzeRule.GetStringList(nextUrlRule, isUrl: true);
+                        if (urls != null)
+                        {
+                            nextUrlList.AddRange(urls);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.Log(bookSource.BookSourceUrl, $"获取下一页链接出错: {e.Message}");
+                    }
+                    Debug.Log(bookSource.BookSourceUrl, $"└{string.Join("，", nextUrlList)}", printLog);
+                }
+            }
+
+            return new ContentData(content, nextUrlList);
+        }
+
+        /// <summary>
+        /// 内容数据类（对应 Kotlin 的 Pair&lt;String, List&lt;String&gt;&gt;）
+        /// </summary>
+        private class ContentData
+        {
+            public string Content { get; }
+            public List<string> NextUrlList { get; }
+
+            public ContentData(string content, List<string> nextUrlList)
+            {
+                Content = content;
+                NextUrlList = nextUrlList;
+            }
         }
     }
 }

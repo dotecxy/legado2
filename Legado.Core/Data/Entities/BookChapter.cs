@@ -22,6 +22,7 @@ namespace Legado.Core.Data.Entities
         /// </summary>
         [Indexed(Name = "IX_BookChapter_Url", Order = 1, Unique = true)]
         [Column("url")]
+        [PrimaryKey]
         [JsonProperty("url")]
         public string Url { get; set; } = "";
 

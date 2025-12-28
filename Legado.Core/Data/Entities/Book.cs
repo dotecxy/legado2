@@ -1,7 +1,9 @@
-﻿using Legado.Core.Models;
+﻿using Legado.Core.Extensions;
+using Legado.Core.Models;
 using Newtonsoft.Json;
 using SQLite;
-using System; // 对应 sqlite-net-pcl
+using System;
+using System.Collections.Generic; // 对应 sqlite-net-pcl
 
 namespace Legado.Core.Data.Entities
 {
@@ -121,7 +123,7 @@ namespace Legado.Core.Data.Entities
         /// </summary>
         [Column("dur_chapter_pos")]
         [JsonProperty("durChapterPos")]
-        public int DurChapterPos { get; set; } = 0;
+        public long DurChapterPos { get; set; } = 0;
 
         /// <summary>
         /// 上次阅读时间
@@ -194,6 +196,13 @@ namespace Legado.Core.Data.Entities
         public string TocHtml { get; set; }
 
         /// <summary>
+        /// 下载链接列表（用于WebFile类型书籍）
+        /// </summary>
+        [Ignore]
+        [JsonIgnore]
+        public List<string> DownloadUrls { get; set; }
+
+        /// <summary>
         /// 存储变量
         /// </summary>
         public virtual bool PutVariable(string key, string value)
@@ -224,7 +233,7 @@ namespace Legado.Core.Data.Entities
             return null;
         }
 
-        public bool SetCurrentChapter(BookChapter chapter, BookChapter lastestChapter, int chapterIndex, int pos)
+        public bool SetCurrentChapter(BookChapter chapter, BookChapter lastestChapter, int chapterIndex, long pos)
         {
             if (chapter == null) return false;
 

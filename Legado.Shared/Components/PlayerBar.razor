@@ -1,0 +1,200 @@
+﻿@inherits AppComponentBase
+@implements IDisposable
+
+@if (AudioService.IsPlaying && Nav.Uri.IndexOf("Audio") == -1)
+{
+    <div class="player-bar" @onclick="NavigateToPlayer">
+        <!-- 封面 -->
+        <div class="player-bar-cover">
+            @if (!string.IsNullOrEmpty(LegadoContext.CurrentBook?.CoverUrl))
+            {
+                <MudImage Src="@LegadoContext.CurrentBook.CoverUrl"
+                          Alt="Cover"
+                          Class="cover-img"
+                          ObjectFit="ObjectFit.Cover" />
+            }
+            else
+            {
+                <div class="cover-placeholder">
+                    <MudText Typo="Typo.body2">@GetCoverPlaceholder()</MudText>
+                </div>
+            }
+        </div>
+
+        <!-- 信息 -->
+        <div class="player-bar-info">
+            <MudText Class="bar-title" Typo="Typo.body2">@(LegadoContext.CurrentBook?.Name ?? "未知")</MudText>
+            <MudText Class="bar-chapter" Typo="Typo.caption">@(LegadoContext.CurrentChapter?.Title ?? "未选择章节")</MudText>
+            <!-- 进度条 -->
+            <MudProgressLinear Value="@GetProgress()" Color="Color.Primary" Class="bar-progress" />
+        </div>
+
+        <!-- 控制按钮 -->
+        <div class="player-bar-controls" @onclick:stopPropagation="true">
+            <MudIconButton Icon="@(LegadoContext.IsPlaying? Icons.Material.Filled.Pause : Icons.Material.Filled.PlayArrow)"
+                           Color="Color.Primary"
+                           Size="Size.Medium"
+                           OnClick="TogglePlay" />
+            <MudIconButton Icon="@Icons.Material.Filled.SkipNext"
+                           Color="Color.Default"
+                           Size="Size.Small"
+                           OnClick="NextChapter" />
+            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                           Color="Color.Default"
+                           Size="Size.Small"
+                           OnClick="ClosePlayer" />
+        </div>
+    </div>
+}
+
+<style>
+    .player-bar {
+        position: fixed;
+        bottom: 56px;
+        left: 0;
+        right: 0;
+        height: 56px;
+        background: var(--mud-palette-surface);
+        border-top: 1px solid var(--mud-palette-lines-default);
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        gap: 8px;
+        z-index: 1000;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+        cursor: pointer;
+    }
+
+    .player-bar-cover {
+        width: 44px;
+        height: 44px;
+        border-radius: 4px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .cover-img {
+        width: 100%;
+        height: 100%;
+    }
+
+    .cover-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%);
+        color: white;
+    }
+
+    .player-bar-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .bar-title {
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .bar-chapter {
+        color: var(--mud-palette-text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11px;
+    }
+
+    .bar-progress {
+        height: 2px !important;
+        margin-top: 2px;
+    }
+
+    .player-bar-controls {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex-shrink: 0;
+    }
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        LegadoContext.PropertyChanged += OnContextPropertyChanged;
+    }
+
+    /// <summary>
+    /// 属性变化时更新UI
+    /// </summary>
+    private void OnContextPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// 获取封面占位符
+    /// </summary>
+    private string GetCoverPlaceholder()
+    {
+        var name = LegadoContext.CurrentBook?.Name;
+        return !string.IsNullOrEmpty(name) ? name[0].ToString() : "?";
+    }
+
+    /// <summary>
+    /// 获取播放进度百分比
+    /// </summary>
+    private double GetProgress()
+    {
+        if (LegadoContext.ReadPosition <= 0) return 0;
+        var total = Math.Max(0, LegadoContext.ReadTotal);
+        return (LegadoContext.ReadPosition / total) * 100;
+    }
+
+    /// <summary>
+    /// 播放/暂停
+    /// </summary>
+    private async Task TogglePlay()
+    {
+        await LegadoContext.TogglePlayAsync();
+    }
+
+    /// <summary>
+    /// 下一章
+    /// </summary>
+    private async Task NextChapter()
+    {
+        await LegadoContext.NextChapterAsync();
+    }
+
+    /// <summary>
+    /// 关闭播放器（清空当前章节）
+    /// </summary>
+    private void ClosePlayer()
+    {
+        LegadoContext.CurrentChapter = null;
+    }
+
+    /// <summary>
+    /// 跳转到播放器页面
+    /// </summary>
+    private void NavigateToPlayer()
+    {
+        Nav.NavigateTo($"/Audio/0");
+    }
+
+    /// <summary>
+    /// 释放资源
+    /// </summary>
+    public void Dispose()
+    {
+        LegadoContext.PropertyChanged -= OnContextPropertyChanged;
+    }
+}

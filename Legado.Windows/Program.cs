@@ -40,11 +40,12 @@ namespace Legado.Windows
         public sealed class WinformHostedService : IHostedService
         {
             private IServiceProvider serviceProvider;
+            private QAutofacFactory factory;
 
             public void Run()
             {
                 var builder = Host.CreateDefaultBuilder();
-                builder.UseServiceProviderFactory(new QAutofacFactory(typeof(WinformModule)))
+                builder.UseServiceProviderFactory(factory = new QAutofacFactory(typeof(WinformModule)))
                     .ConfigureContainer<ContainerBuilder>(cb =>
                     {
                         cb.RegisterType<Form1>().AsSelf().SingleInstance();
@@ -62,6 +63,7 @@ namespace Legado.Windows
                 var host = builder.Build();
                 serviceProvider = host.Services;
                 host.Run();
+                factory.Dispose();
             }
 
             public Task StartAsync(CancellationToken cancellationToken)
@@ -80,6 +82,7 @@ namespace Legado.Windows
 
             public Task StopAsync(CancellationToken cancellationToken)
             {
+                factory.Shutdown();
                 return Task.CompletedTask;
             }
         }

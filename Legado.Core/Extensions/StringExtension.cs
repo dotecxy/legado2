@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Legado.Core.Utils
+namespace Legado.Core.Extensions
 {
     internal static class StringExtension
     {

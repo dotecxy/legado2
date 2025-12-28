@@ -457,11 +457,11 @@ namespace Legado.Core.Models.AnalyzeRules
                         {
                             result = sourceRule.Mode switch
                             {
-                                RuleMode.Regex => AnalyzeByRegex.GetElement(result?.ToString(), rule.Split(new string[] { "&&" }, StringSplitOptions.RemoveEmptyEntries)),
                                 RuleMode.Js => EvalJs(rule, result),
                                 RuleMode.Json => new AnalyzeByJsonPath(JsonConvert.SerializeObject(result)).GetStringList(rule),
                                 RuleMode.XPath => new AnalyzeByXPath(result).GetStringList(rule),
-                                _ => new AnalyzeByAngleSharp(result).GetStringList(rule)
+                                RuleMode.Default=> new AnalyzeByAngleSharp(result).GetStringList(rule),
+                                _=>rule
                             };
                         }
 
