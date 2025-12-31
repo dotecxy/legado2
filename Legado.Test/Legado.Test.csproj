@@ -18,11 +18,19 @@
     <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
+
+    <PackageReference Include="FreeSql" Version="*" />
+    <PackageReference Include="FreeSql.Provider.SqliteCore" Version="*" />
+    <PackageReference Include="FreeSql.Provider.MySqlConnector" Version="3.*" /> 
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.*" />
 
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Legado.Core\Legado.Core.csproj" />
+    <ProjectReference Include="..\Legado.FreeSql\Legado.FreeSql.csproj" />
   </ItemGroup>
 
   <ItemGroup>

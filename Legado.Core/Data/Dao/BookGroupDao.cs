@@ -10,7 +10,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 书籍分组数据访问实现（对应 Kotlin 的 BookGroupDao.kt）
     /// </summary>
-    public class BookGroupDao : ProxyDao<BookGroup>, IBookGroupDao
+    public class BookGroupDao : BaseDao<BookGroup>, IBookGroupDao
     {
         public BookGroupDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -148,8 +148,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task EnableGroupAsync(long groupId)
         {
-            var sql = "UPDATE book_groups SET show = 1 WHERE groupId = ?";
-            await ExecuteAsync(sql, groupId);
+            var sql = "UPDATE book_groups SET show = 1 WHERE groupId = @a";
+            await ExecuteAsync(sql, new { a= groupId });
         }
 
         // ================= 辅助方法 =================

@@ -3,7 +3,7 @@ using Legado.Core.Models;
 using Legado.Core.Models.AnalyzeRules;
 using Legado.Core.Utils;
 using Newtonsoft.Json;
-using SQLite;
+using Legado.FreeSql;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;

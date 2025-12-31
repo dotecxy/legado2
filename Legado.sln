@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 18
-VisualStudioVersion = 18.1.11312.151
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36705.20 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legado", "Legado\Legado.csproj", "{5B1167F8-A65F-4CAC-A0B8-F569D595EC57}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legado.Windows", "Legado.Windows\Legado.Windows.csproj", "{C6947262-92EB-472E-B07F-7FFE6A5EDE7E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legado.Shared", "Legado.Shared\Legado.Shared.csproj", "{38879EAC-183B-446E-B0BE-74B800098F7A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legado.FreeSql", "Legado.FreeSql\Legado.FreeSql.csproj", "{741D80BF-1E7A-40BA-8566-2B965233BCD8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{38879EAC-183B-446E-B0BE-74B800098F7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38879EAC-183B-446E-B0BE-74B800098F7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{38879EAC-183B-446E-B0BE-74B800098F7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{741D80BF-1E7A-40BA-8566-2B965233BCD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{741D80BF-1E7A-40BA-8566-2B965233BCD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{741D80BF-1E7A-40BA-8566-2B965233BCD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{741D80BF-1E7A-40BA-8566-2B965233BCD8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

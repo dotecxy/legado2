@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using SQLite; // 对应 sqlite-net-pcl
+using Legado.FreeSql; // 对应 sqlite-net-pcl
 using System;
 using System.Text.RegularExpressions;
 

@@ -1,4 +1,5 @@
 using Legado.Core.Data.Entities;
+using Legado.FreeSql;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -16,11 +17,11 @@ namespace Legado.Core.Data.Dao
     /// 书籍数据访问实现（对应 Kotlin 的 BookDao.kt）
     /// 使用 SQLite-net-pcl 进行数据库访问
     /// </summary>
-    public class BookDao : ProxyDao<Book>, IBookDao
+    public class BookDao : BaseDao<Book>, IBookDao
     {
         public BookDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            
+
         }
 
         // ================= 按分组查询 =================
@@ -210,8 +211,8 @@ namespace Legado.Core.Data.Dao
         public async Task<bool> HasFileAsync(string fileName)
         {
             // 需要 LIKE 查询,不能使用 ExistsAsync,保持原有逻辑
-            var sql = "SELECT COUNT(1) FROM books WHERE originName = ? OR origin LIKE ?";
-            var result = await ExecuteScalarAsync<int>(sql, fileName, $"%{fileName}%");
+            var sql = "SELECT COUNT(1) FROM books WHERE originName = @a OR origin LIKE @b";
+            var result = await ExecuteScalarAsync<int>(sql, new { a = fileName, b = $"%{fileName}%" });
             return result > 0;
         }
 
@@ -292,11 +293,11 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task ReplaceAsync(Book oldBook, Book newBook)
         {
-            await RunInTransactionAsync(trans =>
+            await RunInTransactionAsync((fsql) =>
             {
-                var sql = "DELETE FROM books WHERE bookUrl = ?";
-                trans.Execute(sql, oldBook.BookUrl);
-                trans.Insert(newBook);
+                var sql = "DELETE FROM books WHERE bookUrl = @a";
+                fsql.Ado.ExecuteNonQuery(sql, new { a = oldBook.BookUrl });
+                fsql.Insert(newBook);
             });
         }
 
@@ -305,8 +306,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateProgressAsync(string bookUrl, int pos)
         {
-            var sql = "UPDATE books SET durChapterPos = ? WHERE bookUrl = ?";
-            await ExecuteAsync(sql, pos, bookUrl);
+            var sql = "UPDATE books SET durChapterPos = @a WHERE bookUrl = @b";
+            await ExecuteAsync(sql, new { a = pos, b = bookUrl });
         }
 
         /// <summary>
@@ -314,8 +315,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateGroupAsync(long oldGroupId, long newGroupId)
         {
-            var sql = "UPDATE books SET `group` = ? WHERE `group` = ?";
-            await ExecuteAsync(sql, newGroupId, oldGroupId);
+            var sql = "UPDATE books SET `group` = @a WHERE `group` = @b";
+            await ExecuteAsync(sql, new { a = newGroupId, b = oldGroupId });
         }
 
         /// <summary>
@@ -323,8 +324,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task RemoveGroupAsync(long group)
         {
-            var sql = "UPDATE books SET `group` = `group` - ? WHERE (`group` & ?) > 0";
-            await ExecuteAsync(sql, group, group);
+            var sql = "UPDATE books SET `group` = `group` - @a WHERE (`group` & @b) > 0";
+            await ExecuteAsync(sql, new { a = group, b = group });
         }
 
         /// <summary>
@@ -333,8 +334,8 @@ namespace Legado.Core.Data.Dao
         public async Task DeleteNotShelfBookAsync()
         {
             // TODO: 实现 BookType.notShelf 的位运算逻辑
-            var sql = "DELETE FROM books WHERE type & ? > 0";
-            await ExecuteAsync(sql, 0);
+            var sql = "DELETE FROM books WHERE type & ? > @a";
+            await ExecuteAsync(sql, new { a= 0 });
         }
 
         // ================= Observable 数据流 =================

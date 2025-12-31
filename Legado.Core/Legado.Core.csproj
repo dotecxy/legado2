@@ -15,8 +15,8 @@
     <PackageReference Include="AngleSharp" Version="1.4.0" />
     <PackageReference Include="AngleSharp.XPath" Version="2.0.5" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.1" />
-    <PackageReference Include="Polly" Version="8.6.5" /> 
-    <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+    <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
+    <PackageReference Include="Polly" Version="8.6.5" />  
     <PackageReference Include="Jint" Version="4.4.2" /> 
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.1" />  
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
@@ -33,11 +33,20 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!--<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />-->
+  </ItemGroup>
 
 
   <ItemGroup>
     <Folder Include="Controls\" />
     <Folder Include="Helps\Source\" />
+  </ItemGroup>
+
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\Legado.FreeSql\Legado.FreeSql.csproj" />
   </ItemGroup>
  
 

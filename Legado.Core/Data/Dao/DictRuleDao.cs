@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 字典规则数据访问实现（对应 Kotlin 的 DictRuleDao.kt）
     /// </summary>
-    public class DictRuleDao : ProxyDao<DictRule>, IDictRuleDao
+    public class DictRuleDao : BaseDao<DictRule>, IDictRuleDao
     {
         public DictRuleDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

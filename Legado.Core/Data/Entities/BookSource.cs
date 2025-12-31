@@ -2,7 +2,7 @@
 using Legado.Core.Data.Entities.Rules;
 using Legado.Core.Utils;
 using Newtonsoft.Json;
-using SQLite;
+using Legado.FreeSql;
 using System;
 using System.Collections.Generic;
 using System.Linq;

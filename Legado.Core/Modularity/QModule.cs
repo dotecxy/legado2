@@ -61,6 +61,12 @@ namespace Legado.Core
 
         public static bool IsSiSModule(Type type)
         {
+
+            if (type == null) {
+
+                return false;
+            }
+
             var typeInfo = type.GetTypeInfo();
 
             return

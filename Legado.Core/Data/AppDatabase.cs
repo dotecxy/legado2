@@ -1,7 +1,7 @@
 using Legado.Core.Constants;
 using Legado.Core.Data.Dao;
 using Legado.Core.Data.Entities;
-using SQLite;
+using Legado.FreeSql;
 using System;
 using System.Data;
 using System.IO;
@@ -15,7 +15,7 @@ namespace Legado.Core.Data
     /// 应用数据库管理器
     /// 负责数据库初始化、迁移和DAO访问 
     /// </summary>
-    public class AppDatabase : QDbContext
+    public class AppDatabase : QDbContext, IInitializable
     {
         /// <summary>
         /// 数据库名称
@@ -38,7 +38,7 @@ namespace Legado.Core.Data
         public const string RssSourceTableName = "rssSources";
 
         private IDbConnection _dbConnection;
-        private SQLiteAsyncConnectionWrapper _asyncConnection;
+        private IFreeSql _fsql;
         private readonly IServiceProvider _serviceProvider;
         private bool _initialized = false;
 
@@ -178,8 +178,9 @@ namespace Legado.Core.Data
         /// </summary>
         /// <param name="databasePath">数据库文件路径</param>
         /// <param name="serviceProvider">服务提供者（可选）</param>
-        public AppDatabase(IServiceProvider serviceProvider = null) : base(serviceProvider)
+        public AppDatabase(IFreeSql freeSql, IServiceProvider serviceProvider = null) : base(serviceProvider)
         {
+            _fsql = freeSql;
         }
 
         /// <summary>
@@ -190,7 +191,6 @@ namespace Legado.Core.Data
             if (_initialized)
                 return;
 
-            _asyncConnection = new SQLiteAsyncConnectionWrapper(ConnectionString);
             _dbConnection = null;
 
             // 检查数据库版本
@@ -199,7 +199,7 @@ namespace Legado.Core.Data
             // 执行数据库迁移
             if (currentVersion < DatabaseMigrations.CurrentVersion)
             {
-                await DatabaseMigrations.MigrateAsync(_asyncConnection, currentVersion, DatabaseMigrations.CurrentVersion);
+                await DatabaseMigrations.MigrateAsync(_fsql, currentVersion, DatabaseMigrations.CurrentVersion);
                 await SetDatabaseVersionAsync(DatabaseMigrations.CurrentVersion);
             }
 
@@ -252,10 +252,10 @@ namespace Legado.Core.Data
             await InsertDefaultBookGroupsAsync();
 
             // 更新书源登录UI字段（清除无效的"null"字符串）
-            await _asyncConnection.ExecuteAsync("UPDATE book_sources SET loginUi = null WHERE loginUi = 'null'");
-            await _asyncConnection.ExecuteAsync("UPDATE rss_sources SET loginUi = null WHERE loginUi = 'null'");
-            await _asyncConnection.ExecuteAsync("UPDATE http_tts SET loginUi = null WHERE loginUi = 'null'");
-            await _asyncConnection.ExecuteAsync("UPDATE http_tts SET concurrentRate = '0' WHERE concurrentRate IS NULL");
+            await _fsql.ExecuteAsync("UPDATE book_sources SET loginUi = null WHERE loginUi = 'null'");
+            await _fsql.ExecuteAsync("UPDATE rss_sources SET loginUi = null WHERE loginUi = 'null'");
+            await _fsql.ExecuteAsync("UPDATE http_tts SET loginUi = null WHERE loginUi = 'null'");
+            await _fsql.ExecuteAsync("UPDATE http_tts SET concurrentRate = '0' WHERE concurrentRate IS NULL");
 
             // 插入默认键盘辅助数据
             await InsertDefaultKeyboardAssistsAsync();
@@ -267,32 +267,32 @@ namespace Legado.Core.Data
         private async Task InsertDefaultBookGroupsAsync()
         {
             // 全部分组
-            await _asyncConnection.ExecuteAsync(@"
+            await _fsql.ExecuteAsync(@"
                 INSERT OR IGNORE INTO book_groups(groupId, groupName, `order`, show) 
                 VALUES (-100, '全部', -10, 1)");
 
             // 本地分组
-            await _asyncConnection.ExecuteAsync(@"
+            await _fsql.ExecuteAsync(@"
                 INSERT OR IGNORE INTO book_groups(groupId, groupName, `order`, enableRefresh, show) 
                 VALUES (-101, '本地', -9, 0, 1)");
 
             // 音频分组
-            await _asyncConnection.ExecuteAsync(@"
+            await _fsql.ExecuteAsync(@"
                 INSERT OR IGNORE INTO book_groups(groupId, groupName, `order`, show) 
                 VALUES (-102, '音频', -8, 1)");
 
             // 网络未分组
-            await _asyncConnection.ExecuteAsync(@"
+            await _fsql.ExecuteAsync(@"
                 INSERT OR IGNORE INTO book_groups(groupId, groupName, `order`, show) 
                 VALUES (-103, '网络未分组', -7, 1)");
 
             // 本地未分组
-            await _asyncConnection.ExecuteAsync(@"
+            await _fsql.ExecuteAsync(@"
                 INSERT OR IGNORE INTO book_groups(groupId, groupName, `order`, show) 
                 VALUES (-104, '本地未分组', -6, 0)");
 
             // 更新失败分组
-            await _asyncConnection.ExecuteAsync(@"
+            await _fsql.ExecuteAsync(@"
                 INSERT OR IGNORE INTO book_groups(groupId, groupName, `order`, show) 
                 VALUES (-105, '更新失败', -1, 1)");
         }
@@ -302,7 +302,7 @@ namespace Legado.Core.Data
         /// </summary>
         private async Task InsertDefaultKeyboardAssistsAsync()
         {
-            var count = await _asyncConnection.ExecuteScalarAsync<int>(
+            var count = await _fsql.ExecuteAsync(
                 "SELECT COUNT(*) FROM keyboard_assists");
 
             if (count == 0)
@@ -319,7 +319,7 @@ namespace Legado.Core.Data
         {
             try
             {
-                var result = await _asyncConnection.ExecuteScalarAsync<int>("PRAGMA user_version");
+                var result = await _fsql.ExecuteScalarAsync<int>("PRAGMA user_version");
                 return result;
             }
             catch
@@ -333,8 +333,8 @@ namespace Legado.Core.Data
         /// </summary>
         private async Task SetDatabaseVersionAsync(int version)
         {
-            await _asyncConnection.ExecuteAsync($"PRAGMA user_version = {version}");
-        } 
+            await _fsql.ExecuteAsync($"PRAGMA user_version = {version}");
+        }
 
         /// <summary>
         /// 关闭数据库连接
@@ -347,6 +347,11 @@ namespace Legado.Core.Data
                     _dbConnection.Close();
                 _dbConnection.Dispose();
             }
+        }
+
+        public void Initialize()
+        {
+            _ = InitializeAsync();
         }
     }
 }

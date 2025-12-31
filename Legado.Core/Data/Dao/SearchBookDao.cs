@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 搜索书籍数据访问实现（对应 Kotlin 的 SearchBookDao.kt）
     /// </summary>
-    public class SearchBookDao : ProxyDao<SearchBook>, ISearchBookDao
+    public class SearchBookDao : BaseDao<SearchBook>, ISearchBookDao
     {
         public SearchBookDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -29,8 +29,8 @@ namespace Legado.Core.Data.Dao
         public async Task<SearchBook> GetAsync(string name, string author)
         {
             // TODO: 需要联表查询 book_sources，这里简化实现
-            var sql = "SELECT * FROM searchBooks WHERE name = ? AND author = ? ORDER BY originOrder LIMIT 1";
-            var result = await QueryAsync<SearchBook>(sql, name, author);
+            var sql = "SELECT * FROM searchBooks WHERE name = @a AND author = @b ORDER BY originOrder LIMIT 1";
+            var result = await QueryAsync<SearchBook>(sql, new { a = name, b = author });
             return result.FirstOrDefault();
         }
 
@@ -39,8 +39,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<SearchBook>> GetByNameAsync(string name)
         {
-            var sql = "SELECT * FROM searchBooks WHERE name = ?";
-            var result = await QueryAsync<SearchBook>(sql, name);
+            var sql = "SELECT * FROM searchBooks WHERE name = @a";
+            var result = await QueryAsync<SearchBook>(sql, new { a = name });
             return result;
         }
 
@@ -53,8 +53,8 @@ namespace Legado.Core.Data.Dao
             string sourceGroup)
         {
             // TODO: 需要实现联表查询
-            var sql = "SELECT * FROM searchBooks WHERE name = ? AND author LIKE ? ORDER BY originOrder";
-            var result = await QueryAsync<SearchBook>(sql, name, $"%{author}%");
+            var sql = "SELECT * FROM searchBooks WHERE name = @a AND author LIKE @b ORDER BY originOrder";
+            var result = await QueryAsync<SearchBook>(sql, new { a = name, b = $"%{author}%" });
             return result;
         }
 
@@ -68,9 +68,9 @@ namespace Legado.Core.Data.Dao
             string sourceGroup)
         {
             // TODO: 需要实现联表查询和模糊搜索
-            var sql = "SELECT * FROM searchBooks WHERE name = ? AND author LIKE ? ORDER BY originOrder";
-            var books = await QueryAsync<SearchBook>(sql, name, $"%{author}%");
-            
+            var sql = "SELECT * FROM searchBooks WHERE name = @a AND author LIKE @b ORDER BY originOrder";
+            var books = await QueryAsync<SearchBook>(sql, new { a = name, b = $"%{author}%" });
+
             // 在内存中过滤
             return books.Where(b =>
                 (b.OriginName?.Contains(key) ?? false) ||
@@ -84,8 +84,8 @@ namespace Legado.Core.Data.Dao
         public async Task<List<SearchBook>> GetEnableHasCoverAsync(string name, string author)
         {
             // TODO: 需要联表查询
-            var sql = "SELECT * FROM searchBooks WHERE name = ? AND author = ? AND coverUrl IS NOT NULL AND coverUrl != '' ORDER BY originOrder";
-            var result = await QueryAsync<SearchBook>(sql, name, author);
+            var sql = "SELECT * FROM searchBooks WHERE name = @a AND author = @b AND coverUrl IS NOT NULL AND coverUrl != '' ORDER BY originOrder";
+            var result = await QueryAsync<SearchBook>(sql, new { a = name, b = author });
             return result;
         }
 
@@ -127,8 +127,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task ClearAsync(string name, string author)
         {
-            var sql = "DELETE FROM searchBooks WHERE name = ? AND author = ?";
-            await ExecuteAsync(sql, name, author);
+            var sql = "DELETE FROM searchBooks WHERE name = @a AND author = @b";
+            await ExecuteAsync(sql, new { a = name, b = author });
         }
 
         /// <summary>
@@ -144,8 +144,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task ClearExpiredAsync(long time)
         {
-            var sql = "DELETE FROM searchBooks WHERE time < ?";
-            await ExecuteAsync(sql, time);
+            var sql = "DELETE FROM searchBooks WHERE time < @a";
+            await ExecuteAsync(sql, new { a = time });
         }
     }
 }

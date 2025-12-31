@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using SQLite;
+using Legado.FreeSql;
 using System;
 using System.Collections.Generic;
 using System.Linq;

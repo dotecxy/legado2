@@ -10,7 +10,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 替换规则数据访问实现（对应 Kotlin 的 ReplaceRuleDao.kt）
     /// </summary>
-    public class ReplaceRuleDao : ProxyDao<ReplaceRule>, IReplaceRuleDao
+    public class ReplaceRuleDao : BaseDao<ReplaceRule>, IReplaceRuleDao
     {
         public ReplaceRuleDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -33,8 +33,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<ReplaceRule>> SearchAsync(string key)
         {
-            var sql = "SELECT * FROM replace_rules WHERE `group` LIKE ? OR name LIKE ? ORDER BY `order`";
-            var result = await QueryAsync<ReplaceRule>(sql, $"%{key}%", $"%{key}%");
+            var sql = "SELECT * FROM replace_rules WHERE `group` LIKE @a OR name LIKE @b ORDER BY `order`";
+            var result = await QueryAsync<ReplaceRule>(sql, new { a = $"%{key}%", b = $"%{key}%" });
             return result;
         }
 

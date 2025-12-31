@@ -1,7 +1,7 @@
 ﻿using Legado.Core.Extensions;
 using Legado.Core.Models;
 using Newtonsoft.Json;
-using SQLite;
+using Legado.FreeSql;
 using System;
 using System.Collections.Generic; // 对应 sqlite-net-pcl
 

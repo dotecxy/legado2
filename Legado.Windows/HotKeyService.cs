@@ -2,6 +2,8 @@
 using Legado.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Nito.AsyncEx;
+using Serilog.Core;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -20,6 +22,7 @@ namespace Legado.Windows
         private readonly Form1 _form;
         private readonly INativeAudioService _audio;
         private readonly ILogger _logger;
+        private AsyncLock _mutex = new AsyncLock();
         private bool _initialization;
 
         private int _id = 1;
@@ -44,13 +47,14 @@ namespace Legado.Windows
 
         public async Task ApplyAsync()
         {
+            using var _ = await _mutex.LockAsync();
+
             if (_initialization)
             {
                 return;
             }
             _initialization = true;
             await Task.Delay(10);
-            if (_initialization) return;
             var id = ID;
             var hWnd = _form.Handle;
             if (User32.RegisterHotKey(hWnd, id, User32.HotKeyModifiers.MOD_ALT | User32.HotKeyModifiers.MOD_CONTROL, (uint)User32.VK.VK_SPACE))
@@ -69,6 +73,10 @@ namespace Legado.Windows
                     }
                 });
                 _registerHotKetRecords.AddOrUpdate(id, (hWnd, action), (_, _) => (hWnd, action));
+            }
+            else
+            {
+                _logger.LogError($"注册{User32.VK.VK_SPACE.ToString()}热键失败!");
             }
 
             if (_form is IMessageProc recv)

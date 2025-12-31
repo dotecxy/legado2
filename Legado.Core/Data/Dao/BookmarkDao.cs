@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 书签数据访问实现（对应 Kotlin 的 BookmarkDao.kt）
     /// </summary>
-    public class BookmarkDao : ProxyDao<Bookmark>, IBookmarkDao
+    public class BookmarkDao : BaseDao<Bookmark>, IBookmarkDao
     {
         public BookmarkDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -17,8 +17,8 @@ namespace Legado.Core.Data.Dao
 
         public async Task<List<Bookmark>> GetByBookAsync(string bookUrl)
         {
-            var sql = "SELECT * FROM bookmarks WHERE bookUrl = ? ORDER BY chapterIndex";
-            var result = await QueryAsync<Bookmark>(sql, bookUrl);
+            var sql = "SELECT * FROM bookmarks WHERE bookUrl = @a ORDER BY chapterIndex";
+            var result = await QueryAsync<Bookmark>(sql, new { a= bookUrl });
             return result;
         }
 
@@ -29,8 +29,8 @@ namespace Legado.Core.Data.Dao
 
         public async Task<Bookmark> GetByIndexAsync(string bookUrl, int chapterIndex)
         {
-            var sql = "SELECT * FROM bookmarks WHERE bookUrl = ? AND chapterIndex = ? LIMIT 1";
-            var result = await QueryAsync<Bookmark>(sql, bookUrl, chapterIndex);
+            var sql = "SELECT * FROM bookmarks WHERE bookUrl = @a AND chapterIndex = @b LIMIT 1";
+            var result = await QueryAsync<Bookmark>(sql, new { a=bookUrl, b=chapterIndex });
             return result.FirstOrDefault();
         }
 

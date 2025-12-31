@@ -528,6 +528,12 @@ namespace Legado.Shared
 
             var result = await _appDb.BookChapterDao.GetListAsync(p => p.BookUrl == CurrentBook.BookUrl);
 
+
+            if (!query && (result == null || result.Count == 0))
+            {
+                query = true;
+            }
+
             if (result != null)
             {
                 List<BookChapter> result2 = null;

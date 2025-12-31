@@ -1,5 +1,8 @@
+using AngleSharp.Dom;
 using Legado.Core.Data.Entities;
-using SQLite;
+using Microsoft.Extensions.DependencyInjection;
+using SharpCompress.Common;
+using Legado.FreeSql;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,44 +15,20 @@ using System.Threading.Tasks;
 namespace Legado.Core.Data
 {
     /// <summary>
-    /// 基于 SQLite-net-pcl 的通用 DAO 基类
+    /// 通用 DAO 基类
     /// </summary>
     /// <typeparam name="T">实体类型</typeparam>
     public abstract class BaseDao<T> : QDbContext where T : class, new()
     {
+        protected readonly IFreeSql _fsql;
         static object lockObj = new object();
+
         public BaseDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            using var conn = CreateConn();
-            conn.CreateTable<T>();
+            _fsql = serviceProvider.GetRequiredService<IFreeSql>();
+            //fsql.CodeFirst.SyncStructure<T>(); 
         }
 
-
-        /// <summary>
-        /// 创建同步连接（内部使用）
-        /// </summary>
-        protected SQLiteConnection CreateConn()
-        {
-            lock (lockObj)
-            {
-                var connStr = ConnectionString;
-                var conn = new SQLiteConnection(connStr);
-                return conn;
-            }
-        }
-
-        /// <summary>
-        /// 创建异步连接（内部使用）
-        /// </summary>
-        protected SQLiteAsyncConnectionWrapper CreateAsyncConn()
-        {
-            lock (lockObj)
-            {
-                var connStr = ConnectionString;
-                var conn = new SQLiteAsyncConnectionWrapper(connStr);
-                return conn;
-            }
-        }
 
         // ================= 查询方法 =================
 
@@ -58,10 +37,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<List<T>> GetAllAsync()
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.Table<T>().ToListAsync();
-            }
+            return await _fsql.Queryable<T>().ToListAsync();
         }
 
         /// <summary>
@@ -69,10 +45,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<List<T>> GetListAsync(Expression<Func<T, bool>> predicate = null)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.Table<T>().Where(predicate).ToListAsync();
-            }
+            return await _fsql.Queryable<T>().Where(predicate).ToListAsync();
         }
 
         /// <summary>
@@ -80,10 +53,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<T> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate = null)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.Table<T>().Where(predicate).FirstOrDefaultAsync();
-            }
+            return await _fsql.Queryable<T>().Where(predicate).FirstAsync();
         }
 
         /// <summary>
@@ -91,10 +61,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<T> GetAsync(object primaryKey)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.GetAsync<T>(primaryKey);
-            }
+            return await _fsql.Queryable<T>().WhereDynamic(primaryKey).FirstAsync();
         }
 
         /// <summary>
@@ -102,10 +69,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<T> FindAsync(object primaryKey)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.FindAsync<T>(primaryKey);
-            }
+            return await _fsql.Queryable<T>().WhereDynamic(primaryKey).FirstAsync();
         }
 
         // ================= 计数/存在性检查 =================
@@ -115,10 +79,8 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> CountAsync()
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.Table<T>().CountAsync();
-            }
+            return (int)await _fsql.Queryable<T>().CountAsync();
+
         }
 
         /// <summary>
@@ -126,10 +88,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> CountAsync(Expression<Func<T, bool>> predicate = null)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.Table<T>().Where(predicate).CountAsync();
-            }
+            return (int)await _fsql.Queryable<T>().Where(predicate).CountAsync();
         }
 
         /// <summary>
@@ -137,11 +96,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate = null)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                var count = await conn.Table<T>().Where(predicate).CountAsync();
-                return count > 0;
-            }
+            return await _fsql.Queryable<T>().Where(predicate).AnyAsync();
         }
 
         // ================= 插入方法 =================
@@ -151,10 +106,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> InsertAsync(T entity)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.InsertAsync(entity);
-            }
+            return await _fsql.Insert<T>(entity).ExecuteAffrowsAsync();
         }
 
         /// <summary>
@@ -162,10 +114,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> InsertAllAsync(IEnumerable<T> entities)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.InsertAllAsync(entities);
-            }
+            return await _fsql.Insert<T>(entities).ExecuteAffrowsAsync();
         }
 
         /// <summary>
@@ -173,10 +122,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> InsertOrReplaceAsync(T entity)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.InsertOrReplaceAsync(entity);
-            }
+            return await _fsql.InsertOrUpdate<T>().SetSource(entity).ExecuteAffrowsAsync();
         }
 
         /// <summary>
@@ -184,18 +130,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> InsertOrReplaceAllAsync(IEnumerable<T> entities)
         {
-            int count = 0;
-            await using (var conn = CreateAsyncConn())
-            {
-                foreach (var item in entities)
-                {
-                    await conn.RunInTransactionAsync(transaction =>
-                    {
-                        count += transaction.InsertOrReplace(item);
-                    });
-                }
-                return count;
-            }
+            return await _fsql.InsertOrUpdate<T>().SetSource(entities).ExecuteAffrowsAsync();
         }
 
         // ================= 更新方法 =================
@@ -205,10 +140,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> UpdateAsync(T entity)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.UpdateAsync(entity);
-            }
+            return await _fsql.Update<T>(entity).ExecuteAffrowsAsync();
         }
 
         /// <summary>
@@ -216,10 +148,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> UpdateAllAsync(IEnumerable<T> entities)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.UpdateAllAsync(entities);
-            }
+            return await _fsql.Update<T>(entities).ExecuteAffrowsAsync();
         }
 
         // ================= 删除方法 =================
@@ -229,10 +158,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> DeleteAsync(T entity)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.DeleteAsync(entity);
-            }
+            return await _fsql.Delete<T>(entity).ExecuteAffrowsAsync();
         }
 
         /// <summary>
@@ -240,10 +166,8 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> DeleteAsync(object primaryKey)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.DeleteAsync<T>(primaryKey);
-            }
+            return await _fsql.Delete<T>(primaryKey).ExecuteAffrowsAsync();
+
         }
 
         /// <summary>
@@ -251,18 +175,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> DeleteAllAsync(IEnumerable<T> entities)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                var count = 0;
-                await conn.RunInTransactionAsync(transaction =>
-                {
-                    foreach (var entity in entities)
-                    {
-                        count += transaction.Delete(entity);
-                    }
-                });
-                return count;
-            }
+            return await _fsql.Delete<T>(entities).ExecuteAffrowsAsync();
         }
 
         /// <summary>
@@ -270,19 +183,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual async Task<int> DeleteAllAsync(Expression<Func<T, bool>> predicate = null)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                var items = await conn.Table<T>().Where(predicate).ToListAsync();
-                var count = 0;
-                await conn.RunInTransactionAsync(transaction =>
-                {
-                    foreach (var item in items)
-                    {
-                        count += transaction.Delete(item);
-                    }
-                });
-                return count;
-            }
+            return await _fsql.Delete<T>().Where(predicate).ExecuteAffrowsAsync();
         }
 
         // ================= 执行 SQL 方法 =================
@@ -290,58 +191,50 @@ namespace Legado.Core.Data
         /// <summary>
         /// 执行 SQL 语句（返回受影响的行数）
         /// </summary>
-        public virtual async Task<int> ExecuteAsync(string sql, params object[] args)
+        public virtual async Task<int> ExecuteAsync(string sql, object args = null)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.ExecuteAsync(sql, args);
-            }
+            return await _fsql.Ado.ExecuteNonQueryAsync(sql, args);
         }
 
         /// <summary>
         /// 执行查询 SQL（返回标量值）
         /// </summary>
-        public virtual async Task<TResult> ExecuteScalarAsync<TResult>(string sql, params object[] args)
+        public virtual async Task<T> ExecuteScalarAsync<T>(string sql, object args = null)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.ExecuteScalarAsync<TResult>(sql, args);
-            }
+            return await _fsql.Ado.QuerySingleAsync<T>(sql, args);
+
         }
 
         /// <summary>
         /// 执行查询 SQL（返回对象列表）
         /// </summary>
-        public virtual async Task<List<T>> QueryAsync(string sql, params object[] args)
+        public virtual async Task<List<T>> QueryAsync(string sql, object args = null)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.QueryAsync<T>(sql, args);
-            }
+            return await _fsql.Ado.QueryAsync<T>(sql, args);
+
         }
 
         /// <summary>
-        /// 执行查询 SQL（返回指定类型的对象列表）
+        /// 执行查询 SQL（返回对象列表）
         /// </summary>
-        public virtual async Task<List<TResult>> QueryAsync<TResult>(string sql, params object[] args) where TResult : new()
+        public virtual async Task<List<T>> QueryAsync<T>(string sql, object args = null)
         {
-            await using (var conn = CreateAsyncConn())
-            {
-                return await conn.QueryAsync<TResult>(sql, args);
-            }
+            return await _fsql.Ado.QueryAsync<T>(sql, args);
         }
+
 
         // ================= 事务方法 =================
 
         /// <summary>
         /// 在事务中执行操作
         /// </summary>
-        public virtual async Task RunInTransactionAsync(Action<SQLiteConnection> action)
+        public virtual async Task RunInTransactionAsync(Action<IFreeSql> action)
         {
-            await using (var conn = CreateAsyncConn())
+            await Task.Delay(1);
+            _fsql.Transaction(() =>
             {
-                await conn.RunInTransactionAsync(action);
-            }
+                action?.Invoke(_fsql);
+            });
         }
 
         // ================= 同步方法（供特殊场景使用） =================
@@ -351,10 +244,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual List<T> GetAll()
         {
-            using (var conn = CreateConn())
-            {
-                return conn.Table<T>().ToList();
-            }
+            return _fsql.Queryable<T>().ToList();
         }
 
         /// <summary>
@@ -362,10 +252,7 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual int Insert(T entity)
         {
-            using (var conn = CreateConn())
-            {
-                return conn.Insert(entity);
-            }
+            return _fsql.Insert<T>(entity).ExecuteAffrows();
         }
 
         /// <summary>
@@ -373,10 +260,8 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual int Update(T entity)
         {
-            using (var conn = CreateConn())
-            {
-                return conn.Update(entity);
-            }
+            return _fsql.Update<T>(entity).ExecuteAffrows();
+
         }
 
         /// <summary>
@@ -384,31 +269,10 @@ namespace Legado.Core.Data
         /// </summary>
         public virtual int Delete(T entity)
         {
-            using (var conn = CreateConn())
-            {
-                return conn.Delete(entity);
-            }
-        }
-    }
+            return _fsql.Delete<T>(entity).ExecuteAffrows();
 
-    public sealed class SQLiteAsyncConnectionWrapper : SQLiteAsyncConnection, IAsyncDisposable
-    {
-        public SQLiteAsyncConnectionWrapper(SQLiteConnectionString connectionString) : base(connectionString)
-        {
-        }
+        } 
 
-        public SQLiteAsyncConnectionWrapper(string databasePath, bool storeDateTimeAsTicks = true) : base(databasePath, storeDateTimeAsTicks)
-        {
-        }
-
-        public SQLiteAsyncConnectionWrapper(string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = true) : base(databasePath, openFlags, storeDateTimeAsTicks)
-        {
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await CloseAsync();
-        }
     }
 
 }

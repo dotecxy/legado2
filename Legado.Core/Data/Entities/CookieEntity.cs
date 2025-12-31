@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using SQLite;
+using Legado.FreeSql;
 
 namespace Legado.Core.Data.Entities
 {

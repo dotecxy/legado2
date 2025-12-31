@@ -2,8 +2,7 @@ using Legado.Core.App;
 using Legado.Core.Data.Entities;
 using System;
 using System.Threading;
-using System.Threading.Tasks;
-using static SQLite.SQLite3;
+using System.Threading.Tasks; 
 
 namespace Legado.Core.Helps.Source
 {

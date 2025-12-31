@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 书籍章节数据访问实现（对应 Kotlin 的 BookChapterDao.kt）
     /// </summary>
-    public class BookChapterDao : ProxyDao<BookChapter>, IBookChapterDao
+    public class BookChapterDao : BaseDao<BookChapter>, IBookChapterDao
     {
         public BookChapterDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -20,8 +20,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookChapter>> SearchAsync(string bookUrl, string key)
         {
-            var sql = "SELECT * FROM chapters WHERE bookUrl = ? AND title LIKE ?";
-            var result = await QueryAsync<BookChapter>(sql, bookUrl, $"%{key}%");
+            var sql = "SELECT * FROM chapters WHERE bookUrl = @a AND title LIKE @b";
+            var result = await QueryAsync<BookChapter>(sql, new { a = bookUrl, b = $"%{key}%" });
             return result;
         }
 
@@ -34,8 +34,8 @@ namespace Legado.Core.Data.Dao
             int start,
             int end)
         {
-            var sql = "SELECT * FROM chapters WHERE bookUrl = ? AND `index` >= ? AND `index` <= ? AND title LIKE ?";
-            var result = await QueryAsync<BookChapter>(sql, bookUrl, start, end, $"%{key}%");
+            var sql = "SELECT * FROM chapters WHERE bookUrl = @a AND `index` >= @b AND `index` <= @c AND title LIKE @d";
+            var result = await QueryAsync<BookChapter>(sql, new { a=bookUrl, b=start, c=end, d=$"%{key}%" });
             return result;
         }
 
@@ -44,8 +44,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookChapter>> GetChaptersAsync(string bookUrl)
         {
-            var sql = "SELECT * FROM chapters WHERE bookUrl = ? ORDER BY `index`";
-            var result = await QueryAsync<BookChapter>(sql, bookUrl);
+            var sql = "SELECT * FROM chapters WHERE bookUrl = @a ORDER BY `index`";
+            var result = await QueryAsync<BookChapter>(sql, new { a= bookUrl });
             return result;
         }
 
@@ -57,8 +57,8 @@ namespace Legado.Core.Data.Dao
             int start,
             int end)
         {
-            var sql = "SELECT * FROM chapters WHERE bookUrl = ? AND `index` >= ? AND `index` <= ? ORDER BY `index`";
-            var result = await QueryAsync<BookChapter>(sql, bookUrl, start, end);
+            var sql = "SELECT * FROM chapters WHERE bookUrl = @a AND `index` >= @b AND `index` <= @c ORDER BY `index`";
+            var result = await QueryAsync<BookChapter>(sql, new { a = bookUrl, b = start, c = end });
             return result;
         }
 
@@ -83,8 +83,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<int> GetCountAsync(string bookUrl)
         {
-            var sql = "SELECT COUNT(*) FROM chapters WHERE bookUrl = ?";
-            return await ExecuteScalarAsync<int>(sql, bookUrl);
+            var sql = "SELECT COUNT(*) FROM chapters WHERE bookUrl = @a";
+            return await ExecuteScalarAsync<int>(sql, new { a= bookUrl });
         }
 
         /// <summary>
@@ -114,8 +114,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task DeleteAsync(string bookUrl)
         {
-            var sql = "DELETE FROM chapters WHERE bookUrl = ?";
-            await ExecuteAsync(sql, bookUrl);
+            var sql = "DELETE FROM chapters WHERE bookUrl = @a";
+            await ExecuteAsync(sql, new { a = bookUrl });
         }
 
         /// <summary>
@@ -123,8 +123,8 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateWordCountAsync(string bookUrl, string url, string wordCount)
         {
-            var sql = "UPDATE chapters SET wordCount = ? WHERE bookUrl = ? AND url = ?";
-            await ExecuteAsync(sql, wordCount, bookUrl, url);
+            var sql = "UPDATE chapters SET word_count = @a WHERE book_url = @b AND url = @c";
+            await ExecuteAsync(sql, new { a = wordCount, b = bookUrl, c = url }); 
         }
     }
 }

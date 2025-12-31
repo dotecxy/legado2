@@ -71,12 +71,12 @@ namespace Legado.Core.DependencyInjection
             _configurationAction(builder, opt);
             CreationOptions = opt;
 
-            //builder.RegisterInstance<QApplicationCreationOptions>(opt);
 
             AddCoreServices(builder);
             Modules = LoadModules(builder);
 
             builder.Register(_ => this).AsSelf().SingleInstance();
+            builder.RegisterInstance<QConfigurationBuilderOptions>(opt.Configuration);
 
             return builder;
         }
@@ -154,7 +154,7 @@ namespace Legado.Core.DependencyInjection
         private IQModuleDescriptor[] LoadModules(ContainerBuilder builder)
         {
             ModuleLoader loader = new ModuleLoader();
-            return loader.LoadModules(builder, _serviceProviderAccessor, this.StartupModuleType);
+            return loader.LoadModules(builder, _serviceProviderAccessor, this.StartupModuleType ?? typeof(QuickCoreModule));
         }
 
         private void InitializeModules()

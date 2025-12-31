@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 阅读记录数据访问实现（对应 Kotlin 的 ReadRecordDao.kt）
     /// </summary>
-    public class ReadRecordDao : ProxyDao<ReadRecord>, IReadRecordDao
+    public class ReadRecordDao : BaseDao<ReadRecord>, IReadRecordDao
     {
         public ReadRecordDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

@@ -8,7 +8,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// 缓存数据访问实现（对应 Kotlin 的 CacheDao.kt）
     /// </summary>
-    public class CacheDao : ProxyDao<Cache>, ICacheDao
+    public class CacheDao : BaseDao<Cache>, ICacheDao
     {
         public CacheDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {

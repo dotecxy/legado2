@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// HTTP TTS 数据访问实现（对应 Kotlin 的 HttpTTSDao.kt）
     /// </summary>
-    public class HttpTTSDao : ProxyDao<HttpTTS>, IHttpTTSDao
+    public class HttpTTSDao : BaseDao<HttpTTS>, IHttpTTSDao
     {
         public HttpTTSDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
