@@ -37,7 +37,7 @@ namespace Legado.Core.Data.Dao
 
         public async Task DeleteAsync(string record)
         {
-            var sql = "DELETE FROM rssReadRecord WHERE record = ?";
+            var sql = "DELETE FROM rss_read_records WHERE record = ?";
             await ExecuteAsync(sql, record);
         }
     }

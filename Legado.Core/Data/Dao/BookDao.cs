@@ -1,5 +1,5 @@
 using Legado.Core.Data.Entities;
-using Legado.FreeSql;
+using  Legado.DB;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -211,7 +211,7 @@ namespace Legado.Core.Data.Dao
         public async Task<bool> HasFileAsync(string fileName)
         {
             // 需要 LIKE 查询,不能使用 ExistsAsync,保持原有逻辑
-            var sql = "SELECT COUNT(1) FROM books WHERE originName = @a OR origin LIKE @b";
+            var sql = "SELECT COUNT(1) FROM books WHERE origin_name = @a OR origin LIKE @b";
             var result = await ExecuteScalarAsync<int>(sql, new { a = fileName, b = $"%{fileName}%" });
             return result > 0;
         }
@@ -239,7 +239,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<Book> GetLastReadBookAsync()
         {
-            var sql = "SELECT * FROM books ORDER BY durChapterTime DESC LIMIT 1";
+            var sql = "SELECT * FROM books ORDER BY dur_chapter_time DESC LIMIT 1";
             var result = await QueryAsync<Book>(sql);
             return result.FirstOrDefault();
         }
@@ -295,7 +295,7 @@ namespace Legado.Core.Data.Dao
         {
             await RunInTransactionAsync((fsql) =>
             {
-                var sql = "DELETE FROM books WHERE bookUrl = @a";
+                var sql = "DELETE FROM books WHERE book_url = @a";
                 fsql.Ado.ExecuteNonQuery(sql, new { a = oldBook.BookUrl });
                 fsql.Insert(newBook);
             });
@@ -306,7 +306,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task UpdateProgressAsync(string bookUrl, int pos)
         {
-            var sql = "UPDATE books SET durChapterPos = @a WHERE bookUrl = @b";
+            var sql = "UPDATE books SET dur_chapter_pos = @a WHERE book_url = @b";
             await ExecuteAsync(sql, new { a = pos, b = bookUrl });
         }
 

@@ -1,48 +1,46 @@
+using FreeSql.DataAnnotations;
 using Newtonsoft.Json;
-using Legado.FreeSql;
 using System;
 
 namespace Legado.Core.Data.Entities
 {
     /// <summary>
-    /// 词典规则（对应 DictRule.kt）
+    /// 词典规则（对应 Kotlin 的 DictRule.kt）
     /// </summary>
-    [Table("dict_rules")]
+    [Table(Name = "dict_rules")]
     public class DictRule
     {
         /// <summary>
         /// ID
         /// </summary>
-        [PrimaryKey]
-        [Column("id")]
+        [Column(IsPrimary = true)]
         [JsonProperty("id")]
         public long Id { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
         /// <summary>
         /// 名称
         /// </summary>
-        [Column("name")]
         [JsonProperty("name")]
         public string Name { get; set; } = "";
 
         /// <summary>
         /// 规则
         /// </summary>
-        [Column("rule")]
+        
         [JsonProperty("rule")]
         public string Rule { get; set; } = "";
 
         /// <summary>
         /// 是否启用
         /// </summary>
-        [Column("enabled")]
+        
         [JsonProperty("enabled")]
         public bool Enabled { get; set; } = true;
 
         /// <summary>
         /// 排序
         /// </summary>
-        [Column("sort_number")]
+        
         [JsonProperty("sortNumber")]
         public int SortNumber { get; set; } = 0;
 

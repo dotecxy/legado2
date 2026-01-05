@@ -1,5 +1,5 @@
 using Legado.Core.Data.Entities;
-using Legado.FreeSql;
+using  Legado.DB;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -237,7 +237,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<bool> HasAsync(string key)
         {
-            var sql = "SELECT COUNT(*) FROM book_sources WHERE bookSourceUrl = ?";
+            var sql = "SELECT COUNT(*) FROM book_sources WHERE book_source_url = ?";
             var count = await ExecuteScalarAsync<int>(sql, key);
             return count > 0;
         }
@@ -319,7 +319,7 @@ namespace Legado.Core.Data.Dao
         public async Task DeleteAsync(string key)
         {
             await ExecuteAsync(
-                "DELETE FROM book_sources WHERE bookSourceUrl = ?",
+                "DELETE FROM book_sources WHERE book_source_url = ?",
                 key
             );
         }
@@ -334,7 +334,7 @@ namespace Legado.Core.Data.Dao
                 foreach (var bs in bookSources)
                 {
                     transaction.Execute(
-                        "DELETE FROM book_sources WHERE bookSourceUrl = @a",
+                        "DELETE FROM book_sources WHERE book_source_url = @a",
                        new { a = bs.BookSourceUrl }
                     );
                 }
@@ -347,7 +347,7 @@ namespace Legado.Core.Data.Dao
         public async Task EnableAsync(string bookSourceUrl, bool enable)
         {
             await ExecuteAsync(
-                "UPDATE book_sources SET enabled = ? WHERE bookSourceUrl = @a",
+                "UPDATE book_sources SET enabled = ? WHERE book_source_url = @a",
                 new { a = enable ? 1 : 0, bookSourceUrl }
             );
         }
@@ -370,7 +370,7 @@ namespace Legado.Core.Data.Dao
                 foreach (var bs in bookSources)
                 {
                     transaction.Execute(
-                        "UPDATE book_sources SET enabled = @a WHERE bookSourceUrl = @b",
+                        "UPDATE book_sources SET enabled = @a WHERE book_source_url = @b",
                         new { a = enable ? 1 : 0, b = bs.BookSourceUrl }
                     );
                 }
@@ -383,7 +383,7 @@ namespace Legado.Core.Data.Dao
         public async Task EnableExploreAsync(string bookSourceUrl, bool enable)
         {
             await ExecuteAsync(
-                "UPDATE book_sources SET enabledExplore = ? WHERE bookSourceUrl = @a",
+                "UPDATE book_sources SET enabled_explore = ? WHERE book_source_url = @a",
                 new { a = enable ? 1 : 0, bookSourceUrl }
             );
         }
@@ -398,7 +398,7 @@ namespace Legado.Core.Data.Dao
                 foreach (var bs in bookSources)
                 {
                     transaction.Execute(
-                        "UPDATE book_sources SET enabledExplore = ? WHERE bookSourceUrl = @a",
+                        "UPDATE book_sources SET enabled_explore = ? WHERE book_source_url = @a",
                         new { a = enable ? 1 : 0, bs.BookSourceUrl }
                     );
                 }
@@ -411,7 +411,7 @@ namespace Legado.Core.Data.Dao
         public async Task UpdateOrderAsync(string bookSourceUrl, int customOrder)
         {
             await ExecuteAsync(
-                "UPDATE book_sources SET customOrder = @a WHERE bookSourceUrl = @b",
+                "UPDATE book_sources SET custom_order = @a WHERE book_source_url = @b",
                 new { a = customOrder, b = bookSourceUrl }
             );
         }
@@ -434,7 +434,7 @@ namespace Legado.Core.Data.Dao
                 foreach (var bs in bookSources)
                 {
                     transaction.Execute(
-                        "UPDATE book_sources SET customOrder = @a WHERE bookSourceUrl = @b",
+                        "UPDATE book_sources SET custom_order = @a WHERE book_source_url = @b",
                        new { a = bs.CustomOrder, b = bs.BookSourceUrl }
                     );
                 }
@@ -447,7 +447,7 @@ namespace Legado.Core.Data.Dao
         public async Task UpdateGroupAsync(string bookSourceUrl, string bookSourceGroup)
         {
             await ExecuteAsync(
-                "UPDATE book_sources SET bookSourceGroup = @a WHERE bookSourceUrl = @b",
+                "UPDATE book_sources SET book_source_group = @a WHERE book_source_url = @b",
                 new { a = bookSourceGroup, b = bookSourceUrl }
             );
         }
@@ -465,7 +465,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookSource>> GetAllEnabledAsync()
         {
-            var sql = "SELECT * FROM book_sources WHERE enabled = 1 ORDER BY customOrder";
+            var sql = "SELECT * FROM book_sources WHERE enabled = 1 ORDER BY custom_order";
             var result = await QueryAsync<BookSource>(sql);
             return result;
         }
@@ -482,7 +482,7 @@ namespace Legado.Core.Data.Dao
                     if (!string.IsNullOrEmpty(bs.BookSourceGroup))
                     {
                         transaction.Execute(
-                            "UPDATE book_sources SET bookSourceGroup = @a WHERE bookSourceUrl = @b",
+                            "UPDATE book_sources SET book_source_group = @a WHERE book_source_url = @b",
                            new { a = bs.BookSourceGroup, b = bs.BookSourceUrl }
                         );
                     }

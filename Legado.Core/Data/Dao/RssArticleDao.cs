@@ -17,7 +17,7 @@ namespace Legado.Core.Data.Dao
 
         public async Task<List<RssArticle>> GetByOriginAsync(string origin)
         {
-            var sql = "SELECT * FROM rssArticles WHERE origin = ? ORDER BY pubDate DESC";
+            var sql = "SELECT * FROM rss_articles WHERE origin = ? ORDER BY pub_date DESC";
             var result = await QueryAsync<RssArticle>(sql, origin);
             return result;
         }
@@ -44,7 +44,7 @@ namespace Legado.Core.Data.Dao
 
         public async Task DeleteByOriginAsync(string origin)
         {
-            var sql = "DELETE FROM rssArticles WHERE origin = ?";
+            var sql = "DELETE FROM rss_articles WHERE origin = ?";
             await ExecuteAsync(sql, origin);
         }
     }

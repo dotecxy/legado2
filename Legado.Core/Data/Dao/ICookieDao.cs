@@ -12,22 +12,22 @@ namespace Legado.Core.Data.Dao
         /// <summary>
         /// 根据URL获取Cookie
         /// </summary>
-        Task<CookieEntity> GetAsync(string url);
+        Task<Cookie> GetAsync(string url);
 
         /// <summary>
         /// 获取所有 OkHttp Cookie（URL包含'|'）
         /// </summary>
-        Task<List<CookieEntity>> GetOkHttpCookiesAsync();
+        Task<List<Cookie>> GetOkHttpCookiesAsync();
 
         /// <summary>
         /// 插入Cookie
         /// </summary>
-        Task InsertAsync(params CookieEntity[] cookies);
+        Task InsertAsync(params Cookie[] cookies);
 
         /// <summary>
         /// 更新Cookie
         /// </summary>
-        Task UpdateAsync(params CookieEntity[] cookies);
+        Task UpdateAsync(params Cookie[] cookies);
 
         /// <summary>
         /// 根据URL删除Cookie

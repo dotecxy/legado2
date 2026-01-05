@@ -1,7 +1,8 @@
+using FreeSql;
 using Legado.Core.Constants;
 using Legado.Core.Data.Dao;
 using Legado.Core.Data.Entities;
-using Legado.FreeSql;
+using Legado.DB;
 using System;
 using System.Data;
 using System.IO;
@@ -35,15 +36,12 @@ namespace Legado.Core.Data
         /// <summary>
         /// RSS源表名
         /// </summary>
-        public const string RssSourceTableName = "rssSources";
+        public const string RssSourceTableName = "rss_sources";
 
-        private IDbConnection _dbConnection;
         private IFreeSql _fsql;
         private readonly IServiceProvider _serviceProvider;
         private bool _initialized = false;
 
-        // 实现IDbContext接口
-        public IDbConnection DbConnection => _dbConnection;
 
         // DAO属性
         private BookDao _bookDao;
@@ -191,8 +189,6 @@ namespace Legado.Core.Data
             if (_initialized)
                 return;
 
-            _dbConnection = null;
-
             // 检查数据库版本
             var currentVersion = await GetDatabaseVersionAsync();
 
@@ -221,10 +217,7 @@ namespace Legado.Core.Data
         /// 创建所有表
         /// </summary>
         private async Task CreateTablesAsync()
-        {
-            // 使用Dapper执行创建表的SQL
-            // TODO: 根据实体类自动生成CREATE TABLE语句
-            // 或者使用SQL脚本文件
+        { 
             await Task.CompletedTask;
         }
 
@@ -233,7 +226,11 @@ namespace Legado.Core.Data
         /// </summary>
         private async Task OnCreateAsync()
         {
-            // TODO: 可以在这里设置数据库区域设置等
+            _fsql.CodeFirst.SyncStructure<BookGroup>();
+            _fsql.CodeFirst.SyncStructure<BookSource>();
+            _fsql.CodeFirst.SyncStructure<RssSource>();
+            _fsql.CodeFirst.SyncStructure<HttpTTS>(); 
+            _fsql.CodeFirst.SyncStructure<KeyboardAssist>();
             await Task.CompletedTask;
         }
 
@@ -242,12 +239,6 @@ namespace Legado.Core.Data
         /// </summary>
         private async Task OnOpenAsync()
         {
-            // 打开连接
-            if (_dbConnection.State != ConnectionState.Open)
-            {
-                _dbConnection.Open();
-            }
-
             // 插入默认书籍分组
             await InsertDefaultBookGroupsAsync();
 
@@ -341,12 +332,6 @@ namespace Legado.Core.Data
         /// </summary>
         public override void Dispose()
         {
-            if (_dbConnection != null)
-            {
-                if (_dbConnection.State == ConnectionState.Open)
-                    _dbConnection.Close();
-                _dbConnection.Dispose();
-            }
         }
 
         public void Initialize()

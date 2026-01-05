@@ -1,4 +1,4 @@
-﻿namespace Legado.FreeSql;
+﻿namespace Legado.DB;
 
 /// <summary>
 /// 配置类

@@ -22,8 +22,8 @@
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
 
     <PackageReference Include="FreeSql" Version="*" />
-    <PackageReference Include="FreeSql.Provider.SqliteCore" Version="*" />
     <PackageReference Include="FreeSql.Provider.MySqlConnector" Version="3.*" /> 
+    <PackageReference Include="FreeSql.Provider.SqliteCore" Version="*" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.*" />
 
   </ItemGroup>

@@ -59,10 +59,39 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookGroup>> GetShowAsync()
         {
-            // TODO: 实现复杂的联表查询逻辑
-            // 涉及 books 表的联合查询
-            var groups = await GetAllAsync();
-            return groups.Where(g => g.Show).ToList();
+            // 复杂的SQL查询，模拟Kotlin版本的show查询逻辑
+            var sql = @"
+                WITH const AS (SELECT SUM(groupId) AS sumGroupId FROM book_groups WHERE groupId > 0)
+                SELECT bg.* FROM book_groups bg 
+                JOIN const c
+                WHERE bg.show > 0
+                AND (
+                    (bg.groupId >= 0 AND EXISTS (SELECT 1 FROM books b WHERE (b.[group] & bg.groupId) > 0))
+                    OR bg.groupId = -1
+                    OR (bg.groupId = -2 AND EXISTS (SELECT 1 FROM books b WHERE (b.type & 1) > 0))  -- 假设BookType.local = 1
+                    OR (bg.groupId = -3 AND EXISTS (SELECT 1 FROM books b WHERE (b.type & 2) > 0))  -- 假设BookType.audio = 2
+                    OR (bg.groupId = -11 AND EXISTS (SELECT 1 FROM books b WHERE (b.type & 4) > 0)) -- 假设BookType.updateError = 4
+                    OR (bg.groupId = -4
+                        AND EXISTS (
+                            SELECT 1 FROM books b 
+                            WHERE (b.type & 2) = 0  -- not audio
+                            AND (b.type & 1) = 0   -- not local
+                            AND (c.sumGroupId & b.[group]) = 0
+                        )
+                    )
+                    OR (bg.groupId = -5
+                        AND EXISTS (
+                            SELECT 1 FROM books b 
+                            WHERE (b.type & 2) = 0  -- not audio
+                            AND (b.type & 1) > 0   -- is local
+                            AND (c.sumGroupId & b.[group]) = 0
+                        )
+                    )
+                )
+                ORDER BY bg.[order]";
+            
+            var result = await QueryAsync<BookGroup>(sql);
+            return result;
         }
 
         /// <summary>
@@ -103,9 +132,9 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<bool> CanAddGroupAsync()
         {
-            var sql = "SELECT COUNT(*) FROM book_groups WHERE groupId >= 0 OR groupId = ?";
-            var count = await ExecuteScalarAsync<int>(sql, long.MinValue);
-            return count < 64;
+            var sql = "SELECT CASE WHEN COUNT(*) < 64 THEN 1 ELSE 0 END FROM book_groups WHERE groupId >= 0 OR groupId = @a";
+            var result = await ExecuteScalarAsync<int>(sql, new { a = long.MinValue });
+            return result > 0;
         }
 
         // ================= 增删改操作 =================

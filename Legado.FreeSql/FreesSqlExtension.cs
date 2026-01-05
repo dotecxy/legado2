@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Legado.FreeSql
+namespace Legado.DB
 {
     public static class FreesSqlExtension
     {

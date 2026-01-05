@@ -12,7 +12,7 @@ alwaysApply: true
 8.项目界面参考阅读3.0 app 移植过来的， github地址为https://github.com/gedoor/legado
 9.方法和非私有属性都是大驼峰命名法，只读和私有属性使用_+小写
 10.json字段注解使用小驼峰命名法
-11.数据注解使用下划线命名法 
+11.数据注解使用小驼峰命名法 
 12.数据model的属性格式如下： /// <summary>
             /// 中文注释
             /// </summary>

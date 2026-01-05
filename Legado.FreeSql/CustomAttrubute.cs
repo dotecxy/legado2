@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Legado.FreeSql
+namespace Legado.DB
 {
 
     [AttributeUsage(AttributeTargets.Class)]
@@ -19,13 +19,11 @@ namespace Legado.FreeSql
     }
 
 
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public class IndexedAttribute : Attribute
     {
         public string Name { get; set; }
-        public string Field { get; set; }
-
-        public int Order { get; set; }
+        public string Field { get; set; } 
 
         public virtual bool Unique { get; set; }
 
@@ -33,15 +31,13 @@ namespace Legado.FreeSql
         {
         }
 
-        public IndexedAttribute(string name, int order)
+        public IndexedAttribute(string name)
         {
-            Name = name;
-            Order = order;
+            Name = name; 
         }
-        public IndexedAttribute(string name,string field, int order)
+        public IndexedAttribute(string name,string field)
         {
-            Name = name;
-            Order = order;
+            Name = name; 
             Field = field;
         }
 

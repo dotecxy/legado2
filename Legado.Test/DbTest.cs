@@ -3,7 +3,7 @@ using FreeSql.DataAnnotations;
 using FreeSql.Internal.Model;
 using Legado.Core;
 using Legado.Core.DependencyInjection;
-using Legado.FreeSql;
+using  Legado.DB;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -12,8 +12,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using TableAttribute = Legado.FreeSql.TableAttribute;
+using System.Threading.Tasks; 
 
 namespace Legado.Test
 {
@@ -86,7 +85,7 @@ namespace Legado.Test
         }
     }
 
-    [Table( "student")]
+    [DB.Table( "student")]
     public class Student
     {
         [PrimaryKey]

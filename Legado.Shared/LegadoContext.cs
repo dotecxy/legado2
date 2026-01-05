@@ -474,7 +474,7 @@ namespace Legado.Shared
             if (CurrentBook != null && this.CurrentChapter != null && this.CurrentChapters?.Count > 0)
             {
                 CurrentBook.Origin = CurrentBookSource?.BookSourceUrl ?? "unknow";
-                CurrentBook.SetCurrentChapter(this.CurrentChapter, CurrentChapters?.LastOrDefault(), CurrentChapter.Index, ReadPosition);
+                CurrentBook.SetCurrentChapter(this.CurrentChapter, CurrentChapters?.LastOrDefault(), CurrentChapters.Count, CurrentChapter.Index, ReadPosition);
                 await _appDb.BookDao.InsertOrReplaceAsync(CurrentBook);
             }
 

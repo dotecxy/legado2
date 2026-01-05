@@ -1,81 +1,81 @@
-﻿using Newtonsoft.Json;
-using Legado.FreeSql; // 对应 sqlite-net-pcl
+using FreeSql.DataAnnotations;
+using Newtonsoft.Json;
 using System;
 using System.Text.RegularExpressions;
 
 namespace Legado.Core.Data.Entities
 {
     /// <summary>
-    /// 净化规则 (对应 ReplaceRule.kt)
+    /// 净化规则 (对应 Kotlin 的 ReplaceRule.kt)
     /// </summary>
-    [Table("replace_rules")]
+    [Table(Name = "replace_rules")]
     public class ReplaceRule
     {
-        [PrimaryKey, AutoIncrement]
+        [Column(IsPrimary = true, IsIdentity = true)]
         [JsonProperty("id")]
         public long Id { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-        [Column("name")]
+        
         [JsonProperty("name")]
         public string Name { get; set; } = "";
 
-        [Column("group")]
+        
         [JsonProperty("group")]
         public string Group { get; set; }
 
-        [Column("pattern")]
+        
         [JsonProperty("pattern")]
         public string Pattern { get; set; } = "";
 
-        [Column("replacement")]
+        
         [JsonProperty("replacement")]
         public string Replacement { get; set; } = "";
 
         // 作用范围 (书名或源URL的正则，为空则对所有生效)
-        [Column("scope")]
+        
         [JsonProperty("scope")]
         public string Scope { get; set; }
 
         /// <summary>
         /// 作用于标题
         /// </summary>
-        [Column("scopeTitle")]
+        
         [JsonProperty("scopeTitle")]
         public bool ScopeTitle { get; set; } = false;
 
         /// <summary>
         /// 作用于正文
         /// </summary>
-        [Column("scopeContent")]
+        
         [JsonProperty("scopeContent")]
         public bool ScopeContent { get; set; } = true;
 
         /// <summary>
         /// 排除范围
         /// </summary>
-        [Column("excludeScope")]
+        
         [JsonProperty("excludeScope")]
         public string ExcludeScope { get; set; }
 
-        [Column("isEnabled")]
+        
         [JsonProperty("isEnabled")]
         public bool IsEnabled { get; set; } = true;
 
-        [Column("isRegex")]
+        
         [JsonProperty("isRegex")]
         public bool IsRegex { get; set; } = true;
 
         /// <summary>
         /// 超时时间（毫秒）
         /// </summary>
-        [Column("timeoutMillisecond")]
+        
         [JsonProperty("timeoutMillisecond")]
         public long TimeoutMillisecond { get; set; } = 3000L;
 
         /// <summary>
         /// 排序（对应 Kotlin 的 order）
         /// </summary>
-        [Column("sortOrder")]
+        
         [JsonProperty("order")]
         public int Order { get; set; } = int.MinValue;
 

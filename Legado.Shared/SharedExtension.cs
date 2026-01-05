@@ -1,15 +1,17 @@
 using Autofac;
 using Legado.Core;
+using Legado.Core.Models.WebBooks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using MudBlazor;
+using MudBlazor.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MudBlazor;
-using MudBlazor.Services;
-using Legado.Core.Models.WebBooks;
 
 namespace Legado.Shared
 {
@@ -26,6 +28,23 @@ namespace Legado.Shared
                 // Register a default implementation that does nothing for non-Windows platforms
                 // The actual Windows implementation will override this in the Windows project
                 s.AddSingleton<IWindowTitleBar, DefaultWindowTitleBarService>();
+
+
+                s.AddFreeSql((option, p) =>
+                {
+                    var confuration = p.GetRequiredService<IQConfiguration>();
+                    var applitionOption = p.GetRequiredService<QConfigurationBuilderOptions>();
+                    var dbpath = Path.Combine(applitionOption.BasePath, "legado.db");
+                    var logger = p.GetRequiredService<ILogger<IFreeSql>>();
+
+                    option.ConfigSQLiteBuild(dbpath, logger);
+
+                }
+                , configureAction: (fsql, p) =>
+                {
+                    fsql.ConfigureSQLitePRAGMA();
+                }
+                , configEntityPropertyImage: true);
             });
         } 
     }

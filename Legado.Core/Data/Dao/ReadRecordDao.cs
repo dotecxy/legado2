@@ -17,7 +17,7 @@ namespace Legado.Core.Data.Dao
 
         public override async Task<List<ReadRecord>> GetAllAsync()
         {
-            var sql = "SELECT * FROM readRecord ORDER BY readTime DESC";
+            var sql = "SELECT * FROM read_records ORDER BY read_time DESC";
             var result = await QueryAsync<ReadRecord>(sql);
             return result;
         }
@@ -44,7 +44,7 @@ namespace Legado.Core.Data.Dao
 
         public async Task ClearAsync()
         {
-            await ExecuteAsync("DELETE FROM readRecord");
+            await ExecuteAsync("DELETE FROM read_records");
         }
     }
 }

@@ -15,11 +15,11 @@
     <SupportedPlatform Include="browser" />
   </ItemGroup>
 
-  <ItemGroup> 
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.22" />
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.22" /> 
   </ItemGroup>
 
-  <ItemGroup> 
+  <ItemGroup>
     <PackageReference Include="MudBlazor" Version="8.15.0" />
   </ItemGroup>
 

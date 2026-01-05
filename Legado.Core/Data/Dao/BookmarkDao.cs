@@ -17,7 +17,7 @@ namespace Legado.Core.Data.Dao
 
         public async Task<List<Bookmark>> GetByBookAsync(string bookUrl)
         {
-            var sql = "SELECT * FROM bookmarks WHERE bookUrl = @a ORDER BY chapterIndex";
+            var sql = "SELECT * FROM bookmarks WHERE book_url = @a ORDER BY chapter_index";
             var result = await QueryAsync<Bookmark>(sql, new { a= bookUrl });
             return result;
         }
@@ -29,7 +29,7 @@ namespace Legado.Core.Data.Dao
 
         public async Task<Bookmark> GetByIndexAsync(string bookUrl, int chapterIndex)
         {
-            var sql = "SELECT * FROM bookmarks WHERE bookUrl = @a AND chapterIndex = @b LIMIT 1";
+            var sql = "SELECT * FROM bookmarks WHERE book_url = @a AND chapter_index = @b LIMIT 1";
             var result = await QueryAsync<Bookmark>(sql, new { a=bookUrl, b=chapterIndex });
             return result.FirstOrDefault();
         }

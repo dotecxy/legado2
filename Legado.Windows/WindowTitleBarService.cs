@@ -22,6 +22,9 @@ namespace Legado.Windows
         private double _windowStartTop;
         private IntPtr hWnd;
 
+
+
+
         /// <summary>
         /// 构造函数
         /// </summary>
@@ -35,7 +38,7 @@ namespace Legado.Windows
                 {
                     return;
                 }
-                if (User32.GetCursorPos(out var point))
+                if (GetCursorPos(out var point))
                 {
                     var mauiWindow = InvokeOnUIAsync(frm =>
                     {
@@ -47,6 +50,9 @@ namespace Legado.Windows
                 }
             }, null, 10, 10);
         }
+
+        [DllImport("user32.dll")]
+        private static extern bool GetCursorPos(out Point point);
 
         private Form GetMainForm()
         {
@@ -187,7 +193,7 @@ namespace Legado.Windows
 
         public async Task DragMouseDown()
         {
-            if (User32.GetCursorPos(out var point))
+            if (GetCursorPos(out var point))
             {
                 _mouseStartX = point.X;
                 _mouseStartY = point.Y;

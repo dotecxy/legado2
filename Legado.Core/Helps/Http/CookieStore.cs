@@ -1,4 +1,4 @@
-﻿using Legado.Core.Data;
+using Legado.Core.Data;
 using Legado.Core.Data.Dao;
 using Legado.Core.Data.Entities;
 using Legado.Core.Helps.Http.Api;
@@ -50,7 +50,7 @@ namespace Legado.Core.Helps.Http
                 var domain = NetworkUtils.GetSubDomain(url);
                 CacheManager.Instance.PutMemory($"{domain}_cookie", cookie ?? "");
 
-                var cookieBean = new CookieEntity { Url = domain, Cookie = cookie ?? "" };
+                var cookieBean = new Cookie { Url = domain, Value = cookie ?? "" };
                 await _cookieDao.InsertAsync(cookieBean);
             }
             catch (Exception e)
@@ -232,8 +232,8 @@ namespace Legado.Core.Helps.Http
             var cookieEntity = await _cookieDao.GetAsync(domain);
             if (cookieEntity != null)
             {
-                CacheManager.Instance.PutMemory($"{domain}_cookie", cookieEntity.Cookie);
-                return cookieEntity.Cookie;
+                CacheManager.Instance.PutMemory($"{domain}_cookie", cookieEntity.Value);
+                return cookieEntity.Value;
             }
 
             return "";

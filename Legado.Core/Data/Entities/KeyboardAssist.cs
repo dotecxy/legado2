@@ -1,41 +1,39 @@
+using FreeSql.DataAnnotations;
 using Newtonsoft.Json;
-using Legado.FreeSql;
 
 namespace Legado.Core.Data.Entities
 {
     /// <summary>
-    /// 键盘辅助（对应 KeyboardAssist.kt）
+    /// 键盘辅助（对应 Kotlin 的 KeyboardAssist.kt）
     /// </summary>
-    [Table("keyboard_assists")]
+    [Table(Name = "keyboard_assists")]
     public class KeyboardAssist
     {
         /// <summary>
         /// 类型（主键之一）
         /// </summary>
-        [PrimaryKey]
-        [Column("type")]
+        [Column(IsPrimary = true)]
         [JsonProperty("type")]
         public int Type { get; set; } = 0;
 
         /// <summary>
         /// 键（主键之一）
         /// </summary>
-        [PrimaryKey]
-        [Column("key")]
+        [Column(IsPrimary = true, StringLength = 255)]
         [JsonProperty("key")]
         public string Key { get; set; } = "";
 
         /// <summary>
         /// 值
         /// </summary>
-        [Column("value")]
+        
         [JsonProperty("value")]
         public string Value { get; set; } = "";
 
         /// <summary>
         /// 序号
         /// </summary>
-        [Column("serial_no")]
+        
         [JsonProperty("serialNo")]
         public int SerialNo { get; set; } = 0;
     }

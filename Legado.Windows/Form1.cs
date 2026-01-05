@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System.ComponentModel;
 using System.DirectoryServices;
 using System.IO;
 using static Legado.Windows.Program;
@@ -22,42 +23,13 @@ using static Legado.Windows.Program;
 namespace Legado.Windows
 {
     [SingletonDependency]
-    public partial class Form1 : BorderlessForm, IMessageProc
+    public partial class Form1 : AntdUI.Window, IMessageProc
     {
-
-        const string URL = "https://jihulab.com/aoaostar/legado/-/raw/release/cache/71e56d4f1d8f1bff61fdd3582ef7513600a9e108.json";
-        const string URL2 = "https://legado.aoaostar.com/sources/e29e19ee.json";
-        static readonly List<BookSource> bookList = new List<BookSource>();
-        static List<BookSource> bookSource;
+        private bool _quick = false;
         string webViewTrue = JsonConvert.SerializeObject(new { webView = true });
 
         static Form1()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                NullValueHandling = NullValueHandling.Ignore,
-                Formatting = Formatting.Indented
-            };
-
-            var json = URL.GetStringAsync().Result;
-            var json2 = URL2.GetStringAsync().Result;
-            json = File.ReadAllText(@"..\..\..\..\bookSource.json");
-            json2 = json2.Replace("[]", "{}");
-            var bookSourcePath = @"D:\testb\bs.txt";
-            if (!File.Exists(bookSourcePath))
-            {
-                Console.WriteLine("错误：文件不存在！");
-                return;
-            }
-
-            var bookSourceContent = File.ReadAllText(bookSourcePath);
-            bookList.AddRange(JsonConvert.DeserializeObject<List<BookSource>>(bookSourceContent));
-            bookList = new List<BookSource>() { bookList[bookList.Count - 4] };
-            bookSource = bookList;
-
-            //bookList.AddRange(JsonConvert.DeserializeObject<List<BookSource>>(json));
-            //bookList.AddRange(JsonConvert.DeserializeObject<List<BookSource>>(json2));
         }
 
 
@@ -68,7 +40,7 @@ namespace Legado.Windows
         public Form1(IServiceProvider services)
         {
             InitializeComponent();
-
+            notifyIcon.Visible = true;
             // 创建 BlazorWebView 控件
             blazorWebView = new BlazorWebView
             {
@@ -84,30 +56,11 @@ namespace Legado.Windows
             Controls.Add(blazorWebView);
 
             // 设置窗体属性
-            this.Text = "Blazor Windows Forms Hybrid App";
+            this.Text = "Legado";
+
+            CenterToScreen();
         }
 
-        protected async override void OnShown(EventArgs e)
-        {
-            base.OnShown(e);
-
-            // WebBook webBook = new WebBook();
-            //var searchResults= await webBook.SearchBookAwait(bookList.First(), "诡秘之主");
-
-            // var first = searchResults.Where(s => s.Author == "爱潜水的乌贼" && s.Name == "诡秘之主").First();
-            // var book = first.ToBook();
-            // var infoList = await webBook.GetBookInfoAwait(bookList.First(), book);
-            // var chapterList = await webBook.GetChapterListAwait(bookList.First(), book);
-            // var first2 = chapterList.First();
-            // var content = await webBook.GetContentAwait(bookList.First(), book, first2);
-            // var content3 = ContentHelper.ReSegment(content, first2.Title);
-            // AnalyzeUrl ar = new AnalyzeUrl(first2.BookUrl);
-            // content = ar.htmlFormat(content);
-
-
-
-
-        }
 
         protected override void WndProc(ref Message m)
         {
@@ -116,10 +69,39 @@ namespace Legado.Windows
         }
 
         protected async override void OnClosed(EventArgs e)
-        { 
+        {
             var host = QServiceProvider.GetService<IHost>();
             await host.StopAsync();
             base.OnClosed(e);
         }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            if (!_quick && e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+
+
+                this.WindowState = FormWindowState.Minimized;
+
+                Hide();
+                return;
+            }
+            base.OnFormClosing(e);
+        }
+
+
+        private void QuitQToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            _quick = true;
+            this.Close();
+        }
+
+        private void ShowToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Show();
+            this.WindowState = FormWindowState.Normal;
+        }
     }
 }
+

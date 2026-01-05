@@ -20,7 +20,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookChapter>> SearchAsync(string bookUrl, string key)
         {
-            var sql = "SELECT * FROM chapters WHERE bookUrl = @a AND title LIKE @b";
+            var sql = "SELECT * FROM chapters WHERE book_url = @a AND title LIKE @b";
             var result = await QueryAsync<BookChapter>(sql, new { a = bookUrl, b = $"%{key}%" });
             return result;
         }
@@ -34,7 +34,7 @@ namespace Legado.Core.Data.Dao
             int start,
             int end)
         {
-            var sql = "SELECT * FROM chapters WHERE bookUrl = @a AND `index` >= @b AND `index` <= @c AND title LIKE @d";
+            var sql = "SELECT * FROM chapters WHERE book_url = @a AND `index` >= @b AND `index` <= @c AND title LIKE @d";
             var result = await QueryAsync<BookChapter>(sql, new { a=bookUrl, b=start, c=end, d=$"%{key}%" });
             return result;
         }
@@ -44,7 +44,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<BookChapter>> GetChaptersAsync(string bookUrl)
         {
-            var sql = "SELECT * FROM chapters WHERE bookUrl = @a ORDER BY `index`";
+            var sql = "SELECT * FROM chapters WHERE book_url = @a ORDER BY `index`";
             var result = await QueryAsync<BookChapter>(sql, new { a= bookUrl });
             return result;
         }
@@ -57,7 +57,7 @@ namespace Legado.Core.Data.Dao
             int start,
             int end)
         {
-            var sql = "SELECT * FROM chapters WHERE bookUrl = @a AND `index` >= @b AND `index` <= @c ORDER BY `index`";
+            var sql = "SELECT * FROM chapters WHERE book_url = @a AND `index` >= @b AND `index` <= @c ORDER BY `index`";
             var result = await QueryAsync<BookChapter>(sql, new { a = bookUrl, b = start, c = end });
             return result;
         }
@@ -83,7 +83,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<int> GetCountAsync(string bookUrl)
         {
-            var sql = "SELECT COUNT(*) FROM chapters WHERE bookUrl = @a";
+            var sql = "SELECT COUNT(*) FROM chapters WHERE book_url = @a";
             return await ExecuteScalarAsync<int>(sql, new { a= bookUrl });
         }
 
@@ -114,7 +114,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task DeleteAsync(string bookUrl)
         {
-            var sql = "DELETE FROM chapters WHERE bookUrl = @a";
+            var sql = "DELETE FROM chapters WHERE book_url = @a";
             await ExecuteAsync(sql, new { a = bookUrl });
         }
 

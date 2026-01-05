@@ -2,7 +2,7 @@ using AngleSharp.Dom;
 using Legado.Core.Data.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using SharpCompress.Common;
-using Legado.FreeSql;
+using  Legado.DB;
 using System;
 using System.Collections.Generic;
 using System.Data;

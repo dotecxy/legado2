@@ -1,7 +1,31 @@
 项目使用c#语言
- Legado.Core 是书源解析库，负责解析书源
- Legado.Shared 是Razor组件库，负责提供Razor组件 UI使用的mudblazor（文档地址：https://www.mudblazor.com/docs/overview）
- Legado.Windows 是Winform框架+webview2承载Legdo.Shared中的Razor组件
+1.始终用中文回答
+2.这是一个Blazor hybrid项目
+3.异步方法始终Async结尾，要添加Task返回值或者valuetask
+4.Legado.Core 是规则解析库等核心数据
+5.Legado.Shared 是一个razor组件使用的是mudblazor库做UI
+6.Legado.Windows 是一个承载razor组件的windows blazor 项目
+7.这个项目更倾向于Windows和手机app项目，布局优先app
+8.项目界面参考阅读3.0 app 移植过来的， github地址为https://github.com/gedoor/legado
+9.方法和非私有属性都是大驼峰命名法，只读和私有属性使用_+小写
+10.json字段注解使用小驼峰命名法
+11.数据注解使用小驼峰命名法 
+12.数据model的属性格式如下： /// <summary>
+            /// 中文注释
+            /// </summary>
+            [Column("column_name")]
+            [JsonProperty("jsonPropertyName")]
+            public Type PropertyName { get; set; } 
 
- DI使用autofac代替默认的DI容器
-页面需要是响应式，支持移动端和PC端
+13.kt代码文件移植的时候，结构保持一致，缺失的地方用TODO占位
+
+
+
+14支持MVVM的属性定义格式如下
+private int myVar;
+
+public int MyProperty
+{
+    get { return myVar; }
+    set { Set(ref myVar,value); }
+}

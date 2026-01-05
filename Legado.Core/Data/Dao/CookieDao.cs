@@ -9,7 +9,7 @@ namespace Legado.Core.Data.Dao
     /// <summary>
     /// Cookie 数据访问实现（对应 Kotlin 的 CookieDao.kt）
     /// </summary>
-    public class CookieDao : BaseDao<CookieEntity>, ICookieDao
+    public class CookieDao : BaseDao<Cookie>, ICookieDao
     {
         public CookieDao(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -18,7 +18,7 @@ namespace Legado.Core.Data.Dao
         /// <summary>
         /// 根据 URL 获取 Cookie
         /// </summary>
-        public async Task<CookieEntity> GetAsync(string url)
+        public async Task<Cookie> GetAsync(string url)
         {
             return await GetFirstOrDefaultAsync(c => c.Url == url);
         }
@@ -26,17 +26,17 @@ namespace Legado.Core.Data.Dao
         /// <summary>
         /// 获取 OkHttp Cookies（URL 包含 '|'）
         /// </summary>
-        public async Task<List<CookieEntity>> GetOkHttpCookiesAsync()
+        public async Task<List<Cookie>> GetOkHttpCookiesAsync()
         {
             var sql = "SELECT * FROM cookies WHERE url LIKE '%|%'";
-            var result = await QueryAsync<CookieEntity>(sql);
+            var result = await QueryAsync<Cookie>(sql);
             return result;
         }
 
         /// <summary>
         /// 插入 Cookie
         /// </summary>
-        public async Task InsertAsync(params CookieEntity[] cookies)
+        public async Task InsertAsync(params Cookie[] cookies)
         {
             if (cookies == null || cookies.Length == 0)
                 return;
@@ -47,7 +47,7 @@ namespace Legado.Core.Data.Dao
         /// <summary>
         /// 更新 Cookie
         /// </summary>
-        public async Task UpdateAsync(params CookieEntity[] cookies)
+        public async Task UpdateAsync(params Cookie[] cookies)
         {
             if (cookies == null || cookies.Length == 0)
                 return;

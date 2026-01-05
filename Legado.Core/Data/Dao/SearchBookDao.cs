@@ -29,7 +29,7 @@ namespace Legado.Core.Data.Dao
         public async Task<SearchBook> GetAsync(string name, string author)
         {
             // TODO: 需要联表查询 book_sources，这里简化实现
-            var sql = "SELECT * FROM searchBooks WHERE name = @a AND author = @b ORDER BY originOrder LIMIT 1";
+            var sql = "SELECT * FROM search_books WHERE name = @a AND author = @b ORDER BY origin_order LIMIT 1";
             var result = await QueryAsync<SearchBook>(sql, new { a = name, b = author });
             return result.FirstOrDefault();
         }
@@ -39,7 +39,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task<List<SearchBook>> GetByNameAsync(string name)
         {
-            var sql = "SELECT * FROM searchBooks WHERE name = @a";
+            var sql = "SELECT * FROM search_books WHERE name = @a";
             var result = await QueryAsync<SearchBook>(sql, new { a = name });
             return result;
         }
@@ -53,7 +53,7 @@ namespace Legado.Core.Data.Dao
             string sourceGroup)
         {
             // TODO: 需要实现联表查询
-            var sql = "SELECT * FROM searchBooks WHERE name = @a AND author LIKE @b ORDER BY originOrder";
+            var sql = "SELECT * FROM search_books WHERE name = @a AND author LIKE @b ORDER BY origin_order";
             var result = await QueryAsync<SearchBook>(sql, new { a = name, b = $"%{author}%" });
             return result;
         }
@@ -68,7 +68,7 @@ namespace Legado.Core.Data.Dao
             string sourceGroup)
         {
             // TODO: 需要实现联表查询和模糊搜索
-            var sql = "SELECT * FROM searchBooks WHERE name = @a AND author LIKE @b ORDER BY originOrder";
+            var sql = "SELECT * FROM search_books WHERE name = @a AND author LIKE @b ORDER BY origin_order";
             var books = await QueryAsync<SearchBook>(sql, new { a = name, b = $"%{author}%" });
 
             // 在内存中过滤
@@ -84,7 +84,7 @@ namespace Legado.Core.Data.Dao
         public async Task<List<SearchBook>> GetEnableHasCoverAsync(string name, string author)
         {
             // TODO: 需要联表查询
-            var sql = "SELECT * FROM searchBooks WHERE name = @a AND author = @b AND coverUrl IS NOT NULL AND coverUrl != '' ORDER BY originOrder";
+            var sql = "SELECT * FROM search_books WHERE name = @a AND author = @b AND cover_url IS NOT NULL AND cover_url != '' ORDER BY origin_order";
             var result = await QueryAsync<SearchBook>(sql, new { a = name, b = author });
             return result;
         }
@@ -127,7 +127,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task ClearAsync(string name, string author)
         {
-            var sql = "DELETE FROM searchBooks WHERE name = @a AND author = @b";
+            var sql = "DELETE FROM search_books WHERE name = @a AND author = @b";
             await ExecuteAsync(sql, new { a = name, b = author });
         }
 
@@ -136,7 +136,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task ClearAsync()
         {
-            await ExecuteAsync("DELETE FROM searchBooks");
+            await ExecuteAsync("DELETE FROM search_books");
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace Legado.Core.Data.Dao
         /// </summary>
         public async Task ClearExpiredAsync(long time)
         {
-            var sql = "DELETE FROM searchBooks WHERE time < @a";
+            var sql = "DELETE FROM search_books WHERE time < @a";
             await ExecuteAsync(sql, new { a = time });
         }
     }

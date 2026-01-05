@@ -125,10 +125,10 @@ namespace Legado.Windows
                             {
                                 var cookie = Newtonsoft.Json.JsonConvert.DeserializeObject<string>(dlg.Cookie);
                                 SourceVerificationHelper.SetResult(data.Get<string>("sourceOrigin"), cookie);
-                                CookieEntity cookieEntity = new CookieEntity()
+                                Cookie cookieEntity = new Cookie()
                                 {
                                     Url = NetworkUtils.GetDomain(url),
-                                    Cookie = cookie
+                                    Value = cookie
                                 };
 
                                 await _appDb.CookieDao.InsertOrReplaceAsync(cookieEntity);

@@ -1,7 +1,7 @@
 ﻿using FreeSql;
 using FreeSql.Aop;
 using FreeSql.DataAnnotations;
-using Legado.FreeSql;
+using  Legado.DB;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
@@ -109,8 +109,8 @@ public static class FreeSqlServiceExtensions
     private static void Aop_ConfigEntity(object sender, ConfigEntityEventArgs e)
     {
         // 获取实体类上的自定义特性
-        var attr = e.EntityType.GetCustomAttributes(typeof(global::Legado.FreeSql.TableAttribute), false)
-            .FirstOrDefault() as global::Legado.FreeSql.TableAttribute;
+        var attr = e.EntityType.GetCustomAttributes(typeof(global::Legado.DB.TableAttribute), false)
+            .FirstOrDefault() as global::Legado.DB.TableAttribute;
 
         if (attr != null)
         {
@@ -118,7 +118,7 @@ public static class FreeSqlServiceExtensions
             e.ModifyResult.Name = attr.Name; 
         }
 
-        var attr2 = e.EntityType.GetCustomAttributes(typeof(global::Legado.FreeSql.IndexedAttribute), false);
+        var attr2 = e.EntityType.GetCustomAttributes(typeof(global::Legado.DB.IndexedAttribute), false);
 
         foreach (IndexedAttribute item in attr2)
         {
@@ -133,8 +133,8 @@ public static class FreeSqlServiceExtensions
     /// <param name="e"></param>
     public static void ConfigEntityProperty(object? sender, FreeSql.Aop.ConfigEntityPropertyEventArgs? e)
     {
-        var attr = e.Property.GetCustomAttributes(typeof(global::Legado.FreeSql.ColumnAttribute), false)
-            .FirstOrDefault() as global::Legado.FreeSql.ColumnAttribute;
+        var attr = e.Property.GetCustomAttributes(typeof(global::Legado.DB.ColumnAttribute), false)
+            .FirstOrDefault() as global::Legado.DB.ColumnAttribute;
          
 
         if (attr != null)
@@ -142,8 +142,8 @@ public static class FreeSqlServiceExtensions
             e.ModifyResult.Name = attr.Name; 
         }
 
-        var attr2 = e.Property.GetCustomAttributes(typeof(global::Legado.FreeSql.PrimaryKeyAttribute), false)
-            .FirstOrDefault() as global::Legado.FreeSql.PrimaryKeyAttribute;
+        var attr2 = e.Property.GetCustomAttributes(typeof(global::Legado.DB.PrimaryKeyAttribute), false)
+            .FirstOrDefault() as global::Legado.DB.PrimaryKeyAttribute;
 
 
         if (attr2 != null)
@@ -152,8 +152,8 @@ public static class FreeSqlServiceExtensions
         }
 
 
-        var attr3 = e.Property.GetCustomAttributes(typeof(global::Legado.FreeSql.IgnoreAttribute), false)
-            .FirstOrDefault() as global::Legado.FreeSql.IgnoreAttribute;
+        var attr3 = e.Property.GetCustomAttributes(typeof(global::Legado.DB.IgnoreAttribute), false)
+            .FirstOrDefault() as global::Legado.DB.IgnoreAttribute;
 
 
         if (attr3 != null)
@@ -161,8 +161,8 @@ public static class FreeSqlServiceExtensions
             e.ModifyResult.IsIgnore = true;
         }
 
-        var attr4 = e.Property.GetCustomAttributes(typeof(global::Legado.FreeSql.AutoIncrementAttribute), false)
-            .FirstOrDefault() as global::Legado.FreeSql.AutoIncrementAttribute;
+        var attr4 = e.Property.GetCustomAttributes(typeof(global::Legado.DB.AutoIncrementAttribute), false)
+            .FirstOrDefault() as global::Legado.DB.AutoIncrementAttribute;
 
 
         if (attr4 != null)
